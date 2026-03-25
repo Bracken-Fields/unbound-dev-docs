@@ -9,6 +9,12 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'Concepts',
+      collapsed: false,
+      items: ['concepts/concepts-overview'],
+    },
+    {
+      type: 'category',
       label: 'SDK',
       collapsed: false,
       items: [
@@ -25,28 +31,20 @@ const sidebars: SidebarsConfig = {
       collapsed: false,
       items: [
         'api-reference/overview',
-        {
-          type: 'category',
-          label: 'Messaging',
-          items: ['api-reference/messaging'],
-        },
+        'api-reference/messaging',
         'api-reference/voice',
         'api-reference/video',
-        {
-          type: 'category',
-          label: 'AI',
-          items: ['api-reference/ai'],
-        },
+        'api-reference/ai',
         'api-reference/objects',
         'api-reference/workflows',
         'api-reference/storage',
         'api-reference/subscriptions',
         'api-reference/phone-numbers',
         'api-reference/engagement-metrics',
+        'api-reference/task-router',
         'api-reference/notes',
         'api-reference/lookup',
         'api-reference/portals',
-        'api-reference/task-router',
       ],
     },
     {
@@ -57,6 +55,8 @@ const sidebars: SidebarsConfig = {
         'guides/make-call',
         'guides/stt-streaming',
         'guides/build-workflow',
+        'guides/webhooks',
+        'guides/task-router-quickstart',
       ],
     },
   ],
