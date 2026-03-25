@@ -33,6 +33,8 @@ const sidebars: SidebarsConfig = {
         'api-reference/workflows',
         'api-reference/storage',
         'api-reference/subscriptions',
+        'api-reference/phone-numbers',
+        'api-reference/engagement-metrics',
       ],
     },
     {

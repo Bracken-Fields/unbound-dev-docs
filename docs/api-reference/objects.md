@@ -5,93 +5,266 @@ title: Objects (Data)
 
 # Objects
 
-`api.objects` — A flexible CRM-style data layer. Store and query any structured data: contacts, leads, tickets, orders, and custom types.
+`api.objects` — A flexible CRM-style data layer. Store and query any structured data — contacts, leads, tickets, orders, and custom types you define.
 
-## Create
+---
 
-```javascript
-const contact = await api.objects.create('contacts', {
-  name: 'Jane Smith',
-  email: 'jane@example.com',
-  phone: '+1234567890',
-  company: 'Acme Corp',
-});
+## `objects.create(object, body)`
 
-console.log('Created ID:', contact.id);
-```
-
-## Query
+Create a new record.
 
 ```javascript
-const results = await api.objects.query('contacts', {
-  limit: 25,
-  orderBy: 'createdAt',
-  orderDirection: 'desc',
-  filters: [
-    { field: 'company', operator: 'eq', value: 'Acme Corp' },
-    { field: 'email', operator: 'contains', value: '@example.com' },
-  ],
+// Preferred (new) syntax
+const contact = await api.objects.create({
+  object: 'contacts',
+  body: {
+    name: 'Jane Smith',
+    email: 'jane@example.com',
+    phone: '+1234567890',
+    company: 'Acme Corp',
+  },
 });
 
-// results.data — array of objects
-// results.total — total count
-// results.cursor — pagination cursor
+// Legacy syntax (also supported)
+const contact = await api.objects.create('contacts', { name: 'Jane Smith', ... });
 ```
 
-### Filter Operators
+---
 
-| Operator | Description |
-|---|---|
-| `eq` | Equals |
-| `neq` | Not equals |
-| `contains` | String contains |
-| `startsWith` | String starts with |
-| `gt` / `gte` | Greater than / or equal |
-| `lt` / `lte` | Less than / or equal |
-| `in` | Value in array |
-| `isNull` | Field is null |
+## `objects.query(options)`
 
-## Get by ID
+Query records with filters, sorting, and pagination.
+
+```javascript
+const results = await api.objects.query({
+  object: 'contacts',
+  select: ['id', 'name', 'email', 'company'],
+  where: {
+    company: 'Acme Corp',
+    status: 'active',
+  },
+  limit: 50,
+  orderByDirection: 'DESC',
+  expandDetails: true,
+});
+
+// results.data → array of matching objects
+// Use results.data[0].id as nextId for cursor pagination
+```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `object` | string | — | Object type to query |
+| `select` | string[] | — | Fields to return (omit for all) |
+| `where` | object | `{}` | Field filters |
+| `limit` | number | `100` | Max records to return |
+| `nextId` | string | — | Cursor for next page |
+| `previousId` | string | — | Cursor for previous page |
+| `orderByDirection` | string | `'DESC'` | `'ASC'` or `'DESC'` |
+| `expandDetails` | boolean | `false` | Resolve related object references |
+
+**Legacy syntax:**
+```javascript
+await api.objects.query('contacts', { status: 'active', limit: 25 });
+```
+
+---
+
+## `objects.byId(id)`
+
+Fetch a record by its ID.
 
 ```javascript
 const contact = await api.objects.byId('contact-id-123');
-```
 
-## Update
-
-```javascript
-await api.objects.updateById('contacts', 'contact-id-123', {
-  company: 'New Corp',
-  status: 'active',
+// With field selection
+const contact = await api.objects.byId({
+  id: 'contact-id-123',
+  query: { select: 'id,name,email' },
 });
 ```
 
-## Delete
+---
+
+## `objects.updateById(object, id, update)`
+
+Update a record by ID.
 
 ```javascript
-await api.objects.deleteById('contacts', 'contact-id-123');
+// Preferred syntax
+await api.objects.updateById({
+  object: 'contacts',
+  id: 'contact-id-123',
+  update: { company: 'New Corp', status: 'active' },
+});
+
+// Legacy syntax
+await api.objects.updateById('contacts', 'contact-id-123', { company: 'New Corp' });
 ```
 
-## Introspection
+---
+
+## `objects.update({ object, where, update })`
+
+Update records matching a `where` clause (bulk update).
 
 ```javascript
-// Get the schema for an object type
+await api.objects.update({
+  object: 'contacts',
+  where: { company: 'Old Corp' },
+  update: { company: 'New Corp' },
+});
+```
+
+---
+
+## `objects.deleteById({ object, id })`
+
+Delete a single record by ID.
+
+```javascript
+await api.objects.deleteById({
+  object: 'contacts',
+  id: 'contact-id-123',
+});
+```
+
+---
+
+## `objects.delete({ object, where })`
+
+Delete records matching a `where` clause.
+
+```javascript
+await api.objects.delete({
+  object: 'contacts',
+  where: { status: 'archived' },
+});
+```
+
+---
+
+## `objects.describe(object)`
+
+Inspect the schema for an object type — fields, types, relationships.
+
+```javascript
 const schema = await api.objects.describe('contacts');
-
-// List all available object types
-const types = await api.objects.list();
+// schema.fields → array of { name, type, required, ... }
 ```
 
-## Relationships
+---
 
-Objects can reference each other by ID. Use `describe()` to understand the relationship fields available on a given type.
+## `objects.list()`
+
+List all available object types in your namespace.
 
 ```javascript
-// Create a ticket linked to a contact
-await api.objects.create('tickets', {
-  subject: 'Need help with billing',
-  contactId: 'contact-id-123',
-  priority: 'high',
-  status: 'open',
+const types = await api.objects.list();
+// → ['contacts', 'leads', 'tickets', 'orders', ...]
+```
+
+---
+
+## Schema Management
+
+### Create a New Object Type
+
+```javascript
+await api.objects.createObject({ name: 'invoices' });
+```
+
+### Add Columns to an Object
+
+```javascript
+// Single column
+await api.objects.createColumn({
+  objectName: 'invoices',
+  name: 'amount',
+  type: 'decimal',
+  length: null,
+  isRequired: true,
+});
+
+// Batch columns
+await api.objects.createColumn({
+  objectName: 'invoices',
+  columns: [
+    { name: 'amount', type: 'decimal' },
+    { name: 'dueDate', type: 'datetime' },
+    { name: 'status', type: 'varchar', length: 50 },
+  ],
+});
+```
+
+| Column Type | Description |
+|---|---|
+| `varchar` | Short string (default length 255) |
+| `text` | Long string / unlimited |
+| `int` | Integer |
+| `decimal` | Decimal number |
+| `boolean` | True/false |
+| `datetime` | Date and time |
+| `json` | JSON blob |
+
+### Modify a Column
+
+```javascript
+await api.objects.modifyColumn({
+  objectName: 'invoices',
+  columnName: 'status',
+  columnType: 'varchar',
+  length: 100,
+  isRequired: false,
+});
+```
+
+### Delete a Column
+
+```javascript
+await api.objects.deleteColumn({
+  objectName: 'invoices',
+  columnName: 'legacyField',
+});
+```
+
+---
+
+## Expand Details
+
+Expand details define automatic joins — when querying one object, related objects are auto-resolved.
+
+```javascript
+// Define a relationship: contacts.companyId → companies.id
+await api.objects.createExpandDetail({
+  objectName: 'contacts',
+  fieldName: 'companyId',
+  targetObject: 'companies',
+  lookupColumn: 'id',
+  expandFields: ['name', 'website', 'industry'],
+});
+
+// Now queries with expandDetails:true will include company data
+const contacts = await api.objects.query({
+  object: 'contacts',
+  expandDetails: true,
+});
+// contacts[0].companyId_expanded → { name: 'Acme Corp', website: '...' }
+```
+
+---
+
+## Generated Columns
+
+Computed columns derived from expressions or formulas.
+
+```javascript
+await api.objects.createGeneratedColumn({
+  objectName: 'contacts',
+  columnName: 'fullName',
+  value: "CONCAT(firstName, ' ', lastName)",
+  type: 'string',
+  columnType: 'varchar',
+  length: '255',
 });
 ```
