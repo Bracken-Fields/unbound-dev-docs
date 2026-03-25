@@ -1,6 +1,6 @@
 ---
 id: portals
-title: Portals & SIP Endpoints
+title: Portals
 ---
 
 # Portals
@@ -35,7 +35,7 @@ const portal = await api.portals.create({
 | `settings` | object | — | Portal configuration (theme, colors, etc.) |
 | `customCss` | string | — | Custom CSS injected into portal |
 | `customJs` | string | — | Custom JS injected into portal |
-| `logo` | string | — | Storage ID for logo |
+| `logo` | string | — | Storage ID for logo image |
 | `favicon` | string | — | Storage ID for favicon |
 
 ---
@@ -51,7 +51,7 @@ const portals = await api.portals.list();
 
 ## `portals.getPublic(domain)`
 
-Fetch a portal by domain (no auth required — for public portal pages).
+Fetch a portal by domain without authentication — for public portal pages.
 
 ```javascript
 const portal = await api.portals.getPublic('support.yourcompany.com');
@@ -73,12 +73,12 @@ await api.portals.update('portal-id', {
 
 ## `portals.verifyDns(portalId)`
 
-Verify that the portal's custom domain DNS is configured correctly.
+Verify the portal's custom domain DNS is configured correctly.
 
 ```javascript
 const result = await api.portals.verifyDns('portal-id');
 // result.verified → true/false
-// result.records → DNS records status
+// result.records → DNS record statuses
 ```
 
 ---
@@ -87,94 +87,4 @@ const result = await api.portals.verifyDns('portal-id');
 
 ```javascript
 await api.portals.delete('portal-id');
-```
-
----
-
-# SIP Endpoints
-
-`api.sipEndpoints` — Manage SIP devices and WebRTC endpoints for users.
-
----
-
-## `sipEndpoints.create(options)`
-
-```javascript
-const endpoint = await api.sipEndpoints.create({
-  type: 'webRtc',           // 'webRtc' | 'ipPhone'
-  name: 'Jane Smith - Desk',
-  userId: 'user-id-123',
-  recordTypeId: 'record-type-id',
-  useSecureCalling: true,
-});
-
-// IP Phone
-const ipPhone = await api.sipEndpoints.create({
-  type: 'ipPhone',
-  name: 'Conference Room Phone',
-  macAddress: '00:11:22:33:44:55',
-  userId: 'user-id-123',
-});
-```
-
----
-
-## `sipEndpoints.getWebRtcDetails()`
-
-Get the authenticated user's WebRTC endpoint configuration (SIP credentials, STUN/TURN servers).
-
-```javascript
-const webrtc = await api.sipEndpoints.getWebRtcDetails();
-// webrtc.sipUser, webrtc.sipPassword, webrtc.domain, webrtc.stunServers
-```
-
----
-
-## `sipEndpoints.update(endpointId, options)`
-
-```javascript
-await api.sipEndpoints.update('endpoint-id', {
-  name: 'Updated Name',
-  userId: 'new-user-id',
-  useSecureCalling: false,
-});
-```
-
----
-
-## `sipEndpoints.reboot(endpointId)`
-
-Force a SIP endpoint to re-register (useful after config changes on IP phones).
-
-```javascript
-await api.sipEndpoints.reboot('endpoint-id');
-```
-
----
-
-## `sipEndpoints.changeAccessSecret(endpointId)`
-
-Rotate the SIP access credentials for an endpoint.
-
-```javascript
-const newCreds = await api.sipEndpoints.changeAccessSecret('endpoint-id');
-// newCreds.password → new SIP password
-```
-
----
-
-## `sipEndpoints.changeProvisioningSecret(endpointId)`
-
-Rotate the provisioning secret (for IP phone auto-provisioning).
-
-```javascript
-await api.sipEndpoints.changeProvisioningSecret('endpoint-id');
-```
-
----
-
-## `sipEndpoints.delete(endpointId)`
-
-```javascript
-await api.sipEndpoints.delete('endpoint-id');
 ```

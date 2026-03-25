@@ -6,26 +6,53 @@ slug: /api-reference/overview
 
 # API Reference
 
-The Unbound SDK exposes the following top-level services:
+The Unbound SDK exposes the following services via `api.<service>`:
+
+## Communication
 
 | Service | Property | Description |
 |---|---|---|
 | [Messaging](/api-reference/messaging) | `api.messaging` | SMS, MMS, email, templates, campaigns |
 | [Voice](/api-reference/voice) | `api.voice` | Calls, conferencing, recording, transcription |
-| [Video](/api-reference/video) | `api.video` | Rooms, participants, analytics |
-| [AI](/api-reference/ai) | `api.ai` | Generative chat, TTS, STT streaming |
+| [Video](/api-reference/video) | `api.video` | Rooms, participants, chat, analytics |
+
+## AI
+
+| Service | Property | Description |
+|---|---|---|
+| [AI Services](/api-reference/ai) | `api.ai` | Generative chat, TTS, real-time STT streaming, data extraction |
+
+## Contact Center
+
+| Service | Property | Description |
+|---|---|---|
+| [Task Router](/api-reference/task-router) | `api.taskRouter` | Routing engine — workers, tasks, queues, metrics |
+| [Engagement Metrics](/api-reference/engagement-metrics) | `api.engagementMetrics` | Queue and agent performance dashboards |
+
+## Data & Automation
+
+| Service | Property | Description |
+|---|---|---|
 | [Objects](/api-reference/objects) | `api.objects` | CRM-style data — CRUD, queries, schemas |
-| [Workflows](/api-reference/workflows) | `api.workflows` | Build and run automation workflows |
-| [Storage](/api-reference/storage) | `api.storage` | File upload, retrieval, deletion |
-| [Subscriptions](/api-reference/subscriptions) | `api.subscriptions` | Realtime event subscriptions |
+| [Workflows](/api-reference/workflows) | `api.workflows` | Build and run automation flows |
+| [Notes](/api-reference/notes) | `api.notes` | Rich-text notes on any CRM object |
+| [Storage](/api-reference/storage) | `api.storage` | File upload, access control, metadata |
+
+## Platform & Infrastructure
+
+| Service | Property | Description |
+|---|---|---|
+| [Subscriptions](/api-reference/subscriptions) | `api.subscriptions` | Real-time WebSocket event subscriptions |
+| [Phone Numbers](/api-reference/phone-numbers) | `api.phoneNumbers` | DID inventory, configuration, porting |
+| [SIP Endpoints](/api-reference/sip-endpoints) | `api.sipEndpoints` | WebRTC and IP phone endpoint management |
+| [Portals](/api-reference/portals) | `api.portals` | Branded customer portals on custom domains |
+| [Lookup](/api-reference/lookup) | `api.lookup` | CNAM, LRN, and number intelligence |
+| Verification | `api.verification` | SMS and email OTP — see [Lookup & Verification](/api-reference/lookup) |
 | Authentication | `api.login` | Login, logout, validate, change password |
-| Phone Numbers | `api.phoneNumbers` | Manage DID inventory |
-| SIP Endpoints | `api.sipEndpoints` | SIP trunk configuration |
-| Portals | `api.portals` | Customer portal management |
+| Record Types | `api.recordTypes` | Data access permission schemas |
 | Layouts | `api.layouts` | UI layout definitions |
-| Record Types | `api.recordTypes` | Custom record type schemas |
-| Lookup | `api.lookup` | Address and data lookup |
-| Verification | `api.verification` | Identity verification flows |
+
+---
 
 ## Base URL
 
