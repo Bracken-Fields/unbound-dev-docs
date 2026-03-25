@@ -5,54 +5,107 @@ title: Subscriptions
 
 # Subscriptions
 
-`api.subscriptions` — Subscribe to realtime events from the Unbound platform via WebSocket.
+`api.subscriptions` — Real-time event subscriptions via WebSocket. Subscribe to platform events and react as they happen.
 
-## Subscribe to Events
+---
+
+## Overview
+
+The subscriptions service uses Socket.io under the hood. In browser environments it uses WebSocket transport automatically. Pass `socketStore` to your SDK constructor for optimized performance in Svelte/browser apps.
+
+---
+
+## `subscriptions.socket.getConnection(sessionId?)`
+
+Get or create a WebSocket connection for subscriptions.
 
 ```javascript
-const sub = await api.subscriptions.subscribe({
-  events: ['call.started', 'call.ended', 'message.received'],
-  namespace: 'your-namespace',
-});
+const connection = await api.subscriptions.socket.getConnection();
+// connection.sessionId → your socket session ID
+// connection.endpoint → WebSocket endpoint
+```
 
-sub.on('call.started', (event) => {
-  console.log('New call:', event.callId, 'from', event.from);
-});
+---
 
-sub.on('call.ended', (event) => {
-  console.log('Call ended:', event.callId, 'duration:', event.duration);
-});
+## `subscriptions.socket.create(sessionId, subscriptionParams)`
 
-sub.on('message.received', (event) => {
-  console.log('Inbound SMS from', event.from, ':', event.body);
+Subscribe to a specific event or data stream.
+
+```javascript
+const sub = await api.subscriptions.socket.create(sessionId, {
+  channel: 'engagements',
+  filters: {
+    queueId: 'queue-id',
+    status: ['new', 'working'],
+  },
 });
 ```
 
-## Available Events
+### Common Subscription Channels
 
-| Event | Description |
+| Channel | Description |
 |---|---|
-| `call.started` | Inbound or outbound call initiated |
-| `call.ended` | Call completed |
-| `call.transferred` | Call transferred to another destination |
-| `message.received` | Inbound SMS/MMS received |
-| `message.status` | Outbound message status update |
-| `video.participant.joined` | Participant joined a video room |
-| `video.participant.left` | Participant left a video room |
-| `workflow.triggered` | Workflow execution started |
-| `workflow.completed` | Workflow execution completed |
-| `object.created` | CRM object created |
-| `object.updated` | CRM object updated |
+| `engagements` | Real-time engagement session updates |
+| `voice` | Call state changes (ringing, answered, ended) |
+| `messages` | Inbound SMS/email notifications |
+| `video` | Video room participant events |
+| `taskRouter` | Task assignment and worker state changes |
+| `ai.transcripts` | Live STT transcript updates |
+| `engagementMetrics` | Dashboard metrics refresh events |
 
-## Unsubscribe
+### Example: Real-Time Engagement Feed
 
 ```javascript
-sub.unsubscribe();
+import SDK from '@unboundcx/sdk';
+import { io } from 'socket.io-client';
+
+const api = new SDK({
+  namespace: 'your-namespace',
+  token: 'your-jwt',
+});
+
+// 1. Get connection details
+const { sessionId, endpoint } = await api.subscriptions.socket.getConnection();
+
+// 2. Connect Socket.io
+const socket = io(endpoint, { withCredentials: true });
+
+socket.on('connect', async () => {
+  // 3. Subscribe to engagement updates
+  await api.subscriptions.socket.create(sessionId, {
+    channel: 'engagements',
+  });
+});
+
+// 4. Listen for events
+socket.on('engagement:updated', (data) => {
+  console.log('Engagement updated:', data.id, data.status);
+});
+
+socket.on('voice:call:started', (data) => {
+  console.log('Inbound call from:', data.from);
+});
+
+socket.on('message:received', (data) => {
+  console.log('New SMS from:', data.from, '—', data.body);
+});
 ```
+
+---
+
+## `subscriptions.socket.delete(id, sessionId)`
+
+Unsubscribe from a specific subscription.
+
+```javascript
+await api.subscriptions.socket.delete(subscriptionId, sessionId);
+```
+
+---
 
 ## Browser / Svelte Usage
 
-In browser environments, subscriptions use WebSocket transport automatically. Pass `socketStore` to your SDK constructor for optimal performance:
+Pass `socketStore` to the SDK constructor to enable the built-in WebSocket transport — no manual Socket.io setup required:
 
 ```javascript
 import SDK from '@unboundcx/sdk';
@@ -63,7 +116,6 @@ const api = new SDK({
   socketStore: socketAppStore,
 });
 
-const sub = await api.subscriptions.subscribe({
-  events: ['message.received'],
-});
+// Subscribe directly — SDK handles the connection
+await api.subscriptions.socket.create(sessionId, { channel: 'engagements' });
 ```
