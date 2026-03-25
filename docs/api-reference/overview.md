@@ -34,6 +34,7 @@ The Unbound SDK exposes the following services via `api.<service>`:
 | Service | Property | Description |
 |---|---|---|
 | [Objects](/api-reference/objects) | `api.objects` | CRM-style data — CRUD, queries, schemas |
+| [UOQL](/api-reference/uoql) | `POST /object/query/v2` | SQL query engine — SELECT, GROUP BY, aggregates, window functions |
 | [Workflows](/api-reference/workflows) | `api.workflows` | Build and run automation flows |
 | [Notes](/api-reference/notes) | `api.notes` | Rich-text notes on any CRM object |
 | [Storage](/api-reference/storage) | `api.storage` | File upload, access control, metadata |

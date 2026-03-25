@@ -62,6 +62,7 @@ const sidebars: SidebarsConfig = {
           collapsed: false,
           items: [
             'api-reference/objects',
+            'api-reference/uoql',
             'api-reference/workflows',
             'api-reference/notes',
             'api-reference/storage',
