@@ -1,0 +1,188 @@
+/* Unbound brand tokens */
+:root {
+  --ifm-color-primary: #1D949A;
+  --ifm-color-primary-dark: #1a8589;
+  --ifm-color-primary-darker: #187e82;
+  --ifm-color-primary-darkest: #13696c;
+  --ifm-color-primary-light: #20a3ab;
+  --ifm-color-primary-lighter: #22acb4;
+  --ifm-color-primary-lightest: #27bfc8;
+  --ifm-font-family-base: 'Inter', system-ui, -apple-system, sans-serif;
+  --ifm-heading-font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  --ifm-code-font-size: 90%;
+  --ifm-navbar-height: 60px;
+  --ifm-border-radius: 8px;
+}
+
+[data-theme='dark'] {
+  --ifm-background-color: #020331;
+  --ifm-background-surface-color: #0a0d3a;
+  --ifm-navbar-background-color: #020331;
+  --ifm-footer-background-color: #010228;
+  --ifm-color-primary: #1D949A;
+  --ifm-sidebar-background: #010228;
+  --ifm-toc-border-color: rgba(29, 148, 154, 0.2);
+  --ifm-hr-border-color: rgba(29, 148, 154, 0.15);
+}
+
+[data-theme='light'] {
+  --ifm-background-color: #f8fbfb;
+  --ifm-navbar-background-color: #ffffff;
+  --ifm-sidebar-background: #f1f7f7;
+}
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap');
+
+/* Navbar */
+.navbar {
+  border-bottom: 1px solid rgba(29, 148, 154, 0.2);
+  box-shadow: none;
+}
+
+[data-theme='dark'] .navbar {
+  background: rgba(2, 3, 49, 0.95);
+  backdrop-filter: blur(12px);
+}
+
+/* Hero landing section */
+.hero-banner {
+  background: linear-gradient(135deg, #020331 0%, #0a0d3a 50%, #020331 100%);
+  padding: 80px 40px;
+  text-align: center;
+  border-bottom: 1px solid rgba(29, 148, 154, 0.2);
+}
+
+.hero-banner h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 3rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 16px;
+}
+
+.hero-banner p {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 600px;
+  margin: 0 auto 32px;
+}
+
+.hero-badge {
+  display: inline-block;
+  background: rgba(29, 148, 154, 0.15);
+  border: 1px solid rgba(29, 148, 154, 0.4);
+  color: #1D949A;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 20px;
+}
+
+/* Quick start cards */
+.quickstart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 32px 0;
+}
+
+.quickstart-card {
+  background: rgba(29, 148, 154, 0.05);
+  border: 1px solid rgba(29, 148, 154, 0.2);
+  border-radius: 12px;
+  padding: 24px;
+  text-decoration: none;
+  transition: border-color 0.2s, background 0.2s;
+  display: block;
+}
+
+.quickstart-card:hover {
+  border-color: #1D949A;
+  background: rgba(29, 148, 154, 0.1);
+  text-decoration: none;
+}
+
+.quickstart-card .card-icon {
+  font-size: 2rem;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.quickstart-card h3 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+[data-theme='light'] .quickstart-card h3 {
+  color: #020331;
+}
+
+.quickstart-card p {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+[data-theme='light'] .quickstart-card p {
+  color: rgba(2, 3, 49, 0.6);
+}
+
+/* Code blocks */
+.prism-code {
+  border-radius: 10px !important;
+  border: 1px solid rgba(29, 148, 154, 0.15);
+}
+
+/* Sidebar */
+[data-theme='dark'] .theme-doc-sidebar-container {
+  background: #010228;
+  border-right: 1px solid rgba(29, 148, 154, 0.12);
+}
+
+.menu__link--active {
+  color: #1D949A !important;
+  font-weight: 600;
+}
+
+/* Method badges */
+.method-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: monospace;
+  margin-right: 8px;
+}
+
+.method-get { background: rgba(29, 148, 154, 0.15); color: #1D949A; }
+.method-post { background: rgba(50, 114, 229, 0.15); color: #3272e5; }
+.method-put { background: rgba(255, 165, 0, 0.15); color: #FFA500; }
+.method-delete { background: rgba(220, 50, 50, 0.15); color: #dc3232; }
+
+/* Admonitions */
+[data-theme='dark'] .alert {
+  border-left-color: #1D949A;
+  background: rgba(29, 148, 154, 0.08);
+}
+
+/* Table styling */
+[data-theme='dark'] table {
+  border-color: rgba(29, 148, 154, 0.15);
+}
+
+[data-theme='dark'] tr:nth-child(even) {
+  background: rgba(29, 148, 154, 0.04);
+}
+
+/* Footer */
+[data-theme='dark'] .footer {
+  border-top: 1px solid rgba(29, 148, 154, 0.15);
+}

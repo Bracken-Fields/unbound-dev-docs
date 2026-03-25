@@ -1,0 +1,118 @@
+---
+id: getting-started
+title: Getting Started
+slug: /getting-started
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Getting Started
+
+The Unbound JavaScript SDK gives you a single, unified interface to the full Unbound platform — messaging, voice, video, AI, workflows, and data — from Node.js or the browser.
+
+## Install
+
+```bash
+npm install @unboundcx/sdk
+```
+
+For browser or Socket.io-based realtime transport, also install:
+
+```bash
+npm install socket.io-client
+```
+
+## Initialize
+
+<Tabs>
+<TabItem value="object" label="Object Config (Recommended)">
+
+```javascript
+import SDK from '@unboundcx/sdk';
+
+const api = new SDK({
+  namespace: 'your-namespace',
+  token: 'your-jwt-token',
+});
+```
+
+</TabItem>
+<TabItem value="factory" label="Factory Function">
+
+```javascript
+import { createSDK } from '@unboundcx/sdk';
+
+const api = createSDK({
+  namespace: 'your-namespace',
+  token: 'your-jwt-token',
+});
+```
+
+</TabItem>
+<TabItem value="legacy" label="Legacy Positional">
+
+```javascript
+import SDK from '@unboundcx/sdk';
+
+// Backwards compatible — namespace, callId, token, fwRequestId
+const api = new SDK('your-namespace', null, 'your-jwt-token');
+```
+
+</TabItem>
+</Tabs>
+
+The SDK automatically connects to `your-namespace.api.unbound.cx`.
+
+## Your First API Call
+
+### Login and send an SMS
+
+```javascript
+import SDK from '@unboundcx/sdk';
+
+const api = new SDK({ namespace: 'your-namespace' });
+
+// Authenticate
+const session = await api.login.login('username', 'password');
+
+// Send SMS
+const sms = await api.messaging.sms.send({
+  from: '+1234567890',
+  to: '+0987654321',
+  message: 'Hello from Unbound!',
+});
+
+console.log('Sent:', sms.id);
+```
+
+### Make a call
+
+```javascript
+const call = await api.voice.createCall({
+  to: '+1234567890',
+  from: '+0987654321',
+  record: true,
+});
+
+console.log('Call ID:', call.callControlId);
+```
+
+### Run AI chat
+
+```javascript
+const response = await api.ai.generative.chat({
+  messages: [{ role: 'user', content: 'Summarize this support ticket...' }],
+  model: 'gpt-4',
+  temperature: 0.7,
+  method: 'openai',
+});
+
+console.log(response.choices[0].message.content);
+```
+
+## What's Next
+
+- [SDK Configuration](/sdk/configuration) — namespaces, tokens, transport options
+- [API Reference](/api-reference/overview) — all services and methods
+- [Guides](/guides/send-sms) — step-by-step walkthroughs
