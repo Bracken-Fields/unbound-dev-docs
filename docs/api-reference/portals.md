@@ -13,17 +13,17 @@ title: Portals
 
 ```javascript
 const portal = await api.portals.create({
-  name: 'Customer Support Portal',
-  domain: 'support.yourcompany.com',
-  isPublic: true,
-  settings: {
-    theme: 'dark',
-    primaryColor: '#1D949A',
-  },
-  customCss: '/* custom styles */',
-  customJs: '/* custom scripts */',
-  logo: 'storage-id-for-logo',
-  favicon: 'storage-id-for-favicon',
+    name: 'Customer Support Portal',
+    domain: 'support.yourcompany.com',
+    isPublic: true,
+    settings: {
+        theme: 'dark',
+        primaryColor: '#1D949A',
+    },
+    customCss: '/* custom styles */',
+    customJs: '/* custom scripts */',
+    logo: 'storage-id-for-logo',
+    favicon: 'storage-id-for-favicon',
 });
 ```
 
@@ -63,9 +63,9 @@ const portal = await api.portals.getPublic('support.yourcompany.com');
 
 ```javascript
 await api.portals.update('portal-id', {
-  name: 'Renamed Portal',
-  settings: { primaryColor: '#FF6600' },
-  isPublic: false,
+    name: 'Renamed Portal',
+    settings: { primaryColor: '#FF6600' },
+    isPublic: false,
 });
 ```
 

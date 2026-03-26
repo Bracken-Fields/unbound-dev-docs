@@ -15,13 +15,13 @@ title: AI Services
 
 ```javascript
 const response = await api.ai.generative.chat({
-  messages: [
-    { role: 'system', content: 'You are a helpful support agent.' },
-    { role: 'user', content: 'What is your return policy?' },
-  ],
-  model: 'gpt-4',
-  temperature: 0.7,
-  method: 'openai',
+    messages: [
+        { role: 'system', content: 'You are a helpful support agent.' },
+        { role: 'user', content: 'What is your return policy?' },
+    ],
+    model: 'gpt-4',
+    temperature: 0.7,
+    method: 'openai',
 });
 
 console.log(response.choices[0].message.content);
@@ -35,11 +35,11 @@ console.log(response.choices[0].message.content);
 
 ```javascript
 const audio = await api.ai.tts.create({
-  text: 'Hello, thank you for calling.',
-  voice: 'en-US-Standard-C',
-  audioEncoding: 'MP3',
-  speakingRate: 1.0,
-  pitch: 0,
+    text: 'Hello, thank you for calling.',
+    voice: 'en-US-Standard-C',
+    audioEncoding: 'MP3',
+    speakingRate: 1.0,
+    pitch: 0,
 });
 
 // audio.audioContent — base64-encoded audio
@@ -62,16 +62,16 @@ const audio = await api.ai.tts.create({
 
 ```javascript
 const transcription = await api.ai.stt.create({
-  sourceType: 'storage',      // 'storage' | 'file' | 'url' | 'stream'
-  storageId: 'audio-file-id',
-  engine: 'google',           // 'google' | 'deepgram' | 'whisper'
-  languageCode: 'en-US',
-  metadata: {
-    diarization: true,
-    speakerCount: 2,
-  },
-  engagementSessionId: 'eng-123',
-  playbookId: 'pb-456',
+    sourceType: 'storage',      // 'storage' | 'file' | 'url' | 'stream'
+    storageId: 'audio-file-id',
+    engine: 'google',           // 'google' | 'deepgram' | 'whisper'
+    languageCode: 'en-US',
+    metadata: {
+        diarization: true,
+        speakerCount: 2,
+    },
+    engagementSessionId: 'eng-123',
+    playbookId: 'pb-456',
 });
 ```
 
@@ -95,25 +95,25 @@ STT streaming requires a Node.js environment. Browser-based streaming is not sup
 
 ```javascript
 const stream = await api.ai.stt.stream({
-  engine: 'google',
-  model: 'phone_call',
-  languageCode: 'en-US',
-  encoding: 'LINEAR16',
-  sampleRateHertz: 16000,
-  audioChannelCount: 1,
-  interimResults: true,
-  enableAutomaticPunctuation: true,
-  diarizationEnabled: false,
-  vadEnabled: false,
-  engagementSessionId: 'eng-123',
+    engine: 'google',
+    model: 'phone_call',
+    languageCode: 'en-US',
+    encoding: 'LINEAR16',
+    sampleRateHertz: 16000,
+    audioChannelCount: 1,
+    interimResults: true,
+    enableAutomaticPunctuation: true,
+    diarizationEnabled: false,
+    vadEnabled: false,
+    engagementSessionId: 'eng-123',
 });
 
 stream.on('transcript', (result) => {
-  if (result.isFinal) {
-    console.log('[FINAL]', result.text);
-  } else {
-    process.stdout.write(`\r[interim] ${result.text}`);
-  }
+    if (result.isFinal) {
+        console.log('[FINAL]', result.text);
+    } else {
+        process.stdout.write(`\r[interim] ${result.text}`);
+    }
 });
 
 stream.on('error', (err) => console.error('Stream error:', err));
@@ -168,7 +168,7 @@ stream.end();               // Finalize
 
 ```javascript
 const transcript = await api.ai.stt.get('session-id', {
-  includeMessages: true,
+    includeMessages: true,
 });
 ```
 
@@ -178,13 +178,13 @@ const transcript = await api.ai.stt.get('session-id', {
 
 ```javascript
 const results = await api.ai.stt.list({
-  engagementSessionId: 'eng-123',
-  status: 'completed',    // 'pending' | 'processing' | 'completed' | 'failed'
-  engine: 'google',
-  startDate: '2024-01-01',
-  endDate: '2024-01-31',
-  limit: 50,
-  offset: 0,
+    engagementSessionId: 'eng-123',
+    status: 'completed',    // 'pending' | 'processing' | 'completed' | 'failed'
+    engine: 'google',
+    startDate: '2024-01-01',
+    endDate: '2024-01-31',
+    limit: 50,
+    offset: 0,
 });
 ```
 
@@ -196,15 +196,15 @@ Manually log a message to a streaming session (for custom STT integrations).
 
 ```javascript
 await api.ai.stt.logMessage('session-id', {
-  text: 'Hello, how can I help you today?',
-  role: 'agent',
-  confidence: 0.98,
-  duration: 2.4,
-  sentiment: {
-    score: 15,
-    trend: 'stable',
-    emotions: ['neutral', 'friendly'],
-  },
+    text: 'Hello, how can I help you today?',
+    role: 'agent',
+    confidence: 0.98,
+    duration: 2.4,
+    sentiment: {
+        score: 15,
+        trend: 'stable',
+        emotions: ['neutral', 'friendly'],
+    },
 });
 ```
 
@@ -228,9 +228,9 @@ await api.ai.stt.complete('session-id', { status: 'failed', error: 'Connection d
 
 ```javascript
 const result = await api.ai.extract.phone({
-  value: 'Call me at eight hundred five five five twelve twelve',
-  country: 'US',
-  format: 'E164',
+    value: 'Call me at eight hundred five five five twelve twelve',
+    country: 'US',
+    format: 'E164',
 });
 // result.isValid → true
 // result.parsedValue → '+18005551212'
@@ -246,8 +246,8 @@ const result = await api.ai.extract.email({ value: 'Reach me at jane at example 
 
 ```javascript
 const result = await api.ai.extract.address({
-  value: '123 Main Street, Springfield, IL 62701',
-  useAI: true,
+    value: '123 Main Street, Springfield, IL 62701',
+    useAI: true,
 });
 ```
 
@@ -255,8 +255,8 @@ const result = await api.ai.extract.address({
 
 ```javascript
 const result = await api.ai.extract.personName({
-  value: 'My name is Jane Marie Smith',
-  useAI: true,
+    value: 'My name is Jane Marie Smith',
+    useAI: true,
 });
 // result.parsedValue → 'Jane Marie Smith'
 // result.firstName → 'Jane'
@@ -267,7 +267,7 @@ const result = await api.ai.extract.personName({
 
 ```javascript
 const result = await api.ai.extract.correctIncorrect({
-  value: 'Yeah that sounds right',
+    value: 'Yeah that sounds right',
 });
 // result.parsedValue → 'correct'
 // result.booleanValue → true
@@ -277,15 +277,15 @@ const result = await api.ai.extract.correctIncorrect({
 
 ```javascript
 const result = await api.ai.extract.intent({
-  value: 'I need help with my bill',
-  params: {
-    question: 'What can I help you with today?',
-    validOptions: [
-      { value: 'billing', label: 'Billing' },
-      { value: 'technical', label: 'Technical Support' },
-      { value: 'sales', label: 'Sales' },
-    ],
-  },
+    value: 'I need help with my bill',
+    params: {
+        question: 'What can I help you with today?',
+        validOptions: [
+            { value: 'billing', label: 'Billing' },
+            { value: 'technical', label: 'Technical Support' },
+            { value: 'sales', label: 'Sales' },
+        ],
+    },
 });
 // result.value → 'billing'
 ```
@@ -294,9 +294,9 @@ const result = await api.ai.extract.intent({
 
 ```javascript
 const result = await api.ai.extract.all({
-  value: 'Call John Smith at 555-1234 or john@example.com',
-  types: ['phone', 'email', 'personName'],
-  question: 'What is the caller contact information?',
+    value: 'Call John Smith at 555-1234 or john@example.com',
+    types: ['phone', 'email', 'personName'],
+    question: 'What is the caller contact information?',
 });
 // result.extractions → [{ type: 'phone', value: '+15551234', ... }, ...]
 ```
@@ -305,9 +305,9 @@ const result = await api.ai.extract.all({
 
 ```javascript
 const result = await api.ai.extract.regex({
-  value: 'Order number is AB-123456',
-  pattern: '[A-Z]{2}-\\d{6}',
-  flags: 'g',
+    value: 'Order number is AB-123456',
+    pattern: '[A-Z]{2}-\\d{6}',
+    flags: 'g',
 });
 // result.parsedValue → 'AB-123456'
 ```
@@ -316,12 +316,46 @@ const result = await api.ai.extract.regex({
 
 ## AI Playbooks
 
-Playbooks define scripted AI behaviors for voice and chat flows.
+Playbooks define scripted AI behaviors for voice and chat flows — structured conversation scripts that guide AI interactions.
+
+### `ai.playbooks.listPlaybooks(options?)`
 
 ```javascript
-// List playbooks
-const playbooks = await api.ai.playbooks.list();
+const playbooks = await api.ai.playbooks.listPlaybooks({
+    limit: 25,
+    orderBy: 'createdAt',
+    orderDirection: 'DESC',
+    isPublished: true,
+    recordTypeId: 'record-type-id',
+});
+```
 
-// Get a playbook
-const pb = await api.ai.playbooks.get('playbook-id');
+### `ai.playbooks.getPlaybook({ playbookId })`
+
+```javascript
+const pb = await api.ai.playbooks.getPlaybook({
+    playbookId: 'playbook-id',
+});
+```
+
+### `ai.playbooks.createPlaybook(options)`
+
+```javascript
+const pb = await api.ai.playbooks.createPlaybook({
+    name: 'Inbound Support Script',
+    recordTypeId: 'record-type-id',
+});
+```
+
+---
+
+## Text-to-Speech Voice List
+
+### `ai.tts.list()`
+
+List all available TTS voices.
+
+```javascript
+const voices = await api.ai.tts.list();
+// voices → [{ name: 'en-US-Standard-A', gender: 'MALE', ... }, ...]
 ```

@@ -15,10 +15,10 @@ import SDK from '@unboundcx/sdk';
 const api = new SDK({ namespace: 'your-namespace', token: 'your-jwt' });
 
 const call = await api.voice.createCall({
-  to: '+1234567890',
-  from: '+0987654321',
-  record: true,
-  transcribe: true,
+    to: '+1234567890',
+    from: '+0987654321',
+    record: true,
+    transcribe: true,
 });
 
 const { callControlId } = call;
@@ -59,8 +59,8 @@ await api.voice.joinConference(callControlId, conference.id);
 
 // Dial a second caller and add them too
 const call2 = await api.voice.createCall({
-  to: '+15556667777',
-  from: '+0987654321',
+    to: '+15556667777',
+    from: '+0987654321',
 });
 await api.voice.joinConference(call2.callControlId, conference.id);
 ```

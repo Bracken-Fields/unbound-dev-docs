@@ -21,24 +21,24 @@ The SDK automatically selects the best transport based on your environment. You 
 import SDK from '@unboundcx/sdk';
 
 class CustomTransport {
-  constructor(config) {
-    this.config = config;
-    this.name = 'custom';
-  }
+    constructor(config) {
+        this.config = config;
+        this.name = 'custom';
+    }
 
-  getPriority() {
-    return 10; // Lower number = higher priority
-  }
+    getPriority() {
+        return 10; // Lower number = higher priority
+    }
 
-  async isAvailable() {
-    return true; // Return false to skip this transport
-  }
+    async isAvailable() {
+        return true; // Return false to skip this transport
+    }
 
-  async request(endpoint, method, params, options) {
-    // Implement your transport logic
-    const response = await myCustomFetch(endpoint, method, params);
-    return response;
-  }
+    async request(endpoint, method, params, options) {
+        // Implement your transport logic
+        const response = await myCustomFetch(endpoint, method, params);
+        return response;
+    }
 }
 
 const api = new SDK({ namespace: 'namespace', token: 'token' });
@@ -53,11 +53,11 @@ Extend the SDK with custom methods:
 const api = new SDK({ namespace: 'namespace' });
 
 api.extend({
-  getActiveContacts: function() {
-    return this.objects.query('contacts', {
-      filters: [{ field: 'status', operator: 'eq', value: 'active' }],
-    });
-  },
+    getActiveContacts: function() {
+        return this.objects.query('contacts', {
+            filters: [{ field: 'status', operator: 'eq', value: 'active' }],
+        });
+    },
 });
 
 // Use it

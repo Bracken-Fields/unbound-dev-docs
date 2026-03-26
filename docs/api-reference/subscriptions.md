@@ -33,11 +33,11 @@ Subscribe to a specific event or data stream.
 
 ```javascript
 const sub = await api.subscriptions.socket.create(sessionId, {
-  channel: 'engagements',
-  filters: {
-    queueId: 'queue-id',
-    status: ['new', 'working'],
-  },
+    channel: 'engagements',
+    filters: {
+        queueId: 'queue-id',
+        status: ['new', 'working'],
+    },
 });
 ```
 
@@ -60,8 +60,8 @@ import SDK from '@unboundcx/sdk';
 import { io } from 'socket.io-client';
 
 const api = new SDK({
-  namespace: 'your-namespace',
-  token: 'your-jwt',
+    namespace: 'your-namespace',
+    token: 'your-jwt',
 });
 
 // 1. Get connection details
@@ -71,23 +71,23 @@ const { sessionId, endpoint } = await api.subscriptions.socket.getConnection();
 const socket = io(endpoint, { withCredentials: true });
 
 socket.on('connect', async () => {
-  // 3. Subscribe to engagement updates
-  await api.subscriptions.socket.create(sessionId, {
-    channel: 'engagements',
-  });
+    // 3. Subscribe to engagement updates
+    await api.subscriptions.socket.create(sessionId, {
+        channel: 'engagements',
+    });
 });
 
 // 4. Listen for events
 socket.on('engagement:updated', (data) => {
-  console.log('Engagement updated:', data.id, data.status);
+    console.log('Engagement updated:', data.id, data.status);
 });
 
 socket.on('voice:call:started', (data) => {
-  console.log('Inbound call from:', data.from);
+    console.log('Inbound call from:', data.from);
 });
 
 socket.on('message:received', (data) => {
-  console.log('New SMS from:', data.from, '—', data.body);
+    console.log('New SMS from:', data.from, '—', data.body);
 });
 ```
 
@@ -112,8 +112,8 @@ import SDK from '@unboundcx/sdk';
 import { socketAppStore } from '$lib/stores/socket.js';
 
 const api = new SDK({
-  namespace: 'your-namespace',
-  socketStore: socketAppStore,
+    namespace: 'your-namespace',
+    socketStore: socketAppStore,
 });
 
 // Subscribe directly — SDK handles the connection

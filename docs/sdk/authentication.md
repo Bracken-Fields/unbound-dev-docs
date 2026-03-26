@@ -26,8 +26,8 @@ If you already have a JWT (e.g., from your backend):
 
 ```javascript
 const api = new SDK({
-  namespace: 'your-namespace',
-  token: process.env.UNBOUND_TOKEN,
+    namespace: 'your-namespace',
+    token: process.env.UNBOUND_TOKEN,
 });
 ```
 
@@ -52,8 +52,8 @@ Tokens are scoped to your namespace. For server-side usage, store the token secu
 
 ```javascript
 await api.enroll.create({
-  email: 'newuser@example.com',
-  namespace: 'your-namespace',
-  role: 'agent',
+    email: 'newuser@example.com',
+    namespace: 'your-namespace',
+    role: 'agent',
 });
 ```

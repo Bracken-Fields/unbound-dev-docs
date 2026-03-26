@@ -13,6 +13,7 @@ The Unbound SDK exposes the following services via `api.<service>`:
 | Service | Property | Description |
 |---|---|---|
 | [Messaging](/api-reference/messaging) | `api.messaging` | SMS, MMS, email, templates, campaigns |
+| [Faxes](/api-reference/faxes) | `api.messaging.fax` | Send, receive, and track faxes |
 | [Voice](/api-reference/voice) | `api.voice` | Calls, conferencing, recording, transcription |
 | [Video](/api-reference/video) | `api.video` | Rooms, participants, chat, analytics |
 
@@ -20,7 +21,8 @@ The Unbound SDK exposes the following services via `api.<service>`:
 
 | Service | Property | Description |
 |---|---|---|
-| [AI Services](/api-reference/ai) | `api.ai` | Generative chat, TTS, real-time STT streaming, data extraction |
+| [AI Services](/api-reference/ai) | `api.ai` | Generative chat, TTS, real-time STT streaming, data extraction, playbooks |
+| [Knowledge Base](/api-reference/knowledge-base) | `api.knowledgeBase` | AI-powered knowledge bases, semantic search, content ingestion |
 
 ## Contact Center
 
@@ -48,7 +50,7 @@ The Unbound SDK exposes the following services via `api.<service>`:
 | [SIP Endpoints](/api-reference/sip-endpoints) | `api.sipEndpoints` | WebRTC and IP phone endpoint management |
 | [Portals](/api-reference/portals) | `api.portals` | Branded customer portals on custom domains |
 | [Lookup](/api-reference/lookup) | `api.lookup` | CNAM, LRN, and number intelligence |
-| Verification | `api.verification` | SMS and email OTP — see [Lookup & Verification](/api-reference/lookup) |
+| [Verification](/api-reference/verification) | `api.verification` | SMS and email OTP verification |
 | Authentication | `api.login` | Login, logout, validate, change password |
 | Record Types | `api.recordTypes` | Data access permission schemas |
 | Layouts | `api.layouts` | UI layout definitions |

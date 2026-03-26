@@ -15,17 +15,17 @@ Create a video meeting room.
 
 ```javascript
 const room = await api.video.createRoom({
-  name: 'Team Standup',
-  password: 'secret123',
-  startTime: '2024-06-01T14:00:00Z',
-  duration: 60,
-  waitingRoom: true,
-  hosts: ['host@yourcompany.com'],
-  participants: ['alice@example.com', 'bob@example.com'],
-  startCameraMuted: false,
-  startMicrophoneMuted: true,
-  startMicrophoneMutedAfter: 5,
-  enableChat: true,
+    name: 'Team Standup',
+    password: 'secret123',
+    startTime: '2024-06-01T14:00:00Z',
+    duration: 60,
+    waitingRoom: true,
+    hosts: ['host@yourcompany.com'],
+    participants: ['alice@example.com', 'bob@example.com'],
+    startCameraMuted: false,
+    startMicrophoneMuted: true,
+    startMicrophoneMutedAfter: 5,
+    enableChat: true,
 });
 
 console.log('Room ID:', room.id);
@@ -59,10 +59,10 @@ Join a video room and get a session token.
 
 ```javascript
 const session = await api.video.joinRoom(
-  'room-id',
-  'secret123',
-  'user@example.com',
-  'Jane Smith',     // display name
+    'room-id',
+    'secret123',
+    'user@example.com',
+    'Jane Smith',     // display name
 );
 ```
 
@@ -74,11 +74,11 @@ Dial a phone number into a video room via SIP.
 
 ```javascript
 await api.video.joinRoomSip({
-  room: 'room-id',
-  phoneNumber: '+1234567890',
-  voiceChannelId: 'vc-123',
-  serverId: 'sip-server-1',
-  engagementSessionId: 'eng-456',
+    room: 'room-id',
+    phoneNumber: '+1234567890',
+    voiceChannelId: 'vc-123',
+    serverId: 'sip-server-1',
+    engagementSessionId: 'eng-456',
 });
 ```
 
@@ -90,10 +90,10 @@ Update an existing room.
 
 ```javascript
 await api.video.updateRoom('room-id', {
-  name: 'Updated Meeting Name',
-  waitingRoom: false,
-  startRecordingOn: true,
-  startTranscribingOn: true,
+    name: 'Updated Meeting Name',
+    waitingRoom: false,
+    startRecordingOn: true,
+    startTranscribingOn: true,
 });
 ```
 
@@ -125,7 +125,7 @@ Get room details and optionally its participants.
 
 ```javascript
 const room = await api.video.describe('room-id', {
-  includeParticipants: true,
+    includeParticipants: true,
 });
 ```
 
@@ -137,10 +137,10 @@ List meetings with optional date filtering.
 
 ```javascript
 const meetings = await api.video.listMeetings({
-  startDate: '2024-01-01',
-  endDate: '2024-01-31',
-  limit: 50,
-  offset: 0,
+    startDate: '2024-01-01',
+    endDate: '2024-01-31',
+    limit: 50,
+    offset: 0,
 });
 ```
 
@@ -170,8 +170,8 @@ await api.video.removeParticipant('room-id', 'participant-id');
 
 ```javascript
 await api.video.addParticipant('room-id', {
-  email: 'newperson@example.com',
-  role: 'participant',
+    email: 'newperson@example.com',
+    role: 'participant',
 });
 ```
 
@@ -179,7 +179,7 @@ await api.video.addParticipant('room-id', {
 
 ```javascript
 await api.video.updateParticipant('room-id', 'participant-id', {
-  role: 'host',
+    role: 'host',
 });
 ```
 
@@ -195,8 +195,8 @@ await api.video.leaveRoom('room-id');
 
 ```javascript
 await api.video.updateRoomBot('room-id', {
-  isRecording: true,
-  isTranscribing: true,
+    isRecording: true,
+    isTranscribing: true,
 });
 ```
 
@@ -206,11 +206,11 @@ await api.video.updateRoomBot('room-id', {
 
 ```javascript
 const analytics = await api.video.getMeetingAnalytics('room-id', {
-  startTime: '2024-06-01T14:00:00Z',
-  endTime: '2024-06-01T15:00:00Z',
-  participantId: 'participant-id',  // optional: drill into one participant
-  granularity: '1m',                // optional: time bucket size
-  timezone: 'America/New_York',
+    startTime: '2024-06-01T14:00:00Z',
+    endTime: '2024-06-01T15:00:00Z',
+    participantId: 'participant-id',  // optional: drill into one participant
+    granularity: '1m',                // optional: time bucket size
+    timezone: 'America/New_York',
 });
 ```
 
@@ -222,7 +222,7 @@ const analytics = await api.video.getMeetingAnalytics('room-id', {
 
 ```javascript
 await api.video.postChatMessage('room-id', [
-  { type: 'paragraph', content: [{ type: 'text', text: 'Hello everyone!' }] },
+    { type: 'paragraph', content: [{ type: 'text', text: 'Hello everyone!' }] },
 ]);
 ```
 
@@ -232,9 +232,9 @@ await api.video.postChatMessage('room-id', [
 
 ```javascript
 const messages = await api.video.getChatMessages('room-id', {
-  limit: 50,
-  orderByDirection: 'DESC',
-  expandDetails: true,
+    limit: 50,
+    orderByDirection: 'DESC',
+    expandDetails: true,
 });
 ```
 
@@ -250,13 +250,13 @@ Default settings applied to every meeting a user creates.
 
 ```javascript
 await api.video.createUserSettings({
-  waitingRoom: true,
-  enableChat: true,
-  startMicrophoneMuted: true,
-  startMicrophoneMutedAfter: 5,
-  startRecordingOn: false,
-  startTranscribingOn: true,
-  maxVideoResolution: 1080,
+    waitingRoom: true,
+    enableChat: true,
+    startMicrophoneMuted: true,
+    startMicrophoneMutedAfter: 5,
+    startRecordingOn: false,
+    startTranscribingOn: true,
+    maxVideoResolution: 1080,
 });
 
 const settings = await api.video.getUserSettings();
@@ -278,11 +278,11 @@ await api.video.placeCall('room-id', '+1234567890', '+18005551234');
 
 ```javascript
 await api.video.submitSurvey({
-  videoRoomId: 'room-id',
-  participantId: 'participant-id',
-  email: 'user@example.com',
-  videoQuality: 4,   // 1-5
-  audioQuality: 5,
-  feedback: 'Great call quality!',
+    videoRoomId: 'room-id',
+    participantId: 'participant-id',
+    email: 'user@example.com',
+    videoQuality: 4,   // 1-5
+    audioQuality: 5,
+    feedback: 'Great call quality!',
 });
 ```

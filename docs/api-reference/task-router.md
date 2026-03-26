@@ -78,16 +78,16 @@ pending → assigned → connected → wrapUp → completed
 
 ```javascript
 const task = await api.taskRouter.task.create({
-  type: 'phoneCall',          // 'phoneCall' | 'chat' | 'email' | 'other'
-  queueId: 'queue-id',
-  priority: 5,                // higher = higher priority
-  subject: 'Inbound sales call',
-  requiredSkills: ['spanish', 'enterprise-tier'],
-  optionalSkills: ['billing'],
-  cdrId: 'cdr-id',            // voice: link to call detail record
-  peopleId: 'person-id',
-  companyId: 'company-id',
-  createEngagement: true,     // auto-create engagement session
+    type: 'phoneCall',          // 'phoneCall' | 'chat' | 'email' | 'other'
+    queueId: 'queue-id',
+    priority: 5,                // higher = higher priority
+    subject: 'Inbound sales call',
+    requiredSkills: ['spanish', 'enterprise-tier'],
+    optionalSkills: ['billing'],
+    cdrId: 'cdr-id',            // voice: link to call detail record
+    peopleId: 'person-id',
+    companyId: 'company-id',
+    createEngagement: true,     // auto-create engagement session
 });
 console.log(task.id);
 ```
@@ -144,11 +144,11 @@ await api.taskRouter.task.complete({ taskId: 'task-id' });
 
 ```javascript
 await api.taskRouter.task.update({
-  taskId: 'task-id',
-  subject: 'Billing inquiry — upgraded to Pro',
-  disposition: 'resolved',
-  summary: 'Customer upgraded from Core to Pro after discussion.',
-  sentiment: { score: 45, trend: 'improving' },
+    taskId: 'task-id',
+    subject: 'Billing inquiry — upgraded to Pro',
+    disposition: 'resolved',
+    summary: 'Customer upgraded from Core to Pro after discussion.',
+    sentiment: { score: 45, trend: 'improving' },
 });
 ```
 
@@ -179,18 +179,18 @@ await api.taskRouter.task.changePriority({ taskId: 'task-id', action: 'decrease'
 ```javascript
 // Add required skills while task is in-flight
 await api.taskRouter.task.updateSkills({
-  taskId: 'task-id',
-  skills: ['spanish', 'billing'],
-  action: 'add',
-  required: true,
+    taskId: 'task-id',
+    skills: ['spanish', 'billing'],
+    action: 'add',
+    required: true,
 });
 
 // Remove optional skills
 await api.taskRouter.task.updateSkills({
-  taskId: 'task-id',
-  skills: 'enterprise-tier',
-  action: 'remove',
-  required: false,
+    taskId: 'task-id',
+    skills: 'enterprise-tier',
+    action: 'remove',
+    required: false,
 });
 ```
 
@@ -202,10 +202,10 @@ Real-time task router performance metrics.
 
 ```javascript
 const metrics = await api.taskRouter.metrics.getCurrent(null, {
-  period: '15min',    // '5min' | '15min' | '30min' | '1hour' | '24hour'
-  queueId: 'queue-id',
-  metricType: 'all',  // 'queue' | 'task' | 'worker' | 'all'
-  limit: 100,
+    period: '15min',    // '5min' | '15min' | '30min' | '1hour' | '24hour'
+    queueId: 'queue-id',
+    metricType: 'all',  // 'queue' | 'task' | 'worker' | 'all'
+    limit: 100,
 });
 
 // Queue metrics

@@ -15,8 +15,8 @@ Unbound delivers real-time event notifications to your server via HTTP webhooks.
 
 ```javascript
 await api.phoneNumbers.update('number-id', {
-  voiceWebHookUrl: 'https://yourapp.com/webhooks/voice',
-  messagingWebHookUrl: 'https://yourapp.com/webhooks/sms',
+    voiceWebHookUrl: 'https://yourapp.com/webhooks/voice',
+    messagingWebHookUrl: 'https://yourapp.com/webhooks/sms',
 });
 ```
 
@@ -24,14 +24,14 @@ await api.phoneNumbers.update('number-id', {
 
 ```javascript
 await api.workflows.items.create({
-  workflowVersionId: 'wf-version-id',
-  category: 'integration',
-  type: 'webhook',
-  settings: {
-    url: 'https://yourapp.com/webhooks/workflow',
-    method: 'POST',
-    headers: { 'X-Secret': 'your-secret' },
-  },
+    workflowVersionId: 'wf-version-id',
+    category: 'integration',
+    type: 'webhook',
+    settings: {
+        url: 'https://yourapp.com/webhooks/workflow',
+        method: 'POST',
+        headers: { 'X-Secret': 'your-secret' },
+    },
 });
 ```
 
@@ -50,20 +50,20 @@ const app = express();
 app.use(express.json());
 
 app.post('/webhooks/voice', (req, res) => {
-  const event = req.body;
-  console.log('Voice event:', event.type, event.callId);
+    const event = req.body;
+    console.log('Voice event:', event.type, event.callId);
 
-  // Acknowledge immediately
-  res.status(200).json({ received: true });
+    // Acknowledge immediately
+    res.status(200).json({ received: true });
 
-  // Process asynchronously
-  processVoiceEvent(event).catch(console.error);
+    // Process asynchronously
+    processVoiceEvent(event).catch(console.error);
 });
 
 app.post('/webhooks/sms', (req, res) => {
-  const { from, to, body, mediaUrls } = req.body;
-  console.log(`SMS from ${from}: ${body}`);
-  res.status(200).json({ received: true });
+    const { from, to, body, mediaUrls } = req.body;
+    console.log(`SMS from ${from}: ${body}`);
+    res.status(200).json({ received: true });
 });
 
 app.listen(3000);
@@ -77,22 +77,22 @@ app.listen(3000);
 
 ```json
 {
-  "type": "call.started",
-  "callId": "call-id-123",
-  "from": "+12135550100",
-  "to": "+18005551234",
-  "direction": "inbound",
-  "timestamp": "2024-06-01T14:00:00Z"
+    "type": "call.started",
+    "callId": "call-id-123",
+    "from": "+12135550100",
+    "to": "+18005551234",
+    "direction": "inbound",
+    "timestamp": "2024-06-01T14:00:00Z"
 }
 ```
 
 ```json
 {
-  "type": "call.ended",
-  "callId": "call-id-123",
-  "duration": 245,
-  "recordingUrl": "https://...",
-  "timestamp": "2024-06-01T14:04:05Z"
+    "type": "call.ended",
+    "callId": "call-id-123",
+    "duration": 245,
+    "recordingUrl": "https://...",
+    "timestamp": "2024-06-01T14:04:05Z"
 }
 ```
 
@@ -100,22 +100,22 @@ app.listen(3000);
 
 ```json
 {
-  "type": "message.received",
-  "id": "msg-id-456",
-  "from": "+12135550100",
-  "to": "+18005551234",
-  "body": "Hello, I need help with my order",
-  "mediaUrls": [],
-  "timestamp": "2024-06-01T14:00:00Z"
+    "type": "message.received",
+    "id": "msg-id-456",
+    "from": "+12135550100",
+    "to": "+18005551234",
+    "body": "Hello, I need help with my order",
+    "mediaUrls": [],
+    "timestamp": "2024-06-01T14:00:00Z"
 }
 ```
 
 ```json
 {
-  "type": "message.status",
-  "id": "msg-id-456",
-  "status": "delivered",
-  "timestamp": "2024-06-01T14:00:05Z"
+    "type": "message.status",
+    "id": "msg-id-456",
+    "status": "delivered",
+    "timestamp": "2024-06-01T14:00:05Z"
 }
 ```
 
@@ -123,22 +123,22 @@ app.listen(3000);
 
 ```json
 {
-  "type": "task.created",
-  "taskId": "task-id-789",
-  "queueId": "queue-id",
-  "taskType": "phoneCall",
-  "priority": 0,
-  "timestamp": "2024-06-01T14:00:00Z"
+    "type": "task.created",
+    "taskId": "task-id-789",
+    "queueId": "queue-id",
+    "taskType": "phoneCall",
+    "priority": 0,
+    "timestamp": "2024-06-01T14:00:00Z"
 }
 ```
 
 ```json
 {
-  "type": "task.assigned",
-  "taskId": "task-id-789",
-  "workerId": "worker-id",
-  "userId": "user-id",
-  "timestamp": "2024-06-01T14:00:01Z"
+    "type": "task.assigned",
+    "taskId": "task-id-789",
+    "workerId": "worker-id",
+    "userId": "user-id",
+    "timestamp": "2024-06-01T14:00:01Z"
 }
 ```
 
@@ -150,12 +150,12 @@ Add a shared secret header to verify requests genuinely come from Unbound.
 
 ```javascript
 app.post('/webhooks/voice', (req, res) => {
-  const secret = req.headers['x-unbound-secret'];
-  if (secret !== process.env.WEBHOOK_SECRET) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  // process event...
-  res.json({ received: true });
+    const secret = req.headers['x-unbound-secret'];
+    if (secret !== process.env.WEBHOOK_SECRET) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    // process event...
+    res.json({ received: true });
 });
 ```
 
@@ -185,15 +185,15 @@ Use the event `id` field to deduplicate:
 const processedEvents = new Set();
 
 app.post('/webhooks/voice', (req, res) => {
-  const { id, type } = req.body;
+    const { id, type } = req.body;
 
-  if (processedEvents.has(id)) {
-    return res.json({ duplicate: true });
-  }
+    if (processedEvents.has(id)) {
+        return res.json({ duplicate: true });
+    }
 
-  processedEvents.add(id);
-  // process...
-  res.json({ received: true });
+    processedEvents.add(id);
+    // process...
+    res.json({ received: true });
 });
 ```
 

@@ -29,29 +29,29 @@ app.use(express.json());
 const api = new SDK({ namespace: 'your-namespace', token: process.env.UNBOUND_TOKEN });
 
 app.post('/webhooks/voice', async (req, res) => {
-  const { type, callId, cdrId, from } = req.body;
-  res.json({ received: true }); // acknowledge immediately
+    const { type, callId, cdrId, from } = req.body;
+    res.json({ received: true }); // acknowledge immediately
 
-  if (type === 'call.started') {
-    // Find or create the contact
-    const [contact] = await api.objects.query({
-      object: 'contacts',
-      where: { phone: from },
-      limit: 1,
-    }).then(r => r.data);
+    if (type === 'call.started') {
+        // Find or create the contact
+        const [contact] = await api.objects.query({
+            object: 'contacts',
+            where: { phone: from },
+            limit: 1,
+        }).then(r => r.data);
 
-    // Create a task to route this call
-    const task = await api.taskRouter.task.create({
-      type: 'phoneCall',
-      queueId: 'your-queue-id',
-      cdrId,
-      peopleId: contact?.id,
-      subject: `Inbound call from ${from}`,
-      createEngagement: true,
-    });
+        // Create a task to route this call
+        const task = await api.taskRouter.task.create({
+            type: 'phoneCall',
+            queueId: 'your-queue-id',
+            cdrId,
+            peopleId: contact?.id,
+            subject: `Inbound call from ${from}`,
+            createEngagement: true,
+        });
 
-    console.log('Task created:', task.id);
-  }
+        console.log('Task created:', task.id);
+    }
 });
 ```
 
@@ -82,13 +82,13 @@ const { sessionId } = await api.subscriptions.socket.getConnection();
 
 // Subscribe to task events for this worker
 await api.subscriptions.socket.create(sessionId, {
-  channel: 'taskRouter',
+    channel: 'taskRouter',
 });
 
 // In your Socket.io handler:
 socket.on('task:assigned', async (data) => {
-  const { taskId } = data;
-  showIncomingTaskNotification(taskId);
+    const { taskId } = data;
+    showIncomingTaskNotification(taskId);
 });
 ```
 
@@ -118,8 +118,8 @@ await api.taskRouter.task.hold({ taskId }); // toggles back to connected
 
 // Update subject based on what you learn
 await api.taskRouter.task.update({
-  taskId,
-  subject: 'Billing dispute — account #12345',
+    taskId,
+    subject: 'Billing dispute — account #12345',
 });
 ```
 
@@ -133,14 +133,14 @@ await api.taskRouter.task.wrapUp({ taskId });
 
 // Agent fills in notes and disposition...
 await api.notes.create({
-  relatedId: engagementSessionId,
-  content_html: '<p>Customer disputed charge. Issued $25 credit.</p>',
+    relatedId: engagementSessionId,
+    content_html: '<p>Customer disputed charge. Issued $25 credit.</p>',
 });
 
 await api.taskRouter.task.update({
-  taskId,
-  disposition: 'resolved',
-  summary: 'Customer disputed charge on invoice #456. Credit issued.',
+    taskId,
+    disposition: 'resolved',
+    summary: 'Customer disputed charge on invoice #456. Credit issued.',
 });
 
 // Complete the task

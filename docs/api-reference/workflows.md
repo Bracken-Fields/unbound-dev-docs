@@ -24,15 +24,15 @@ A workflow is composed of:
 
 ```javascript
 const item = await api.workflows.items.create({
-  workflowVersionId: 'wf-version-id',
-  category: 'communication',
-  type: 'sendSms',
-  settings: {
-    from: '+18005551234',
-    messageTemplate: 'appointment-reminder',
-  },
-  description: 'Send appointment reminder SMS',
-  position: { x: 200, y: 150 },
+    workflowVersionId: 'wf-version-id',
+    category: 'communication',
+    type: 'sendSms',
+    settings: {
+        from: '+18005551234',
+        messageTemplate: 'appointment-reminder',
+    },
+    description: 'Send appointment reminder SMS',
+    position: { x: 200, y: 150 },
 });
 ```
 
@@ -61,12 +61,12 @@ const item = await api.workflows.items.create({
 
 ```javascript
 await api.workflows.items.update({
-  id: 'item-id',
-  settings: { messageTemplate: 'new-template' },
-  position: { x: 300, y: 200 },
-  label: 'Send Reminder',
-  labelBgColor: '#1D949A',
-  labelTextColor: '#ffffff',
+    id: 'item-id',
+    settings: { messageTemplate: 'new-template' },
+    position: { x: 300, y: 200 },
+    label: 'Send Reminder',
+    labelBgColor: '#1D949A',
+    labelTextColor: '#ffffff',
 });
 ```
 
@@ -93,10 +93,10 @@ Connections wire item output ports to other items' input ports.
 
 ```javascript
 await api.workflows.connections.create({
-  workflowItemId: 'item-1-id',
-  workflowItemPortId: 'output',          // source port name
-  inWorkflowItemId: 'item-2-id',
-  inWorkflowItemPortId: 'input',         // destination port name
+    workflowItemId: 'item-1-id',
+    workflowItemPortId: 'output',          // source port name
+    inWorkflowItemId: 'item-2-id',
+    inWorkflowItemPortId: 'input',         // destination port name
 });
 ```
 
@@ -106,10 +106,10 @@ For conditional branches, port names vary by item type (e.g., `output-yes`, `out
 
 ```javascript
 await api.workflows.connections.delete(
-  workflowItemId,
-  workflowItemPortId,
-  inWorkflowItemId,
-  inWorkflowItemPortId,
+    workflowItemId,
+    workflowItemPortId,
+    inWorkflowItemId,
+    inWorkflowItemPortId,
 );
 ```
 
@@ -135,9 +135,9 @@ Sessions are runtime executions of a workflow. Use them to run a workflow on dem
 
 ```javascript
 const session = await api.workflows.sessions.create('wf-version-id', {
-  contactId: 'contact-id',
-  channel: 'sms',
-  input: { phoneNumber: '+12135550100' },
+    contactId: 'contact-id',
+    channel: 'sms',
+    input: { phoneNumber: '+12135550100' },
 });
 console.log(session.id);
 ```
@@ -155,10 +155,10 @@ Update session state mid-execution (e.g., pass input collected from a caller):
 
 ```javascript
 await api.workflows.sessions.update('session-id', {
-  variables: {
-    accountNumber: '123456',
-    verifiedIdentity: true,
-  },
+    variables: {
+        accountNumber: '123456',
+        verifiedIdentity: true,
+    },
 });
 ```
 
@@ -193,63 +193,63 @@ const versionId = 'your-workflow-version-id';
 
 // 1. Trigger: SMS received
 const trigger = await api.workflows.items.create({
-  workflowVersionId: versionId,
-  category: 'flow',
-  type: 'trigger',
-  settings: { event: 'message.received', channel: 'sms' },
-  position: { x: 100, y: 50 },
+    workflowVersionId: versionId,
+    category: 'flow',
+    type: 'trigger',
+    settings: { event: 'message.received', channel: 'sms' },
+    position: { x: 100, y: 50 },
 });
 
 // 2. AI classification
 const classify = await api.workflows.items.create({
-  workflowVersionId: versionId,
-  category: 'ai',
-  type: 'aiChat',
-  settings: {
-    instructions: 'Reply with exactly one word: support, sales, or spam',
-    model: 'gpt-4',
-  },
-  position: { x: 100, y: 200 },
+    workflowVersionId: versionId,
+    category: 'ai',
+    type: 'aiChat',
+    settings: {
+        instructions: 'Reply with exactly one word: support, sales, or spam',
+        model: 'gpt-4',
+    },
+    position: { x: 100, y: 200 },
 });
 
 // 3a. Route to queue (support/sales)
 const route = await api.workflows.items.create({
-  workflowVersionId: versionId,
-  category: 'routing',
-  type: 'routeToQueue',
-  settings: { queueId: 'support-queue-id' },
-  position: { x: 0, y: 350 },
+    workflowVersionId: versionId,
+    category: 'routing',
+    type: 'routeToQueue',
+    settings: { queueId: 'support-queue-id' },
+    position: { x: 0, y: 350 },
 });
 
 // 3b. Auto-reply (spam)
 const reject = await api.workflows.items.create({
-  workflowVersionId: versionId,
-  category: 'communication',
-  type: 'sendSms',
-  settings: { message: 'Thanks for reaching out!' },
-  position: { x: 250, y: 350 },
+    workflowVersionId: versionId,
+    category: 'communication',
+    type: 'sendSms',
+    settings: { message: 'Thanks for reaching out!' },
+    position: { x: 250, y: 350 },
 });
 
 // Wire it together
 await api.workflows.connections.create({
-  workflowItemId: trigger.id,
-  workflowItemPortId: 'output',
-  inWorkflowItemId: classify.id,
-  inWorkflowItemPortId: 'input',
+    workflowItemId: trigger.id,
+    workflowItemPortId: 'output',
+    inWorkflowItemId: classify.id,
+    inWorkflowItemPortId: 'input',
 });
 
 await api.workflows.connections.create({
-  workflowItemId: classify.id,
-  workflowItemPortId: 'output-support',
-  inWorkflowItemId: route.id,
-  inWorkflowItemPortId: 'input',
+    workflowItemId: classify.id,
+    workflowItemPortId: 'output-support',
+    inWorkflowItemId: route.id,
+    inWorkflowItemPortId: 'input',
 });
 
 await api.workflows.connections.create({
-  workflowItemId: classify.id,
-  workflowItemPortId: 'output-spam',
-  inWorkflowItemId: reject.id,
-  inWorkflowItemPortId: 'input',
+    workflowItemId: classify.id,
+    workflowItemPortId: 'output-spam',
+    inWorkflowItemId: reject.id,
+    inWorkflowItemPortId: 'input',
 });
 
 console.log('Workflow wired ✓');

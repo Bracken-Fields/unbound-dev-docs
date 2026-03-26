@@ -16,13 +16,13 @@ Create a new record.
 ```javascript
 // Preferred (new) syntax
 const contact = await api.objects.create({
-  object: 'contacts',
-  body: {
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    phone: '+1234567890',
-    company: 'Acme Corp',
-  },
+    object: 'contacts',
+    body: {
+        name: 'Jane Smith',
+        email: 'jane@example.com',
+        phone: '+1234567890',
+        company: 'Acme Corp',
+    },
 });
 
 // Legacy syntax (also supported)
@@ -37,15 +37,15 @@ Query records with filters, sorting, and pagination.
 
 ```javascript
 const results = await api.objects.query({
-  object: 'contacts',
-  select: ['id', 'name', 'email', 'company'],
-  where: {
-    company: 'Acme Corp',
-    status: 'active',
-  },
-  limit: 50,
-  orderByDirection: 'DESC',
-  expandDetails: true,
+    object: 'contacts',
+    select: ['id', 'name', 'email', 'company'],
+    where: {
+        company: 'Acme Corp',
+        status: 'active',
+    },
+    limit: 50,
+    orderByDirection: 'DESC',
+    expandDetails: true,
 });
 
 // results.data → array of matching objects
@@ -79,8 +79,8 @@ const contact = await api.objects.byId('contact-id-123');
 
 // With field selection
 const contact = await api.objects.byId({
-  id: 'contact-id-123',
-  query: { select: 'id,name,email' },
+    id: 'contact-id-123',
+    query: { select: 'id,name,email' },
 });
 ```
 
@@ -93,9 +93,9 @@ Update a record by ID.
 ```javascript
 // Preferred syntax
 await api.objects.updateById({
-  object: 'contacts',
-  id: 'contact-id-123',
-  update: { company: 'New Corp', status: 'active' },
+    object: 'contacts',
+    id: 'contact-id-123',
+    update: { company: 'New Corp', status: 'active' },
 });
 
 // Legacy syntax
@@ -110,9 +110,9 @@ Update records matching a `where` clause (bulk update).
 
 ```javascript
 await api.objects.update({
-  object: 'contacts',
-  where: { company: 'Old Corp' },
-  update: { company: 'New Corp' },
+    object: 'contacts',
+    where: { company: 'Old Corp' },
+    update: { company: 'New Corp' },
 });
 ```
 
@@ -124,8 +124,8 @@ Delete a single record by ID.
 
 ```javascript
 await api.objects.deleteById({
-  object: 'contacts',
-  id: 'contact-id-123',
+    object: 'contacts',
+    id: 'contact-id-123',
 });
 ```
 
@@ -137,8 +137,8 @@ Delete records matching a `where` clause.
 
 ```javascript
 await api.objects.delete({
-  object: 'contacts',
-  where: { status: 'archived' },
+    object: 'contacts',
+    where: { status: 'archived' },
 });
 ```
 
@@ -166,6 +166,28 @@ const types = await api.objects.list();
 
 ---
 
+## `objects.uoql(options)`
+
+Run a UOQL (SQL-style) query against any object type. See the [full UOQL reference](/api-reference/uoql) for syntax details.
+
+```javascript
+const data = await api.objects.uoql({
+    query: 'SELECT direction, COUNT(*) as total FROM cdr GROUP BY direction',
+    expandDetails: false,
+});
+
+// data.results — array of matching rows
+// data.pagination.totalRecords
+// data.pagination.hasNextPage
+```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `query` | string | — | UOQL SQL query string |
+| `expandDetails` | boolean | `false` | Resolve foreign key references inline |
+
+---
+
 ## Schema Management
 
 ### Create a New Object Type
@@ -179,21 +201,21 @@ await api.objects.createObject({ name: 'invoices' });
 ```javascript
 // Single column
 await api.objects.createColumn({
-  objectName: 'invoices',
-  name: 'amount',
-  type: 'decimal',
-  length: null,
-  isRequired: true,
+    objectName: 'invoices',
+    name: 'amount',
+    type: 'decimal',
+    length: null,
+    isRequired: true,
 });
 
 // Batch columns
 await api.objects.createColumn({
-  objectName: 'invoices',
-  columns: [
-    { name: 'amount', type: 'decimal' },
-    { name: 'dueDate', type: 'datetime' },
-    { name: 'status', type: 'varchar', length: 50 },
-  ],
+    objectName: 'invoices',
+    columns: [
+        { name: 'amount', type: 'decimal' },
+        { name: 'dueDate', type: 'datetime' },
+        { name: 'status', type: 'varchar', length: 50 },
+    ],
 });
 ```
 
@@ -211,11 +233,11 @@ await api.objects.createColumn({
 
 ```javascript
 await api.objects.modifyColumn({
-  objectName: 'invoices',
-  columnName: 'status',
-  columnType: 'varchar',
-  length: 100,
-  isRequired: false,
+    objectName: 'invoices',
+    columnName: 'status',
+    columnType: 'varchar',
+    length: 100,
+    isRequired: false,
 });
 ```
 
@@ -223,8 +245,8 @@ await api.objects.modifyColumn({
 
 ```javascript
 await api.objects.deleteColumn({
-  objectName: 'invoices',
-  columnName: 'legacyField',
+    objectName: 'invoices',
+    columnName: 'legacyField',
 });
 ```
 
@@ -237,17 +259,17 @@ Expand details define automatic joins — when querying one object, related obje
 ```javascript
 // Define a relationship: contacts.companyId → companies.id
 await api.objects.createExpandDetail({
-  objectName: 'contacts',
-  fieldName: 'companyId',
-  targetObject: 'companies',
-  lookupColumn: 'id',
-  expandFields: ['name', 'website', 'industry'],
+    objectName: 'contacts',
+    fieldName: 'companyId',
+    targetObject: 'companies',
+    lookupColumn: 'id',
+    expandFields: ['name', 'website', 'industry'],
 });
 
 // Now queries with expandDetails:true will include company data
 const contacts = await api.objects.query({
-  object: 'contacts',
-  expandDetails: true,
+    object: 'contacts',
+    expandDetails: true,
 });
 // contacts[0].companyId_expanded → { name: 'Acme Corp', website: '...' }
 ```
@@ -260,11 +282,11 @@ Computed columns derived from expressions or formulas.
 
 ```javascript
 await api.objects.createGeneratedColumn({
-  objectName: 'contacts',
-  columnName: 'fullName',
-  value: "CONCAT(firstName, ' ', lastName)",
-  type: 'string',
-  columnType: 'varchar',
-  length: '255',
+    objectName: 'contacts',
+    columnName: 'fullName',
+    value: "CONCAT(firstName, ' ', lastName)",
+    type: 'string',
+    columnType: 'varchar',
+    length: '255',
 });
 ```

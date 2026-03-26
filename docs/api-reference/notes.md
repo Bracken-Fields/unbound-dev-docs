@@ -15,10 +15,10 @@ Notes support HTML, binary, and structured JSON content formats.
 
 ```javascript
 const note = await api.notes.create({
-  relatedId: 'contact-id-123',      // Required: object this note belongs to
-  recordTypeId: 'record-type-id',   // Optional: permission scope
-  title: 'Follow-up call notes',
-  content_html: '<p>Customer mentioned interest in <strong>Pro plan</strong>.</p>',
+    relatedId: 'contact-id-123',      // Required: object this note belongs to
+    recordTypeId: 'record-type-id',   // Optional: permission scope
+    title: 'Follow-up call notes',
+    content_html: '<p>Customer mentioned interest in <strong>Pro plan</strong>.</p>',
 });
 ```
 
@@ -38,11 +38,11 @@ const note = await api.notes.create({
 
 ```javascript
 const notes = await api.notes.list({
-  relatedId: 'contact-id-123',
-  recordTypeId: 'record-type-id',
-  limit: 25,
-  orderBy: 'createdAt',
-  orderDirection: 'desc',
+    relatedId: 'contact-id-123',
+    recordTypeId: 'record-type-id',
+    limit: 25,
+    orderBy: 'createdAt',
+    orderDirection: 'desc',
 });
 ```
 
@@ -60,8 +60,8 @@ const note = await api.notes.get('note-id-456');
 
 ```javascript
 await api.notes.update('note-id-456', {
-  title: 'Updated call notes',
-  content_html: '<p>Updated content.</p>',
+    title: 'Updated call notes',
+    content_html: '<p>Updated content.</p>',
 });
 ```
 

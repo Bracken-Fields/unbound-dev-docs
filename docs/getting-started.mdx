@@ -32,8 +32,8 @@ npm install socket.io-client
 import SDK from '@unboundcx/sdk';
 
 const api = new SDK({
-  namespace: 'your-namespace',
-  token: 'your-jwt-token',
+    namespace: 'your-namespace',
+    token: 'your-jwt-token',
 });
 ```
 
@@ -44,8 +44,8 @@ const api = new SDK({
 import { createSDK } from '@unboundcx/sdk';
 
 const api = createSDK({
-  namespace: 'your-namespace',
-  token: 'your-jwt-token',
+    namespace: 'your-namespace',
+    token: 'your-jwt-token',
 });
 ```
 
@@ -78,9 +78,9 @@ const session = await api.login.login('username', 'password');
 
 // Send SMS
 const sms = await api.messaging.sms.send({
-  from: '+1234567890',
-  to: '+0987654321',
-  message: 'Hello from Unbound!',
+    from: '+1234567890',
+    to: '+0987654321',
+    message: 'Hello from Unbound!',
 });
 
 console.log('Sent:', sms.id);
@@ -90,9 +90,9 @@ console.log('Sent:', sms.id);
 
 ```javascript
 const call = await api.voice.createCall({
-  to: '+1234567890',
-  from: '+0987654321',
-  record: true,
+    to: '+1234567890',
+    from: '+0987654321',
+    record: true,
 });
 
 console.log('Call ID:', call.callControlId);
@@ -102,10 +102,10 @@ console.log('Call ID:', call.callControlId);
 
 ```javascript
 const response = await api.ai.generative.chat({
-  messages: [{ role: 'user', content: 'Summarize this support ticket...' }],
-  model: 'gpt-4',
-  temperature: 0.7,
-  method: 'openai',
+    messages: [{ role: 'user', content: 'Summarize this support ticket...' }],
+    model: 'gpt-4',
+    temperature: 0.7,
+    method: 'openai',
 });
 
 console.log(response.choices[0].message.content);

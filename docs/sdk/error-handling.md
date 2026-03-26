@@ -11,26 +11,26 @@ All SDK methods return Promises and throw on API errors.
 
 ```javascript
 try {
-  const sms = await api.messaging.sms.send({
-    from: '+1234567890',
-    to: '+0987654321',
-    message: 'Hello!',
-  });
+    const sms = await api.messaging.sms.send({
+        from: '+1234567890',
+        to: '+0987654321',
+        message: 'Hello!',
+    });
 } catch (error) {
-  console.error('Name:', error.name);
-  // → 'API :: Error :: https :: POST :: /messaging/sms :: ...'
+    console.error('Name:', error.name);
+    // → 'API :: Error :: https :: POST :: /messaging/sms :: ...'
 
-  console.error('Message:', error.message);
-  // → 'Invalid phone number format'
+    console.error('Message:', error.message);
+    // → 'Invalid phone number format'
 
-  console.error('Status:', error.status);
-  // → 400
+    console.error('Status:', error.status);
+    // → 400
 
-  console.error('Method:', error.method);
-  // → 'POST'
+    console.error('Method:', error.method);
+    // → 'POST'
 
-  console.error('Endpoint:', error.endpoint);
-  // → '/messaging/sms'
+    console.error('Endpoint:', error.endpoint);
+    // → '/messaging/sms'
 }
 ```
 
@@ -59,17 +59,17 @@ try {
 
 ```javascript
 async function withRetry(fn, retries = 3) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await fn();
-    } catch (err) {
-      if (err.status === 429 && i < retries - 1) {
-        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
-        continue;
-      }
-      throw err;
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await fn();
+        } catch (err) {
+            if (err.status === 429 && i < retries - 1) {
+                await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+                continue;
+            }
+            throw err;
+        }
     }
-  }
 }
 
 const result = await withRetry(() => api.messaging.sms.send({ ... }));

@@ -60,16 +60,16 @@ const info = await api.lookup.number('+12135550100');
 ```javascript
 // Send a code
 const verification = await api.verification.createSmsVerification({
-  phoneNumber: '+12135550100',
-  code: '123456',          // optional: provide your own, otherwise auto-generated
-  expiresIn: 600,          // seconds (default: 600 = 10 min)
-  metadata: { userId: 'user-123' },
+    phoneNumber: '+12135550100',
+    code: '123456',          // optional: provide your own, otherwise auto-generated
+    expiresIn: 600,          // seconds (default: 600 = 10 min)
+    metadata: { userId: 'user-123' },
 });
 
 // Validate the code the user entered
 const result = await api.verification.validateSmsVerification(
-  '+12135550100',
-  '123456',
+    '+12135550100',
+    '123456',
 );
 // result.valid → true/false
 ```
@@ -79,14 +79,14 @@ const result = await api.verification.validateSmsVerification(
 ```javascript
 // Send a code
 await api.verification.createEmailVerification({
-  email: 'user@example.com',
-  code: '789012',
-  expiresIn: 3600,
+    email: 'user@example.com',
+    code: '789012',
+    expiresIn: 3600,
 });
 
 // Validate
 const result = await api.verification.validateEmailVerification(
-  'user@example.com',
-  '789012',
+    'user@example.com',
+    '789012',
 );
 ```

@@ -17,30 +17,30 @@ const api = new SDK({ namespace: 'your-namespace', token: 'your-jwt' });
 
 // Start the stream
 const stream = await api.ai.stt.stream({
-  engine: 'google',
-  model: 'phone_call',
-  languageCode: 'en-US',
-  encoding: 'LINEAR16',
-  sampleRateHertz: 16000,
-  engagementSessionId: 'eng-session-123',
+    engine: 'google',
+    model: 'phone_call',
+    languageCode: 'en-US',
+    encoding: 'LINEAR16',
+    sampleRateHertz: 16000,
+    engagementSessionId: 'eng-session-123',
 });
 
 // Handle transcript events
 stream.on('transcript', (result) => {
-  if (result.isFinal) {
-    console.log('[FINAL]', result.text);
-    // Store, analyze, or route based on content
-  } else {
-    process.stdout.write(`\r[interim] ${result.text}`);
-  }
+    if (result.isFinal) {
+        console.log('[FINAL]', result.text);
+        // Store, analyze, or route based on content
+    } else {
+        process.stdout.write(`\r[interim] ${result.text}`);
+    }
 });
 
 stream.on('error', (error) => {
-  console.error('Stream error:', error);
+    console.error('Stream error:', error);
 });
 
 stream.on('close', () => {
-  console.log('Stream closed. Session:', stream.sessionId);
+    console.log('Stream closed. Session:', stream.sessionId);
 });
 
 // Pipe audio to the stream
@@ -53,7 +53,7 @@ audio.on('end', () => stream.end());
 
 ```javascript
 const transcript = await api.ai.stt.get(stream.sessionId, {
-  includeMessages: true,
+    includeMessages: true,
 });
 
 console.log('Full transcript:', transcript.messages);
@@ -76,9 +76,9 @@ Pair with `api.voice.createCall()` to transcribe calls automatically:
 
 ```javascript
 const call = await api.voice.createCall({
-  to: '+1234567890',
-  from: '+0987654321',
-  transcribe: true, // Enables server-side transcription
+    to: '+1234567890',
+    from: '+0987654321',
+    transcribe: true, // Enables server-side transcription
 });
 
 // Or stream manually with api.ai.stt.stream for client-side control

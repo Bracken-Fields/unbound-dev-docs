@@ -15,18 +15,18 @@ Upload a single file with full control over options.
 
 ```javascript
 const result = await api.storage.upload({
-  file: fileBuffer,               // Buffer, File, or binary data
-  fileName: 'contract.pdf',
-  classification: 'documents',
-  isPublic: false,
-  country: 'US',
-  expireAfter: '30d',             // '1h', '7d', '30d', etc.
-  relatedId: 'contact-id-123',
-  createAccessKey: true,
-  accessKeyExpiresIn: 3600,       // seconds
-  onProgress: ({ percentage, speed }) => {
-    console.log(`${percentage.toFixed(1)}% — ${(speed / 1024).toFixed(1)} KB/s`);
-  },
+    file: fileBuffer,               // Buffer, File, or binary data
+    fileName: 'contract.pdf',
+    classification: 'documents',
+    isPublic: false,
+    country: 'US',
+    expireAfter: '30d',             // '1h', '7d', '30d', etc.
+    relatedId: 'contact-id-123',
+    createAccessKey: true,
+    accessKeyExpiresIn: 3600,       // seconds
+    onProgress: ({ percentage, speed }) => {
+        console.log(`${percentage.toFixed(1)}% — ${(speed / 1024).toFixed(1)} KB/s`);
+    },
 });
 
 console.log('Storage ID:', result.uploaded[0].id);
@@ -50,17 +50,17 @@ console.log('URL:', result.uploaded[0].url);
 **Response:**
 ```json
 {
-  "uploaded": [{
-    "id": "017d0120251229hvdxjod...",
-    "fileName": "contract.pdf",
-    "fileSize": 45231,
-    "url": "https://your-namespace.api.unbound.cx/storage/017d01...",
-    "mimeType": "application/pdf",
-    "s3Regions": ["d01", "d03"],
-    "isPublic": false
-  }],
-  "viruses": [],
-  "errors": []
+    "uploaded": [{
+        "id": "017d0120251229hvdxjod...",
+        "fileName": "contract.pdf",
+        "fileSize": 45231,
+        "url": "https://your-namespace.api.unbound.cx/storage/017d01...",
+        "mimeType": "application/pdf",
+        "s3Regions": ["d01", "d03"],
+        "isPublic": false
+    }],
+    "viruses": [],
+    "errors": []
 }
 ```
 
@@ -73,14 +73,14 @@ Upload multiple files at once.
 ```javascript
 // Node.js: array of Buffers
 const result = await api.storage.uploadFiles(
-  [fileBuffer1, fileBuffer2],
-  { classification: 'recordings', isPublic: false }
+    [fileBuffer1, fileBuffer2],
+    { classification: 'recordings', isPublic: false }
 );
 
 // Browser: FileList from an <input>
 const result = await api.storage.uploadFiles(
-  document.querySelector('#fileInput').files,
-  { classification: 'documents' }
+    document.querySelector('#fileInput').files,
+    { classification: 'documents' }
 );
 ```
 
@@ -125,15 +125,15 @@ Update file contents or metadata.
 ```javascript
 // Update metadata only (no re-upload)
 await api.storage.updateFile('storage-id-123', {
-  fileName: 'renamed-contract.pdf',
-  classification: 'legal',
-  isPublic: true,
+    fileName: 'renamed-contract.pdf',
+    classification: 'legal',
+    isPublic: true,
 });
 
 // Replace file content
 await api.storage.updateFile('storage-id-123', {
-  file: newFileBuffer,
-  fileName: 'updated-contract.pdf',
+    file: newFileBuffer,
+    fileName: 'updated-contract.pdf',
 });
 ```
 
@@ -145,8 +145,8 @@ Update custom metadata fields.
 
 ```javascript
 await api.storage.updateFileMetadata('storage-id-123', {
-  tags: ['contract', 'signed'],
-  owner: 'jane@example.com',
+    tags: ['contract', 'signed'],
+    owner: 'jane@example.com',
 });
 ```
 
@@ -168,12 +168,12 @@ List files with filters.
 
 ```javascript
 const files = await api.storage.listFiles({
-  classification: 'recordings',
-  folder: 'calls/2024',
-  limit: 50,
-  offset: 0,
-  orderBy: 'createdAt',
-  orderDirection: 'desc',
+    classification: 'recordings',
+    folder: 'calls/2024',
+    limit: 50,
+    offset: 0,
+    orderBy: 'createdAt',
+    orderDirection: 'desc',
 });
 ```
 
@@ -196,10 +196,10 @@ const access = await api.storage.generateAccessKey('storage-id-123', 3600);
 
 ```javascript
 await api.storage.uploadProfileImage({
-  file: imageBuffer,
-  fileName: 'avatar.jpg',
-  classification: 'user_images',   // or 'account_logo'
-  userId: 'user-id-123',
+    file: imageBuffer,
+    fileName: 'avatar.jpg',
+    classification: 'user_images',   // or 'account_logo'
+    userId: 'user-id-123',
 });
 ```
 

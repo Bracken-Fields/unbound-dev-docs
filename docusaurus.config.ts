@@ -70,6 +70,11 @@ const config: Config = {
           label: 'API Reference',
         },
         {
+          to: '/playground',
+          label: '⚡ Playground',
+          position: 'left',
+        },
+        {
           href: 'https://unbound.cx',
           label: 'unbound.cx',
           position: 'right',

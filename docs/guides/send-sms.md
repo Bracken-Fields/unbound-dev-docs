@@ -33,9 +33,9 @@ await api.login.login('your-username', 'your-password');
 
 ```javascript
 const sms = await api.messaging.sms.send({
-  from: '+1234567890',   // Your Unbound DID
-  to: '+0987654321',     // Recipient
-  message: 'Hello from Unbound! 👋',
+    from: '+1234567890',   // Your Unbound DID
+    to: '+0987654321',     // Recipient
+    message: 'Hello from Unbound! 👋',
 });
 
 console.log('Message SID:', sms.id);
@@ -48,17 +48,17 @@ console.log('Status:', sms.status);
 import SDK from '@unboundcx/sdk';
 
 async function main() {
-  const api = new SDK({ namespace: 'your-namespace' });
+    const api = new SDK({ namespace: 'your-namespace' });
 
-  await api.login.login('your-username', 'your-password');
+    await api.login.login('your-username', 'your-password');
 
-  const sms = await api.messaging.sms.send({
-    from: '+1234567890',
-    to: '+0987654321',
-    message: 'Hello from Unbound!',
-  });
+    const sms = await api.messaging.sms.send({
+        from: '+1234567890',
+        to: '+0987654321',
+        message: 'Hello from Unbound!',
+    });
 
-  console.log('Sent:', sms.id, '| Status:', sms.status);
+    console.log('Sent:', sms.id, '| Status:', sms.status);
 }
 
 main().catch(console.error);

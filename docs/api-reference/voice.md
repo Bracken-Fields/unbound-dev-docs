@@ -15,11 +15,11 @@ Initiate an outbound call.
 
 ```javascript
 const call = await api.voice.call({
-  to: '+1234567890',
-  from: '+0987654321',
-  timeout: 30,              // seconds to ring
-  app: { ... },            // optional voice app object
-  customHeaders: { ... },  // optional SIP headers
+    to: '+1234567890',
+    from: '+0987654321',
+    timeout: 30,              // seconds to ring
+    app: { ... },            // optional voice app object
+    customHeaders: { ... },  // optional SIP headers
 });
 ```
 
@@ -50,15 +50,15 @@ Dynamically replace the voice app on an active call — change the call flow in 
 
 ```javascript
 await api.voice.replaceCallApp({
-  callId: 'call-id-123',
-  app: {
-    version: '2.0',
-    name: 'transfer-flow',
-    commands: [
-      { command: 'play', file: 'hold-music.wav' },
-      { command: 'hangup' },
-    ],
-  },
+    callId: 'call-id-123',
+    app: {
+        version: '2.0',
+        name: 'transfer-flow',
+        commands: [
+            { command: 'play', file: 'hold-music.wav' },
+            { command: 'hangup' },
+        ],
+    },
 });
 ```
 
@@ -108,11 +108,11 @@ Transfer a call.
 
 ```javascript
 await api.voice.transfer({
-  channels: ['channel-id-123'],
-  to: '+15556667777',
-  callerIdName: 'Support',
-  callerIdNumber: '+18005551234',
-  timeout: 30,
+    channels: ['channel-id-123'],
+    to: '+15556667777',
+    callerIdName: 'Support',
+    callerIdNumber: '+18005551234',
+    timeout: 30,
 });
 ```
 
@@ -144,9 +144,9 @@ Start, stop, pause, or resume recording.
 ```javascript
 // Start recording
 await api.voice.record({
-  callId: 'call-id-123',
-  action: 'start',
-  direction: 'sendrecv',  // 'send', 'recv', or 'sendrecv'
+    callId: 'call-id-123',
+    action: 'start',
+    direction: 'sendrecv',  // 'send', 'recv', or 'sendrecv'
 });
 
 // Stop recording

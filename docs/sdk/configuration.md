@@ -9,11 +9,11 @@ title: Configuration
 
 ```typescript
 new SDK({
-  namespace: string,      // Required — your Unbound namespace
-  token?: string,         // JWT auth token
-  callId?: string,        // Optional call tracking ID
-  fwRequestId?: string,   // Optional request forwarding ID
-  socketStore?: any,      // Socket.io store (Svelte/browser)
+    namespace: string,      // Required — your Unbound namespace
+    token?: string,         // JWT auth token
+    callId?: string,        // Optional call tracking ID
+    fwRequestId?: string,   // Optional request forwarding ID
+    socketStore?: any,      // Socket.io store (Svelte/browser)
 })
 ```
 
@@ -35,8 +35,8 @@ A Svelte-compatible store wrapping a Socket.io connection. When provided, the SD
 import SDK from '@unboundcx/sdk';
 
 const api = new SDK({
-  namespace: process.env.UNBOUND_NAMESPACE,
-  token: process.env.UNBOUND_TOKEN,
+    namespace: process.env.UNBOUND_NAMESPACE,
+    token: process.env.UNBOUND_TOKEN,
 });
 ```
 
@@ -47,8 +47,8 @@ import SDK from '@unboundcx/sdk';
 import { socketAppStore } from '$lib/stores/socket.js';
 
 const api = new SDK({
-  namespace: 'your-namespace',
-  socketStore: socketAppStore,
+    namespace: 'your-namespace',
+    socketStore: socketAppStore,
 });
 ```
 

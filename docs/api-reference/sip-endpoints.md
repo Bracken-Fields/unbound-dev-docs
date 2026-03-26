@@ -14,19 +14,19 @@ title: SIP Endpoints
 ```javascript
 // WebRTC endpoint (browser-based)
 const endpoint = await api.sipEndpoints.create({
-  type: 'webRtc',
-  name: 'Jane Smith - Browser',
-  userId: 'user-id-123',
-  recordTypeId: 'record-type-id',
-  useSecureCalling: true,
+    type: 'webRtc',
+    name: 'Jane Smith - Browser',
+    userId: 'user-id-123',
+    recordTypeId: 'record-type-id',
+    useSecureCalling: true,
 });
 
 // IP Phone endpoint
 const ipPhone = await api.sipEndpoints.create({
-  type: 'ipPhone',
-  name: 'Conference Room Phone',
-  macAddress: '00:11:22:33:44:55',
-  userId: 'user-id-123',
+    type: 'ipPhone',
+    name: 'Conference Room Phone',
+    macAddress: '00:11:22:33:44:55',
+    userId: 'user-id-123',
 });
 ```
 
@@ -59,10 +59,10 @@ const config = await api.sipEndpoints.getWebRtcDetails();
 
 ```javascript
 await api.sipEndpoints.update('endpoint-id', {
-  name: 'Updated Endpoint Name',
-  userId: 'new-user-id',
-  useSecureCalling: false,
-  macAddress: 'AA:BB:CC:DD:EE:FF',
+    name: 'Updated Endpoint Name',
+    userId: 'new-user-id',
+    useSecureCalling: false,
+    macAddress: 'AA:BB:CC:DD:EE:FF',
 });
 ```
 

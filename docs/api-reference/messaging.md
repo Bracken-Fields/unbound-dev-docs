@@ -15,11 +15,11 @@ title: Messaging
 
 ```javascript
 const msg = await api.messaging.sms.send({
-  to: '+10987654321',
-  from: '+11234567890',
-  message: 'Your appointment is tomorrow at 3pm.',
-  mediaUrls: ['https://example.com/image.jpg'],  // MMS
-  webhookUrl: 'https://yourapp.com/webhooks/sms', // delivery callbacks
+    to: '+10987654321',
+    from: '+11234567890',
+    message: 'Your appointment is tomorrow at 3pm.',
+    mediaUrls: ['https://example.com/image.jpg'],  // MMS
+    webhookUrl: 'https://yourapp.com/webhooks/sms', // delivery callbacks
 });
 ```
 
@@ -47,9 +47,9 @@ const msg = await api.messaging.sms.get('msg-id-123');
 
 ```javascript
 await api.messaging.sms.templates.create({
-  name: 'appointment-reminder',
-  message: 'Hi {{name}}, your appointment is at {{time}}.',
-  variables: { name: 'string', time: 'string' },
+    name: 'appointment-reminder',
+    message: 'Hi {{name}}, your appointment is at {{time}}.',
+    variables: { name: 'string', time: 'string' },
 });
 ```
 
@@ -70,20 +70,20 @@ await api.messaging.sms.templates.delete('template-id');
 
 ```javascript
 await api.messaging.email.send({
-  from: 'support@yourcompany.com',
-  to: ['customer@example.com'],
-  cc: ['manager@yourcompany.com'],
-  subject: 'Your order is confirmed',
-  html: '<h1>Thanks for your order!</h1>',
-  text: 'Thanks for your order!',
-  storageId: ['file-id-123'],       // attachments
-  replyToEmailId: 'email-id-456',   // thread reply
-  templateId: 'tpl-789',
-  variables: { orderId: 'ORD-001' },
-  emailType: 'transactional',       // 'marketing' | 'transactional'
-  tracking: true,
-  mailboxId: 'mailbox-id-abc',
-  engagementSessionId: 'eng-123',
+    from: 'support@yourcompany.com',
+    to: ['customer@example.com'],
+    cc: ['manager@yourcompany.com'],
+    subject: 'Your order is confirmed',
+    html: '<h1>Thanks for your order!</h1>',
+    text: 'Thanks for your order!',
+    storageId: ['file-id-123'],       // attachments
+    replyToEmailId: 'email-id-456',   // thread reply
+    templateId: 'tpl-789',
+    variables: { orderId: 'ORD-001' },
+    emailType: 'transactional',       // 'marketing' | 'transactional'
+    tracking: true,
+    mailboxId: 'mailbox-id-abc',
+    engagementSessionId: 'eng-123',
 });
 ```
 
@@ -146,14 +146,14 @@ await api.messaging.email.delete('email-id');
 
 ```javascript
 const draft = await api.messaging.email.createDraft({
-  from: 'support@yourcompany.com',
-  to: ['customer@example.com'],
-  subject: 'Following up on your request',
-  html: '<p>Hi there...</p>',
-  mailboxId: 'mailbox-id',
-  replyToEmailId: 'email-id-456',
-  replyType: 'reply',          // 'reply' | 'replyAll' | 'forward'
-  engagementSessionId: 'eng-123',
+    from: 'support@yourcompany.com',
+    to: ['customer@example.com'],
+    subject: 'Following up on your request',
+    html: '<p>Hi there...</p>',
+    mailboxId: 'mailbox-id',
+    replyToEmailId: 'email-id-456',
+    replyType: 'reply',          // 'reply' | 'replyAll' | 'forward'
+    engagementSessionId: 'eng-123',
 });
 ```
 
@@ -179,13 +179,13 @@ Mailboxes are inboxes your platform receives email to. Each gets a system addres
 
 ```javascript
 const mailbox = await api.messaging.email.mailboxes.create({
-  mailbox: 'support',
-  name: 'Support Team',
-  useEngagementSessions: true,    // link emails to engagement sessions
-  queueId: 'queue-id',
-  ticketPrefix: 'SUP',
-  ticketCreateEmailTemplateId: 'template-id',
-  ticketCreateEmailFrom: 'support@yourcompany.com',
+    mailbox: 'support',
+    name: 'Support Team',
+    useEngagementSessions: true,    // link emails to engagement sessions
+    queueId: 'queue-id',
+    ticketPrefix: 'SUP',
+    ticketCreateEmailTemplateId: 'template-id',
+    ticketCreateEmailFrom: 'support@yourcompany.com',
 });
 ```
 
@@ -193,9 +193,9 @@ const mailbox = await api.messaging.email.mailboxes.create({
 
 ```javascript
 const result = await api.messaging.email.mailboxes.list({
-  folderCounts: ['open', 'completed', 'trash'],
-  search: 'support',
-  limit: 50,
+    folderCounts: ['open', 'completed', 'trash'],
+    search: 'support',
+    limit: 50,
 });
 // result.mailboxes[0].messageCounts → { open: 5, completed: 3, total: 8 }
 ```
@@ -206,8 +206,8 @@ const result = await api.messaging.email.mailboxes.list({
 const mailbox = await api.messaging.email.mailboxes.get('mailbox-id', true); // includeAliases
 
 await api.messaging.email.mailboxes.update('mailbox-id', {
-  name: 'Customer Success',
-  queueId: 'new-queue-id',
+    name: 'Customer Success',
+    queueId: 'new-queue-id',
 });
 
 await api.messaging.email.mailboxes.delete('mailbox-id');
@@ -219,13 +219,13 @@ Fetch emails from a mailbox in a Gmail-style threaded view.
 
 ```javascript
 const emails = await api.messaging.email.getMailboxEmails('mailbox-id', {
-  folder: 'open',          // 'open' | 'completed' | 'trash' | 'spam'
-  includeDrafts: false,
-  search: 'invoice',
-  sortBy: 'dateTime',
-  sortOrder: 'desc',
-  limit: 25,
-  offset: 0,
+    folder: 'open',          // 'open' | 'completed' | 'trash' | 'spam'
+    includeDrafts: false,
+    search: 'invoice',
+    sortBy: 'dateTime',
+    sortOrder: 'desc',
+    limit: 25,
+    offset: 0,
 });
 // emails.messages[0].threads → nested reply thread
 ```
@@ -237,11 +237,11 @@ Add custom addresses like `support@yourcompany.com` on a verified domain.
 ```javascript
 // Add custom alias
 const alias = await api.messaging.email.mailboxes.createAlias(
-  'mailbox-id',
-  'email-domain-id',
-  'support',    // → support@yourdomain.com
-  null,         // recordTypeId
-  true,         // isDefault
+    'mailbox-id',
+    'email-domain-id',
+    'support',    // → support@yourdomain.com
+    null,         // recordTypeId
+    true,         // isDefault
 );
 
 await api.messaging.email.mailboxes.updateAlias('alias-id', true);  // set as default
@@ -258,10 +258,10 @@ const folders = await api.messaging.email.mailboxes.listFolders('mailbox-id');
 ```javascript
 // Create (variables auto-extracted from {{placeholders}})
 await api.messaging.email.templates.create({
-  name: 'Welcome Email',
-  subject: 'Welcome {{firstName}}!',
-  html: '<h1>Hello {{firstName}} {{lastName}}</h1>',
-  text: 'Hello {{firstName}} {{lastName}}',
+    name: 'Welcome Email',
+    subject: 'Welcome {{firstName}}!',
+    html: '<h1>Hello {{firstName}} {{lastName}}</h1>',
+    text: 'Hello {{firstName}} {{lastName}}',
 });
 
 await api.messaging.email.templates.get('template-id');
@@ -279,10 +279,10 @@ Verify sending domains for custom `from` addresses.
 ```javascript
 // Verify a domain
 const domain = await api.messaging.email.domains.create({
-  domain: 'yourcompany.com',
-  primaryRegion: 'us-east-1',
-  secondaryRegion: 'us-west-2',
-  mailFromSubdomain: 'mail',
+    domain: 'yourcompany.com',
+    primaryRegion: 'us-east-1',
+    secondaryRegion: 'us-west-2',
+    mailFromSubdomain: 'mail',
 });
 // domain.dns → array of DNS records to add (CNAME, TXT, DMARC)
 
@@ -319,16 +319,16 @@ await api.messaging.email.addresses.delete('sender@yourcompany.com');
 ```javascript
 // Time-series delivery metrics
 const series = await api.messaging.email.analytics.timeSeries({
-  period: '24h',           // '1h' | '6h' | '24h' | '7d' | '30d'
-  granularity: 'hour',     // 'minute' | 'hour' | 'day'
-  timezone: 'America/New_York',
+    period: '24h',           // '1h' | '6h' | '24h' | '7d' | '30d'
+    granularity: 'hour',     // 'minute' | 'hour' | 'day'
+    timezone: 'America/New_York',
 });
 // series.data → [{ timestamp, sent, delivered, failed, queued }]
 
 // Summary stats (includes opens, clicks, bounces, complaints)
 const summary = await api.messaging.email.analytics.summary({
-  period: '7d',
-  timezone: 'America/Chicago',
+    period: '7d',
+    timezone: 'America/Chicago',
 });
 // summary.openRate, summary.clickRate, summary.bounceRate, ...
 
@@ -353,9 +353,9 @@ const delivered = await api.messaging.email.queue.getDelivered({ limit: 25 });
 
 // Or filter manually
 const all = await api.messaging.email.queue.list({
-  status: 'queued',   // 'queued' | 'sent' | 'delivered' | 'failed'
-  page: 1,
-  limit: 50,
+    status: 'queued',   // 'queued' | 'sent' | 'delivered' | 'failed'
+    page: 1,
+    limit: 50,
 });
 ```
 
@@ -372,9 +372,9 @@ const complaints   = await api.messaging.email.suppression.getComplaints();
 
 // Custom filter
 const all = await api.messaging.email.suppression.list({
-  type: 'bounce',
-  emailAddress: '@example.com',
-  page: 1,
+    type: 'bounce',
+    emailAddress: '@example.com',
+    page: 1,
 });
 
 // Check if an address is globally suppressed
@@ -384,8 +384,8 @@ const status = await api.messaging.email.suppression.checkGlobal('user@example.c
 
 // Request removal from global suppression
 await api.messaging.email.suppression.requestRemoval(
-  'user@example.com',
-  'Customer re-opted in via web form'
+    'user@example.com',
+    'Customer re-opted in via web form'
 );
 
 // Delete a suppression entry (with required reason)
@@ -400,10 +400,10 @@ await api.messaging.email.suppression.delete('suppression-id', 'Customer request
 
 ```javascript
 await api.messaging.campaigns.tollFree.create({
-  companyName: 'Acme Corp',
-  phoneNumber: '+18005551234',
-  description: 'Customer support SMS',
-  useCase: 'customer_care',
+    companyName: 'Acme Corp',
+    phoneNumber: '+18005551234',
+    description: 'Customer support SMS',
+    useCase: 'customer_care',
 });
 
 await api.messaging.campaigns.tollFree.list();
@@ -415,18 +415,18 @@ await api.messaging.campaigns.tollFree.get('campaign-id');
 ```javascript
 // Register a brand
 const brand = await api.messaging.campaigns.tenDlc.brands.create({
-  name: 'Acme Support',
-  entityType: 'PRIVATE_PROFIT',     // 'PRIVATE_PROFIT' | 'PUBLIC_PROFIT' | 'NON_PROFIT'
-  companyName: 'Acme Corp',
-  address1: '123 Main St',
-  city: 'Los Angeles',
-  state: 'CA',
-  postalCode: '90001',
-  country: 'US',
-  pocEmail: 'admin@acme.com',
-  pocPhone: '+13235550100',
-  vertical: 'RETAIL',
-  website: 'https://acme.com',
+    name: 'Acme Support',
+    entityType: 'PRIVATE_PROFIT',     // 'PRIVATE_PROFIT' | 'PUBLIC_PROFIT' | 'NON_PROFIT'
+    companyName: 'Acme Corp',
+    address1: '123 Main St',
+    city: 'Los Angeles',
+    state: 'CA',
+    postalCode: '90001',
+    country: 'US',
+    pocEmail: 'admin@acme.com',
+    pocPhone: '+13235550100',
+    vertical: 'RETAIL',
+    website: 'https://acme.com',
 });
 
 await api.messaging.campaigns.tenDlc.brands.get('brand-id');
@@ -441,19 +441,19 @@ await api.messaging.campaigns.tenDlc.brands.delete('brand-id');
 
 ```javascript
 const campaign = await api.messaging.campaigns.tenDlc.campaigns.create({
-  brandId: 'brand-id',
-  description: 'Customer support and appointment reminders',
-  messageFlow: 'Users opt-in via web form at acme.com/subscribe',
-  helpMessage: 'For help, text HELP or call 1-800-555-0100',
-  optInMessage: 'You\'ve subscribed to Acme alerts. Msg&data rates may apply. Reply STOP to unsubscribe.',
-  optOutMessage: 'You\'ve been unsubscribed. Reply START to re-subscribe.',
-  useCase: 'CUSTOMER_CARE',
+    brandId: 'brand-id',
+    description: 'Customer support and appointment reminders',
+    messageFlow: 'Users opt-in via web form at acme.com/subscribe',
+    helpMessage: 'For help, text HELP or call 1-800-555-0100',
+    optInMessage: 'You\'ve subscribed to Acme alerts. Msg&data rates may apply. Reply STOP to unsubscribe.',
+    optOutMessage: 'You\'ve been unsubscribed. Reply START to re-subscribe.',
+    useCase: 'CUSTOMER_CARE',
 });
 
 await api.messaging.campaigns.tenDlc.campaigns.update('campaign-id', {
-  samples: ['Your appt is tomorrow at 3pm', 'Your order shipped!'],
-  embeddedLink: false,
-  subscriberOptout: true,
+    samples: ['Your appt is tomorrow at 3pm', 'Your order shipped!'],
+    embeddedLink: false,
+    subscriberOptout: true,
 });
 
 await api.messaging.campaigns.tenDlc.campaigns.get('campaign-id');

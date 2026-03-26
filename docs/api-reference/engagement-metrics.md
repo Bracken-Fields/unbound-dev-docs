@@ -15,13 +15,13 @@ Full metrics with flexible include flags.
 
 ```javascript
 const metrics = await api.engagementMetrics.getMetrics({
-  queueIds: ['queue-1', 'queue-2'],
-  statuses: ['new', 'working', 'wrapUp'],
-  userIds: ['user-1', 'user-2'],
-  includeSummary: true,
-  includeByQueue: true,
-  includeQueuePerformance: true,
-  includeAgentPerformance: true,
+    queueIds: ['queue-1', 'queue-2'],
+    statuses: ['new', 'working', 'wrapUp'],
+    userIds: ['user-1', 'user-2'],
+    includeSummary: true,
+    includeByQueue: true,
+    includeQueuePerformance: true,
+    includeAgentPerformance: true,
 });
 ```
 
@@ -43,8 +43,8 @@ const metrics = await api.engagementMetrics.getMetrics({
 
 ```javascript
 const summary = await api.engagementMetrics.getSummary({
-  queueIds: ['queue-1'],
-  statuses: ['new', 'working'],
+    queueIds: ['queue-1'],
+    statuses: ['new', 'working'],
 });
 ```
 
@@ -52,7 +52,7 @@ const summary = await api.engagementMetrics.getSummary({
 
 ```javascript
 const byQueue = await api.engagementMetrics.getByQueue({
-  queueIds: ['queue-1', 'queue-2'],
+    queueIds: ['queue-1', 'queue-2'],
 });
 ```
 
@@ -60,7 +60,7 @@ const byQueue = await api.engagementMetrics.getByQueue({
 
 ```javascript
 const queuePerf = await api.engagementMetrics.getQueuePerformance({
-  queueIds: ['queue-1'],
+    queueIds: ['queue-1'],
 });
 ```
 
@@ -68,8 +68,8 @@ const queuePerf = await api.engagementMetrics.getQueuePerformance({
 
 ```javascript
 const agentPerf = await api.engagementMetrics.getAgentPerformance({
-  queueIds: ['queue-1'],
-  userIds: ['user-1', 'user-2'],
+    queueIds: ['queue-1'],
+    userIds: ['user-1', 'user-2'],
 });
 ```
 
@@ -79,8 +79,8 @@ Returns all sections (summary + by queue + queue performance + agent performance
 
 ```javascript
 const dashboard = await api.engagementMetrics.getDashboardMetrics({
-  queueIds: ['queue-1'],
-  statuses: ['new', 'working'],
-  userIds: [],
+    queueIds: ['queue-1'],
+    statuses: ['new', 'working'],
+    userIds: [],
 });
 ```
