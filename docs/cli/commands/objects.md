@@ -1,5 +1,5 @@
 ---
-id: cli-objects
+id: objects
 title: Objects & UOQL
 ---
 

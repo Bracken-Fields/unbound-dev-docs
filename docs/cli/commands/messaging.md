@@ -1,5 +1,5 @@
 ---
-id: cli-messaging
+id: messaging
 title: Messaging
 ---
 

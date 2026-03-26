@@ -1,5 +1,5 @@
 ---
-id: cli-tasks
+id: tasks
 title: Task Router
 ---
 

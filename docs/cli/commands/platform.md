@@ -1,5 +1,5 @@
 ---
-id: cli-platform
+id: platform
 title: Platform & Infrastructure
 ---
 

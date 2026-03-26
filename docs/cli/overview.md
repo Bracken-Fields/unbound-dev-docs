@@ -1,5 +1,5 @@
 ---
-id: cli-overview
+id: overview
 title: CLI Reference
 ---
 

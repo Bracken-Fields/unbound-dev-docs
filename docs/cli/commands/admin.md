@@ -1,5 +1,5 @@
 ---
-id: cli-admin
+id: admin
 title: Admin & Utilities
 ---
 

@@ -1,5 +1,5 @@
 ---
-id: cli-voice
+id: voice
 title: Voice & CDR
 ---
 

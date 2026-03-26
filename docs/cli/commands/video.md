@@ -1,5 +1,5 @@
 ---
-id: cli-video
+id: video
 title: Video
 ---
 

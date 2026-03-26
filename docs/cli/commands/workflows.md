@@ -1,5 +1,5 @@
 ---
-id: cli-workflows
+id: workflows
 title: Workflows
 ---
 

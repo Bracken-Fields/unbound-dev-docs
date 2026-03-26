@@ -1,5 +1,5 @@
 ---
-id: cli-contacts
+id: contacts
 title: Contacts & People
 ---
 

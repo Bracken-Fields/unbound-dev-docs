@@ -1,5 +1,5 @@
 ---
-id: cli-ai
+id: ai
 title: AI
 ---
 
