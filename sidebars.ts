@@ -121,6 +121,7 @@ const sidebars: SidebarsConfig = {
       label: 'Reference',
       collapsed: false,
       items: [
+        'reference/types',
         'reference/errors',
         'reference/limits',
         'reference/changelog',
