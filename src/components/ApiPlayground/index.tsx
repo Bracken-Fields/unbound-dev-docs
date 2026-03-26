@@ -33,7 +33,7 @@ const EXAMPLE_REQUESTS: { label: string; method: string; endpoint: string; body:
     { label: 'Storage — list files', method: 'GET', endpoint: '/storage?limit=10', body: '' },
 ];
 
-const DEFAULT_API_URL = (ns: string) => `https://${ns}.api.dev-d01.app1svc.com`;
+const DEFAULT_API_URL = (ns: string) => `https://${ns}.api.unbound.cx`;
 
 function AuthPanel({ onAuth }: { onAuth: (auth: AuthState) => void }) {
     const [namespace, setNamespace] = useState('');
@@ -51,30 +51,50 @@ function AuthPanel({ onAuth }: { onAuth: (auth: AuthState) => void }) {
 
         try {
             const baseUrl = customUrl.trim() || DEFAULT_API_URL(namespace);
-            const res = await fetch(`${baseUrl}/login`, {
+            const loginUrl = `${baseUrl}/login`;
+            const loginBody = { username, password, namespace, tokenType: 'bearer' };
+
+            console.log('[Playground] Login attempt:', { url: loginUrl, namespace, username, tokenType: 'bearer' });
+
+            const res = await fetch(loginUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password, namespace, tokenType: 'cookie' }),
+                body: JSON.stringify(loginBody),
             });
 
+            console.log('[Playground] Login response status:', res.status, res.statusText);
+
+            const rawText = await res.text();
+            console.log('[Playground] Login response body:', rawText);
+
             if (!res.ok) {
-                const text = await res.text();
-                throw new Error(`Login failed (${res.status}): ${text}`);
+                throw new Error(`Login failed (${res.status}): ${rawText}`);
             }
 
-            const data = await res.json();
-            const token = data.token ?? data.jwt ?? data.accessToken;
-            if (!token) throw new Error('No token in response — check namespace and credentials.');
+            let data: Record<string, unknown>;
+            try {
+                data = JSON.parse(rawText);
+            } catch {
+                throw new Error(`Login returned non-JSON: ${rawText}`);
+            }
+
+            console.log('[Playground] Login response parsed:', data);
+
+            const token = (data.token ?? data.jwt ?? data.accessToken) as string | undefined;
+            console.log('[Playground] Token extracted:', token ? `${String(token).slice(0, 20)}…` : 'NONE');
+
+            if (!token) throw new Error(`No token in response. Keys received: ${Object.keys(data).join(', ')}`);
 
             const auth: AuthState = {
                 namespace,
                 token,
                 username,
-                baseUrl: customUrl.trim() || DEFAULT_API_URL(namespace),
+                baseUrl,
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(auth));
             onAuth(auth);
         } catch (err: unknown) {
+            console.error('[Playground] Login error:', err);
             setError(err instanceof Error ? err.message : String(err));
         } finally {
             setLoading(false);
@@ -105,6 +125,7 @@ function AuthPanel({ onAuth }: { onAuth: (auth: AuthState) => void }) {
                             autoFocus
                         />
                         <span className={styles.namespaceSuffix}>.api.unbound.cx</span>
+                        {/* Label already matches DEFAULT_API_URL */}
                     </div>
                 </div>
                 <div className={styles.fieldRow}>
