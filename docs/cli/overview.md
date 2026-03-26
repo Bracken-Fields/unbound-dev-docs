@@ -92,13 +92,13 @@ unbound phones search --state CA --limit 5
 
 | Group | Commands | Description |
 |---|---|---|
-| [Contacts & People](./commands/contacts) | `contacts` | Create, list, search, and update contacts |
-| [Messaging](./commands/messaging) | `sms`, `email`, `faxes` | Send and manage SMS, email, and fax messages |
-| [Voice & CDR](./commands/voice) | `voice`, `cdr` | Make calls, manage active calls, and query call records |
-| [Video](./commands/video) | `video` | Create and manage video rooms and participants |
-| [AI](./commands/ai) | `ai` | Chat with AI models and generate text-to-speech audio |
-| [Objects & UOQL](./commands/objects) | `objects`, `query`, `uoql` | Query platform data with the object system and UOQL SQL engine |
-| [Task Router](./commands/tasks) | `tasks`, `queues`, `skills`, `agents` | Manage contact center task routing |
-| [Workflows](./commands/workflows) | `workflows`, `modules` | Build, inspect, and manage automation workflows |
-| [Platform & Infrastructure](./commands/platform) | `phones`, `sip`, `portals`, `provisioning`, `enroll`, `oauth`, `record-types`, `layouts`, `webhooks`, `subscriptions`, `recordings` | Phone numbers, SIP, portals, webhooks, and system configuration |
-| [Admin & Utilities](./commands/admin) | `login`, `metrics`, `notes`, `lookup`, `verification`, `kb`, `calendar` | Authentication, analytics, notes, lookups, and integrations |
+| [Contacts & People](/cli/commands/cli-contacts) | `contacts` | Create, list, search, and update contacts |
+| [Messaging](/cli/commands/cli-messaging) | `sms`, `email`, `faxes` | Send and manage SMS, email, and fax messages |
+| [Voice & CDR](/cli/commands/cli-voice) | `voice`, `cdr` | Make calls, manage active calls, and query call records |
+| [Video](/cli/commands/cli-video) | `video` | Create and manage video rooms and participants |
+| [AI](/cli/commands/cli-ai) | `ai` | Chat with AI models and generate text-to-speech audio |
+| [Objects & UOQL](/cli/commands/cli-objects) | `objects`, `query`, `uoql` | Query platform data with the object system and UOQL SQL engine |
+| [Task Router](/cli/commands/cli-tasks) | `tasks`, `queues`, `skills`, `agents` | Manage contact center task routing |
+| [Workflows](/cli/commands/cli-workflows) | `workflows`, `modules` | Build, inspect, and manage automation workflows |
+| [Platform & Infrastructure](/cli/commands/cli-platform) | `phones`, `sip`, `portals`, `provisioning`, `enroll`, `oauth`, `record-types`, `layouts`, `webhooks`, `subscriptions`, `recordings` | Phone numbers, SIP, portals, webhooks, and system configuration |
+| [Admin & Utilities](/cli/commands/cli-admin) | `login`, `metrics`, `notes`, `lookup`, `verification`, `kb`, `calendar` | Authentication, analytics, notes, lookups, and integrations |
