@@ -54,7 +54,7 @@ function AuthPanel({ onAuth }: { onAuth: (auth: AuthState) => void }) {
             const res = await fetch(`${baseUrl}/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify({ username, password, namespace, tokenType: 'cookie' }),
             });
 
             if (!res.ok) {
