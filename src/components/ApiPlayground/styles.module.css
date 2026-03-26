@@ -156,6 +156,28 @@
     cursor: not-allowed;
 }
 
+.advancedToggle {
+    background: none;
+    border: none;
+    color: var(--ifm-color-content-secondary);
+    font-size: 0.82rem;
+    cursor: pointer;
+    padding: 2px 0;
+    text-align: left;
+    transition: color 0.15s;
+}
+
+.advancedToggle:hover {
+    color: var(--unbound-teal);
+}
+
+.fieldHint {
+    font-size: 0.78rem;
+    color: var(--ifm-color-content-secondary);
+    margin-top: 4px;
+    display: block;
+}
+
 .hint {
     margin-top: 20px;
     padding: 12px 16px;

@@ -7,6 +7,7 @@ interface AuthState {
     namespace: string;
     token: string;
     username: string;
+    baseUrl: string;
 }
 
 interface RequestState {
@@ -32,10 +33,14 @@ const EXAMPLE_REQUESTS: { label: string; method: string; endpoint: string; body:
     { label: 'Storage — list files', method: 'GET', endpoint: '/storage?limit=10', body: '' },
 ];
 
+const DEFAULT_API_URL = (ns: string) => `https://${ns}.api.dev-d01.app1svc.com`;
+
 function AuthPanel({ onAuth }: { onAuth: (auth: AuthState) => void }) {
     const [namespace, setNamespace] = useState('');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [customUrl, setCustomUrl] = useState('');
+    const [showAdvanced, setShowAdvanced] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -45,7 +50,7 @@ function AuthPanel({ onAuth }: { onAuth: (auth: AuthState) => void }) {
         setError('');
 
         try {
-            const baseUrl = `https://${namespace}.api.dev-d01.app1svc.com`;
+            const baseUrl = customUrl.trim() || DEFAULT_API_URL(namespace);
             const res = await fetch(`${baseUrl}/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -61,7 +66,12 @@ function AuthPanel({ onAuth }: { onAuth: (auth: AuthState) => void }) {
             const token = data.token ?? data.jwt ?? data.accessToken;
             if (!token) throw new Error('No token in response — check namespace and credentials.');
 
-            const auth: AuthState = { namespace, token, username };
+            const auth: AuthState = {
+                namespace,
+                token,
+                username,
+                baseUrl: customUrl.trim() || DEFAULT_API_URL(namespace),
+            };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(auth));
             onAuth(auth);
         } catch (err: unknown) {
@@ -69,7 +79,7 @@ function AuthPanel({ onAuth }: { onAuth: (auth: AuthState) => void }) {
         } finally {
             setLoading(false);
         }
-    }, [namespace, username, password, onAuth]);
+    }, [namespace, username, password, customUrl, onAuth]);
 
     return (
         <div className={styles.panel}>
@@ -120,6 +130,31 @@ function AuthPanel({ onAuth }: { onAuth: (auth: AuthState) => void }) {
                     />
                 </div>
 
+                <button
+                    type="button"
+                    className={styles.advancedToggle}
+                    onClick={() => setShowAdvanced(v => !v)}
+                >
+                    {showAdvanced ? '▾' : '▸'} Advanced — custom API URL
+                </button>
+
+                {showAdvanced && (
+                    <div className={styles.fieldRow}>
+                        <label className={styles.label}>Base API URL</label>
+                        <input
+                            className={styles.input}
+                            type="url"
+                            placeholder={namespace ? DEFAULT_API_URL(namespace) : 'https://your-namespace.api.dev-d01.app1svc.com'}
+                            value={customUrl}
+                            onChange={e => setCustomUrl(e.target.value)}
+                        />
+                        <span className={styles.fieldHint}>
+                            Override the default API URL — useful for dev/staging environments.
+                            Leave blank to use the standard namespace URL.
+                        </span>
+                    </div>
+                )}
+
                 {error && <div className={styles.errorBanner}>{error}</div>}
 
                 <button className={styles.primaryBtn} type="submit" disabled={loading}>
@@ -147,12 +182,14 @@ function TokenPanel({ auth, onClear }: { auth: AuthState; onClear: () => void })
         ? `${auth.token.slice(0, 30)}…${auth.token.slice(-20)}`
         : auth.token;
 
+    const displayUrl = auth.baseUrl.replace('https://', '').replace('http://', '');
+
     return (
         <div className={styles.tokenPanel}>
             <div className={styles.tokenRow}>
                 <div className={styles.tokenInfo}>
                     <span className={styles.tokenBadge}>✅ Authenticated</span>
-                    <span className={styles.tokenNamespace}>{auth.namespace}.api.unbound.cx</span>
+                    <span className={styles.tokenNamespace}>{displayUrl}</span>
                     <span className={styles.tokenUser}>{auth.username}</span>
                 </div>
                 <div className={styles.tokenActions}>
@@ -209,7 +246,7 @@ function RequestBuilder({ auth, request, setRequest, onSend, loading }: {
                     ))}
                 </select>
                 <div className={styles.endpointWrap}>
-                    <span className={styles.baseUrl}>{auth.namespace}.api.dev-d01.app1svc.com</span>
+                    <span className={styles.baseUrl}>{auth.baseUrl.replace('https://', '').replace('http://', '')}</span>
                     <input
                         className={styles.endpointInput}
                         type="text"
@@ -331,7 +368,7 @@ export default function ApiPlayground(): React.ReactElement {
 
         const start = Date.now();
         try {
-            const baseUrl = `https://${auth.namespace}.api.dev-d01.app1svc.com`;
+            const baseUrl = auth.baseUrl;
             const url = `${baseUrl}${request.endpoint.startsWith('/') ? '' : '/'}${request.endpoint}`;
 
             const opts: RequestInit = {
