@@ -179,15 +179,11 @@ article > p:first-of-type {
   font-size: 0.92rem !important;
   line-height: 1.7 !important;
   border: 1px solid rgba(29, 148, 154, 0.14);
-  tab-size: 4 !important;
-  -moz-tab-size: 4 !important;
-  padding: 20px 24px !important;
 }
 
-/* Each logical line in the code block */
-.prism-code .token-line {
-  display: block;
-  min-height: 1.5em;
+/* Fix: Prism sets white-space: nowrap on .token.plain which collapses leading spaces */
+.prism-code .token.plain {
+  white-space: pre !important;
 }
 
 [data-theme='dark'] .prism-code {
