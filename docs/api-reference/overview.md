@@ -51,9 +51,11 @@ The Unbound SDK exposes the following services via `api.<service>`:
 | [Portals](/api-reference/portals) | `api.portals` | Branded customer portals on custom domains |
 | [Lookup](/api-reference/lookup) | `api.lookup` | CNAM, LRN, and number intelligence |
 | [Verification](/api-reference/verification) | `api.verification` | SMS and email OTP verification |
+| [External OAuth](/api-reference/external-oauth) | `api.externalOAuth` | Third-party OAuth integrations (Salesforce, HubSpot, etc.) |
+| [Record Types](/api-reference/record-types) | `api.recordTypes` | Data access permission schemas |
+| [Layouts](/api-reference/layouts) | `api.layouts` | UI layout definitions for CRM objects |
+| [Google Calendar](/api-reference/google-calendar) | `api.googleCalendar` | Calendar sync, webhooks, and event fetching |
 | Authentication | `api.login` | Login, logout, validate, change password |
-| Record Types | `api.recordTypes` | Data access permission schemas |
-| Layouts | `api.layouts` | UI layout definitions |
 
 ---
 
