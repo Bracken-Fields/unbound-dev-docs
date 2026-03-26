@@ -22,7 +22,6 @@ const sidebars: SidebarsConfig = {
         'sdk/authentication',
         'sdk/configuration',
         'sdk/error-handling',
-        'sdk/transports',
       ],
     },
     {

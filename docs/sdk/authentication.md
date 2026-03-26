@@ -11,16 +11,12 @@ Unbound uses JWT tokens for all API requests. The SDK handles token attachment a
 
 ## SDK Initialization
 
-### Object-based (recommended)
-
 ```javascript
 import SDK from '@unboundcx/sdk';
 
 const api = new SDK({
     namespace: 'your-namespace',   // Required: your Unbound tenant namespace
     token: 'optional-jwt-token',   // Optional: pre-supplied JWT
-    callId: 'optional-call-id',    // Optional: SIP call correlation ID
-    fwRequestId: 'optional-id',    // Optional: forwarded request ID for tracing
 });
 ```
 
@@ -28,21 +24,6 @@ const api = new SDK({
 |---|---|---|---|
 | `namespace` | string | ✅ | Your Unbound tenant namespace (e.g., `acme`) |
 | `token` | string | — | Pre-supplied JWT token — skips login |
-| `callId` | string | — | SIP call ID for call-scoped requests |
-| `fwRequestId` | string | — | Forwarded request ID for distributed tracing |
-| `url` | string | — | Override API base URL (for on-prem or staging) |
-| `socketStore` | object | — | Shared WebSocket store for client-side use |
-
-### Environment variable fallback
-
-If `namespace` is omitted, the SDK reads `process.env.namespace` automatically:
-
-```javascript
-// In .env:
-// namespace=acme
-
-const api = new SDK(); // uses process.env.namespace
-```
 
 ---
 
@@ -274,73 +255,24 @@ Store credentials in environment variables — never hard-code them:
 
 ```bash
 # .env
-namespace=acme
+UNBOUND_NAMESPACE=acme
 UNBOUND_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 UNBOUND_USER=service@acme.com
 UNBOUND_PASS=super-secret-password
-API_BASE_URL=api.unbound.cx   # optional: override for staging/on-prem
 ```
 
 ```javascript
 import SDK from '@unboundcx/sdk';
 import 'dotenv/config';
 
-// namespace is read from process.env.namespace automatically
 const api = new SDK({
-    token: process.env.UNBOUND_TOKEN,   // pre-supplied token
+    namespace: process.env.UNBOUND_NAMESPACE,
+    token: process.env.UNBOUND_TOKEN,
 });
 
 // Or login dynamically
-const api2 = new SDK({ namespace: process.env.namespace });
+const api2 = new SDK({ namespace: process.env.UNBOUND_NAMESPACE });
 await api2.login.login(process.env.UNBOUND_USER, process.env.UNBOUND_PASS);
-```
-
-### Custom API Base URL
-
-For on-premises deployments or staging environments:
-
-```javascript
-// Via environment variable
-// API_BASE_URL=staging.unbound.cx
-
-// Or via constructor
-const api = new SDK({
-    namespace: 'acme',
-    url: 'https://acme.staging.unbound.cx',
-});
-```
-
----
-
-## Browser vs. Server Behavior
-
-The SDK auto-detects its environment and behaves differently:
-
-| Feature | Browser | Node.js |
-|---|---|---|
-| Token storage | `localStorage` | In-process memory |
-| HTTP credentials | `credentials: 'include'` (cookies) | Bearer header |
-| Namespace URL | `https://<namespace>.<baseUrl>` | `https://<namespace>.api.unbound.cx` |
-| `localStorage` keys | `unbound_url`, `unbound_userId`, `unbound_namespace` | — |
-
-:::tip Browser Security
-Never expose service credentials (username/password) in browser-side code. Authenticate server-side and pass the resulting token to your frontend via a secure API endpoint.
-:::
-
-### Browser Setup Example
-
-```javascript
-// Backend: authenticate and expose a token endpoint
-app.get('/api/auth/token', requireSession, async (req, res) => {
-    const api = new SDK({ namespace: req.user.namespace });
-    await api.login.login(req.user.email, req.user.password);
-    // Return the namespace details; the session cookie handles auth
-    res.json({ namespace: req.user.namespace });
-});
-
-// Frontend: initialize SDK with namespace only (cookie auth)
-const api = new SDK({ namespace: userNamespace });
-// Subsequent calls use the session cookie set by the backend login
 ```
 
 ---
@@ -412,94 +344,9 @@ await api.login.forgotPassword('agent@acme.com');
 
 ### `api.login.logout()`
 
-End the current session. In browser environments, also clears `localStorage` entries:
+End the current session:
 
 ```javascript
 await api.login.logout();
 // Returns true
-```
-
----
-
-## Enrollment (New Account Signup)
-
-The `api.enroll` service handles new tenant provisioning end-to-end:
-
-```javascript
-// Step 1: Check if a namespace is available
-const available = await api.enroll.checkNamespace('my-company');
-
-// Step 2: Collect company info
-const enrollment = await api.enroll.collectCompanyInfo({
-    companyName: 'My Company',
-    email: 'admin@mycompany.com',
-    namespace: 'my-company',
-    phone: '+15555551234',
-});
-
-// Step 3: Verify email
-await api.enroll.verifyEmail('admin@mycompany.com', '123456');
-
-// Step 4: Verify SMS
-await api.enroll.verifySms('+15555551234', '654321');
-
-// Step 5: Sign terms of service
-await api.enroll.signAgreement({
-    enrollmentId: enrollment.id,
-    agreementType: 'terms',
-    agreed: true,
-});
-
-// Step 6: Validate and complete
-await api.enroll.validateEnrollment({ enrollmentId: enrollment.id });
-await api.enroll.completeEnrollment(enrollment.id, { plan: 'professional' });
-
-// Step 7: Create the database (async — poll buildStatus)
-await api.enroll.createAccountDatabase(enrollment.id);
-
-// Poll until ready
-let status;
-do {
-    await new Promise(r => setTimeout(r, 3000));
-    status = await api.enroll.getBuildStatus(enrollment.id);
-} while (status.state !== 'complete');
-```
-
-**All enrollment methods:**
-
-| Method | Description |
-|---|---|
-| `checkNamespace(namespace)` | Check if a namespace is available |
-| `collectCompanyInfo(info)` | Submit initial company/contact info |
-| `updateEnrollmentInfo(id, data)` | Update an in-progress enrollment |
-| `validateEnrollment(data)` | Validate enrollment data before submission |
-| `verifyEmail(email, code)` | Verify email with OTP code |
-| `verifySms(phoneNumber, code)` | Verify phone number with OTP code |
-| `verifyPayment(paymentData)` | Submit payment verification |
-| `createStripeVerificationSession(data)` | Create a Stripe identity verification session |
-| `getStripeVerificationStatus(sessionId)` | Poll Stripe verification result |
-| `signAgreement(data)` | Sign ToS/agreement |
-| `getAgreement(type, version?)` | Fetch the text of an agreement |
-| `getBrandForEnrollment(id)` | Get brand settings for an enrollment |
-| `getBuildStatus(id)` | Poll database provisioning status |
-| `completeEnrollment(id, data)` | Finalize the enrollment |
-| `createAccountDatabase(id)` | Trigger database provisioning |
-
----
-
-## Request Tracing
-
-For distributed systems, attach request IDs for end-to-end tracing:
-
-```javascript
-const api = new SDK({
-    namespace: 'acme',
-    token: process.env.UNBOUND_TOKEN,
-    fwRequestId: req.headers['x-request-id'],  // forward from incoming HTTP request
-    callId: activeSipCallId,                    // attach SIP call context
-});
-
-// All API calls will include:
-// x-request-id-fw: <fwRequestId>
-// x-call-id: <callId>
 ```
