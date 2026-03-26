@@ -122,6 +122,8 @@ const sidebars: SidebarsConfig = {
       collapsed: false,
       items: [
         'reference/errors',
+        'reference/limits',
+        'reference/changelog',
       ],
     },
     {
