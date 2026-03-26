@@ -118,6 +118,14 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'Reference',
+      collapsed: false,
+      items: [
+        'reference/errors',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Guides',
       items: [
         'guides/cli-quickstart',
