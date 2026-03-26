@@ -55,7 +55,8 @@ const config: Config = {
         src: 'img/logo-color.png',
         srcDark: 'img/logo-white.png',
         href: '/',
-        width: 120,
+        width: 140,
+        height: 34,
       },
       items: [
         {

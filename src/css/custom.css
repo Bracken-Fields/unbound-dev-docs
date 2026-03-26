@@ -91,6 +91,12 @@ h3 { font-size: 1.2rem;  font-weight: 700; }
 
 .navbar__brand { gap: 10px; }
 
+.navbar__logo img {
+  object-fit: contain;
+  width: auto !important;
+  height: 32px !important;
+}
+
 .navbar__link {
   font-weight: 500;
   font-size: 0.9rem;
