@@ -3,6 +3,9 @@ id: video
 title: Video
 ---
 
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
 # Video
 
 `api.video` — Create and manage video meeting rooms, participants, chat, recording bots, analytics, and user settings.
@@ -14,6 +17,9 @@ title: Video
 ### `video.createRoom(options)`
 
 Create a new video meeting room.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const room = await api.video.createRoom({
@@ -34,7 +40,128 @@ const room = await api.video.createRoom({
     enableChat: true,
     engagementSessionId: 'eng-abc123',
 });
+```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    name: "Team Standup",
+    password: "secret123",
+    startTime: "2024-06-01T14:00:00Z",
+    endTime: "2024-06-01T15:00:00Z",
+    duration: 60,
+    durationUnit: "minutes",
+    timezone: "America/New_York",
+    waitingRoom: true,
+    hosts: ["host@yourcompany.com"],
+    participants: ["alice@example.com", "bob@example.com"],
+    startCameraMuted: false,
+    startCameraMutedAfter: 10,
+    startMicrophoneMuted: true,
+    startMicrophoneMutedAfter: 5,
+    enableChat: true,
+    engagementSessionId: "eng-abc123"
+  })
+});
+const room = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "name" => "Team Standup",
+    "password" => "secret123",
+    "startTime" => "2024-06-01T14:00:00Z",
+    "endTime" => "2024-06-01T15:00:00Z",
+    "duration" => 60,
+    "durationUnit" => "minutes",
+    "timezone" => "America/New_York",
+    "waitingRoom" => true,
+    "hosts" => ["host@yourcompany.com"],
+    "participants" => ["alice@example.com", "bob@example.com"],
+    "startCameraMuted" => false,
+    "startCameraMutedAfter" => 10,
+    "startMicrophoneMuted" => true,
+    "startMicrophoneMutedAfter" => 5,
+    "enableChat" => true,
+    "engagementSessionId" => "eng-abc123"
+]));
+$room = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/video/room",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "name": "Team Standup",
+        "password": "secret123",
+        "startTime": "2024-06-01T14:00:00Z",
+        "endTime": "2024-06-01T15:00:00Z",
+        "duration": 60,
+        "durationUnit": "minutes",
+        "timezone": "America/New_York",
+        "waitingRoom": True,
+        "hosts": ["host@yourcompany.com"],
+        "participants": ["alice@example.com", "bob@example.com"],
+        "startCameraMuted": False,
+        "startCameraMutedAfter": 10,
+        "startMicrophoneMuted": True,
+        "startMicrophoneMutedAfter": 5,
+        "enableChat": True,
+        "engagementSessionId": "eng-abc123"
+    }
+)
+room = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/video/room" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Team Standup",
+    "password": "secret123",
+    "startTime": "2024-06-01T14:00:00Z",
+    "endTime": "2024-06-01T15:00:00Z",
+    "duration": 60,
+    "durationUnit": "minutes",
+    "timezone": "America/New_York",
+    "waitingRoom": true,
+    "hosts": ["host@yourcompany.com"],
+    "participants": ["alice@example.com", "bob@example.com"],
+    "startCameraMuted": false,
+    "startCameraMutedAfter": 10,
+    "startMicrophoneMuted": true,
+    "startMicrophoneMutedAfter": 5,
+    "enableChat": true,
+    "engagementSessionId": "eng-abc123"
+  }'
+```
+
+</TabItem>
+</Tabs>
+
+```javascript
 // Response
 // {
 //   id: 'room-xyz789',
@@ -78,6 +205,9 @@ const room = await api.video.createRoom({
 
 Update room settings. Only fields you pass are changed.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 await api.video.updateRoom('room-xyz789', {
     name: 'New Name',
@@ -88,6 +218,85 @@ await api.video.updateRoom('room-xyz789', {
     endTime: '2024-06-01T16:00:00Z',
 });
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789", {
+  method: "PUT",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    name: "New Name",
+    waitingRoom: false,
+    startRecordingOn: true,
+    startTranscribingOn: true,
+    hosts: ["newhost@yourcompany.com"],
+    endTime: "2024-06-01T16:00:00Z"
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "name" => "New Name",
+    "waitingRoom" => false,
+    "startRecordingOn" => true,
+    "startTranscribingOn" => true,
+    "hosts" => ["newhost@yourcompany.com"],
+    "endTime" => "2024-06-01T16:00:00Z"
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.put(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "name": "New Name",
+        "waitingRoom": False,
+        "startRecordingOn": True,
+        "startTranscribingOn": True,
+        "hosts": ["newhost@yourcompany.com"],
+        "endTime": "2024-06-01T16:00:00Z"
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X PUT "https://{namespace}.api.unbound.cx/video/room/room-xyz789" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "New Name",
+    "waitingRoom": false,
+    "startRecordingOn": true,
+    "startTranscribingOn": true,
+    "hosts": ["newhost@yourcompany.com"],
+    "endTime": "2024-06-01T16:00:00Z"
+  }'
+```
+
+</TabItem>
+</Tabs>
 
 Updatable fields match `createRoom` parameters plus:
 
@@ -102,11 +311,62 @@ Updatable fields match `createRoom` parameters plus:
 
 Get room details, optionally including current participants.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 const room = await api.video.describe('room-xyz789', {
     includeParticipants: true,
 });
+```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789?includeParticipants=true", {
+  method: "GET",
+  headers: { "Authorization": "Bearer {token}" }
+});
+const room = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789?includeParticipants=true");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$room = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789",
+    headers={"Authorization": "Bearer {token}"},
+    params={"includeParticipants": "true"}
+)
+room = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X GET "https://{namespace}.api.unbound.cx/video/room/room-xyz789?includeParticipants=true" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
+```javascript
 // Response
 // {
 //   id: 'room-xyz789',
@@ -137,6 +397,9 @@ const room = await api.video.describe('room-xyz789', {
 
 List past and upcoming meetings.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 const result = await api.video.listMeetings({
     startDate: '2024-01-01',
@@ -148,6 +411,52 @@ const result = await api.video.listMeetings({
 // result.data = array of room objects
 // result.total = total count
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room?startDate=2024-01-01&endDate=2024-01-31&limit=50&offset=0", {
+  method: "GET",
+  headers: { "Authorization": "Bearer {token}" }
+});
+const result = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room?startDate=2024-01-01&endDate=2024-01-31&limit=50&offset=0");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$result = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/video/room",
+    headers={"Authorization": "Bearer {token}"},
+    params={"startDate": "2024-01-01", "endDate": "2024-01-31", "limit": 50, "offset": 0}
+)
+result = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X GET "https://{namespace}.api.unbound.cx/video/room?startDate=2024-01-01&endDate=2024-01-31&limit=50&offset=0" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -162,9 +471,58 @@ const result = await api.video.listMeetings({
 
 Permanently delete a room and all associated data.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 await api.video.deleteRoom('room-xyz789');
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789", {
+  method: "DELETE",
+  headers: { "Authorization": "Bearer {token}" }
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.delete(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789",
+    headers={"Authorization": "Bearer {token}"}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X DELETE "https://{namespace}.api.unbound.cx/video/room/room-xyz789" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
 
 :::caution
 This is irreversible. Chat history, recordings, and analytics will be lost.
@@ -176,9 +534,59 @@ This is irreversible. Chat history, recordings, and analytics will be lost.
 
 End an active meeting and disconnect all participants without deleting the room.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 await api.video.closeRoom('room-xyz789');
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/close", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}" }
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/close");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, "");
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/close",
+    headers={"Authorization": "Bearer {token}"}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/close" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
 
 Use `closeRoom` to end a live session gracefully. The room still exists and can be described or deleted later.
 
@@ -189,6 +597,9 @@ Use `closeRoom` to end a live session gracefully. The room still exists and can 
 ### `video.joinRoom(room, password?, email?, name?, firstName?, lastName?, tokenType?, token?)`
 
 Join a video room and receive a session credential.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 // Authenticated user join
@@ -214,6 +625,119 @@ const guestSession = await api.video.joinRoom(
 );
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Authenticated user join
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/join", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    password: "secret123",
+    email: "alice@example.com",
+    firstName: "Alice",
+    lastName: "Smith"
+  })
+});
+const session = await res.json();
+
+// Guest join with JWT token
+const guestRes = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/join", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "guest@example.com",
+    name: "Guest User",
+    tokenType: "jwt",
+    token: "existing-jwt-token"
+  })
+});
+const guestSession = await guestRes.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// Authenticated user join
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/join");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "password" => "secret123",
+    "email" => "alice@example.com",
+    "firstName" => "Alice",
+    "lastName" => "Smith"
+]));
+$session = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+# Authenticated user join
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/join",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "password": "secret123",
+        "email": "alice@example.com",
+        "firstName": "Alice",
+        "lastName": "Smith"
+    }
+)
+session = response.json()
+
+# Guest join with JWT token
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/join",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "email": "guest@example.com",
+        "name": "Guest User",
+        "tokenType": "jwt",
+        "token": "existing-jwt-token"
+    }
+)
+guest_session = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Authenticated user join
+curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/join" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "password": "secret123",
+    "email": "alice@example.com",
+    "firstName": "Alice",
+    "lastName": "Smith"
+  }'
+
+# Guest join with JWT token
+curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/join" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "guest@example.com",
+    "name": "Guest User",
+    "tokenType": "jwt",
+    "token": "existing-jwt-token"
+  }'
+```
+
+</TabItem>
+</Tabs>
+
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `room` | string | **Yes** | Room ID |
@@ -231,6 +755,9 @@ const guestSession = await api.video.joinRoom(
 
 Dial a PSTN phone number into a video room over SIP.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 await api.video.joinRoomSip({
     room: 'room-xyz789',
@@ -242,6 +769,85 @@ await api.video.joinRoomSip({
     meetingJoinType: 'outboundApi',     // 'outboundApi' | 'inbound'
 });
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/join/sip", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    password: "secret123",
+    phoneNumber: "+13175551234",
+    voiceChannelId: "vc-abc123",
+    serverId: "sip-server-1",
+    engagementSessionId: "eng-abc123",
+    meetingJoinType: "outboundApi"
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/join/sip");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "password" => "secret123",
+    "phoneNumber" => "+13175551234",
+    "voiceChannelId" => "vc-abc123",
+    "serverId" => "sip-server-1",
+    "engagementSessionId" => "eng-abc123",
+    "meetingJoinType" => "outboundApi"
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/join/sip",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "password": "secret123",
+        "phoneNumber": "+13175551234",
+        "voiceChannelId": "vc-abc123",
+        "serverId": "sip-server-1",
+        "engagementSessionId": "eng-abc123",
+        "meetingJoinType": "outboundApi"
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/join/sip" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "password": "secret123",
+    "phoneNumber": "+13175551234",
+    "voiceChannelId": "vc-abc123",
+    "serverId": "sip-server-1",
+    "engagementSessionId": "eng-abc123",
+    "meetingJoinType": "outboundApi"
+  }'
+```
+
+</TabItem>
+</Tabs>
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -259,6 +865,9 @@ await api.video.joinRoomSip({
 
 Validate a guest token before attempting to join a password-protected room.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 const result = await api.video.validateGuestToken('room-xyz789', 'guest-token-abc');
 
@@ -266,6 +875,61 @@ const result = await api.video.validateGuestToken('room-xyz789', 'guest-token-ab
 // { valid: true, roomId: 'room-xyz789', ... }
 // or throws if token is invalid/expired
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/validate-token", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    token: "guest-token-abc"
+  })
+});
+const result = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/validate-token");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "token" => "guest-token-abc"
+]));
+$result = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/validate-token",
+    headers={"Authorization": "Bearer {token}"},
+    json={"token": "guest-token-abc"}
+)
+result = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/validate-token" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"token": "guest-token-abc"}'
+```
+
+</TabItem>
+</Tabs>
 
 Useful for pre-flight checks in custom embed flows before calling `joinRoom`.
 
@@ -275,10 +939,60 @@ Useful for pre-flight checks in custom embed flows before calling `joinRoom`.
 
 Clear the current video session token (cookie-based auth).
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 await api.video.clearToken();
 // Revokes the current video session credential
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/video/token/clear", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}" }
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/token/clear");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, "");
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/video/token/clear",
+    headers={"Authorization": "Bearer {token}"}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/video/token/clear" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
 
 Call this on logout or when switching users in an embedded video context.
 
@@ -289,6 +1003,9 @@ Call this on logout or when switching users in an embedded video context.
 ### `video.mute(roomId, participantId, mediaType, isMute, noDevice?, streamCreation?)`
 
 Mute or unmute a participant's camera or microphone.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 // Mute a participant's microphone
@@ -303,6 +1020,91 @@ await api.video.mute('room-xyz789', 'p-abc123', 'camera', true, true);
 // Mute during stream creation
 await api.video.mute('room-xyz789', 'p-abc123', 'microphone', true, false, true);
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Mute a participant's microphone
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant/p-abc123/mute", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    mediaType: "microphone",
+    isMute: true
+  })
+});
+const data = await res.json();
+
+// Unmute participant's camera
+await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant/p-abc123/mute", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    mediaType: "camera",
+    isMute: false
+  })
+});
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// Mute a participant's microphone
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant/p-abc123/mute");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "mediaType" => "microphone",
+    "isMute" => true
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+# Mute a participant's microphone
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant/p-abc123/mute",
+    headers={"Authorization": "Bearer {token}"},
+    json={"mediaType": "microphone", "isMute": True}
+)
+data = response.json()
+
+# Unmute participant's camera
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant/p-abc123/mute",
+    headers={"Authorization": "Bearer {token}"},
+    json={"mediaType": "camera", "isMute": False}
+)
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Mute a participant's microphone
+curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant/p-abc123/mute" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"mediaType": "microphone", "isMute": true}'
+
+# Unmute participant's camera
+curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant/p-abc123/mute" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"mediaType": "camera", "isMute": false}'
+```
+
+</TabItem>
+</Tabs>
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -319,6 +1121,9 @@ await api.video.mute('room-xyz789', 'p-abc123', 'microphone', true, false, true)
 
 Update a participant's role or properties.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 // Promote to host
 await api.video.updateParticipant('room-xyz789', 'p-abc123', {
@@ -331,11 +1136,70 @@ await api.video.updateParticipant('room-xyz789', 'p-abc123', {
 });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Promote to host
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant/p-abc123", {
+  method: "PUT",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({ role: "host" })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// Promote to host
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant/p-abc123");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(["role" => "host"]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+# Promote to host
+response = requests.put(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant/p-abc123",
+    headers={"Authorization": "Bearer {token}"},
+    json={"role": "host"}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Promote to host
+curl -X PUT "https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant/p-abc123" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"role": "host"}'
+```
+
+</TabItem>
+</Tabs>
+
 ---
 
 ### `video.addParticipant(roomId, participant)`
 
 Add a participant to an existing room (invite to join).
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 await api.video.addParticipant('room-xyz789', {
@@ -345,15 +1209,131 @@ await api.video.addParticipant('room-xyz789', {
 });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "newperson@example.com",
+    role: "participant",
+    name: "Bob Jones"
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "email" => "newperson@example.com",
+    "role" => "participant",
+    "name" => "Bob Jones"
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "email": "newperson@example.com",
+        "role": "participant",
+        "name": "Bob Jones"
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "newperson@example.com",
+    "role": "participant",
+    "name": "Bob Jones"
+  }'
+```
+
+</TabItem>
+</Tabs>
+
 ---
 
 ### `video.removeParticipant(roomId, participantId)`
 
 Forcibly remove (kick) a participant from an active room.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 await api.video.removeParticipant('room-xyz789', 'p-abc123');
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant/p-abc123", {
+  method: "DELETE",
+  headers: { "Authorization": "Bearer {token}" }
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant/p-abc123");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.delete(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant/p-abc123",
+    headers={"Authorization": "Bearer {token}"}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X DELETE "https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant/p-abc123" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
 
 ---
 
@@ -361,9 +1341,59 @@ await api.video.removeParticipant('room-xyz789', 'p-abc123');
 
 Leave the current room as the authenticated user.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 await api.video.leaveRoom('room-xyz789');
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/leave", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}" }
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/leave");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, "");
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/leave",
+    headers={"Authorization": "Bearer {token}"}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/leave" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
 
 ---
 
@@ -372,6 +1402,9 @@ await api.video.leaveRoom('room-xyz789');
 ### `video.updateRoomBot(roomId, options)`
 
 Control the recording/transcription bot in an active room.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 // Start recording and transcription
@@ -386,6 +1419,68 @@ await api.video.updateRoomBot('room-xyz789', {
     isTranscribing: true,
 });
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Start recording and transcription
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/bot", {
+  method: "PUT",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    isRecording: true,
+    isTranscribing: true
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// Start recording and transcription
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/bot");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "isRecording" => true,
+    "isTranscribing" => true
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+# Start recording and transcription
+response = requests.put(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/bot",
+    headers={"Authorization": "Bearer {token}"},
+    json={"isRecording": True, "isTranscribing": True}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Start recording and transcription
+curl -X PUT "https://{namespace}.api.unbound.cx/video/room/room-xyz789/bot" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"isRecording": true, "isTranscribing": true}'
+```
+
+</TabItem>
+</Tabs>
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -405,6 +1500,9 @@ You can also set `startRecordingOn` and `startTranscribingOn` on the room itself
 
 Retrieve quality and engagement analytics for a completed or active meeting.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 const analytics = await api.video.getMeetingAnalytics('room-xyz789', {
     startTime: '2024-06-01T14:00:00Z',
@@ -413,7 +1511,75 @@ const analytics = await api.video.getMeetingAnalytics('room-xyz789', {
     granularity: '1m',            // time bucket size
     timezone: 'America/New_York',
 });
+```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const params = new URLSearchParams({
+  startTime: "2024-06-01T14:00:00Z",
+  endTime: "2024-06-01T15:00:00Z",
+  participantId: "p-abc123",
+  granularity: "1m",
+  timezone: "America/New_York"
+});
+const res = await fetch(`https://{namespace}.api.unbound.cx/video/room/room-xyz789/analytics?${params}`, {
+  method: "GET",
+  headers: { "Authorization": "Bearer {token}" }
+});
+const analytics = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$query = http_build_query([
+    "startTime" => "2024-06-01T14:00:00Z",
+    "endTime" => "2024-06-01T15:00:00Z",
+    "participantId" => "p-abc123",
+    "granularity" => "1m",
+    "timezone" => "America/New_York"
+]);
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/analytics?{$query}");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$analytics = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/analytics",
+    headers={"Authorization": "Bearer {token}"},
+    params={
+        "startTime": "2024-06-01T14:00:00Z",
+        "endTime": "2024-06-01T15:00:00Z",
+        "participantId": "p-abc123",
+        "granularity": "1m",
+        "timezone": "America/New_York"
+    }
+)
+analytics = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X GET "https://{namespace}.api.unbound.cx/video/room/room-xyz789/analytics?startTime=2024-06-01T14:00:00Z&endTime=2024-06-01T15:00:00Z&participantId=p-abc123&granularity=1m&timezone=America/New_York" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
+```javascript
 // Response shape
 // {
 //   roomId: 'room-xyz789',
@@ -456,6 +1622,9 @@ const analytics = await api.video.getMeetingAnalytics('room-xyz789', {
 
 Report client-side quality stats from a participant's browser or native client.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 await api.video.logStats('room-xyz789', {
     participantId: 'p-abc123',
@@ -469,6 +1638,94 @@ await api.video.logStats('room-xyz789', {
 });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/stats", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    participantId: "p-abc123",
+    timestamp: new Date().toISOString(),
+    videoResolution: { width: 1280, height: 720 },
+    frameRate: 30,
+    bitrate: 450000,
+    packetLoss: 0.002,
+    jitter: 5,
+    rtt: 42
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/stats");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "participantId" => "p-abc123",
+    "timestamp" => date("c"),
+    "videoResolution" => ["width" => 1280, "height" => 720],
+    "frameRate" => 30,
+    "bitrate" => 450000,
+    "packetLoss" => 0.002,
+    "jitter" => 5,
+    "rtt" => 42
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+from datetime import datetime, timezone
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/stats",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "participantId": "p-abc123",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "videoResolution": {"width": 1280, "height": 720},
+        "frameRate": 30,
+        "bitrate": 450000,
+        "packetLoss": 0.002,
+        "jitter": 5,
+        "rtt": 42
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/stats" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "participantId": "p-abc123",
+    "timestamp": "2024-06-01T14:30:00Z",
+    "videoResolution": {"width": 1280, "height": 720},
+    "frameRate": 30,
+    "bitrate": 450000,
+    "packetLoss": 0.002,
+    "jitter": 5,
+    "rtt": 42
+  }'
+```
+
+</TabItem>
+</Tabs>
+
 :::info
 This is typically called by the Unbound video client SDK automatically. Use it in custom integrations to feed quality telemetry for analytics.
 :::
@@ -481,6 +1738,9 @@ This is typically called by the Unbound video client SDK automatically. Use it i
 
 Dial a PSTN number from inside an active meeting (bring external caller in).
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 await api.video.placeCall(
     'room-xyz789',
@@ -489,6 +1749,69 @@ await api.video.placeCall(
 );
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/call", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    phoneNumber: "+13175551234",
+    callerIdNumber: "+18005550001"
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/call");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "phoneNumber" => "+13175551234",
+    "callerIdNumber" => "+18005550001"
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/call",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "phoneNumber": "+13175551234",
+        "callerIdNumber": "+18005550001"
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/call" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNumber": "+13175551234",
+    "callerIdNumber": "+18005550001"
+  }'
+```
+
+</TabItem>
+</Tabs>
+
 ---
 
 ## In-Meeting Chat
@@ -496,6 +1819,9 @@ await api.video.placeCall(
 ### `video.postChatMessage(roomId, content, storageId?)`
 
 Post a message to the room chat. Content uses TipTap JSON format.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 // Simple text message
@@ -526,11 +1852,113 @@ await api.video.postChatMessage('room-xyz789', [
 ], 'storage-id-abc123');
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Simple text message
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    content: [
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: "Hello everyone!" }]
+      }
+    ]
+  })
+});
+const data = await res.json();
+
+// With file attachment
+await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    content: [
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: "See attached agenda." }]
+      }
+    ],
+    storageId: "storage-id-abc123"
+  })
+});
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// Simple text message
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "content" => [
+        [
+            "type" => "paragraph",
+            "content" => [["type" => "text", "text" => "Hello everyone!"]]
+        ]
+    ]
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+# Simple text message
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "content": [
+            {
+                "type": "paragraph",
+                "content": [{"type": "text", "text": "Hello everyone!"}]
+            }
+        ]
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Simple text message
+curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": [
+      {
+        "type": "paragraph",
+        "content": [{"type": "text", "text": "Hello everyone!"}]
+      }
+    ]
+  }'
+```
+
+</TabItem>
+</Tabs>
+
 ---
 
 ### `video.getChatMessages(roomId, options?)`
 
 Retrieve chat messages with cursor-based pagination.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 // First page
@@ -546,7 +1974,82 @@ const page2 = await api.video.getChatMessages('room-xyz789', {
     orderByDirection: 'DESC',
     nextId: page1.nextId,
 });
+```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// First page
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat?limit=50&orderByDirection=DESC&expandDetails=true", {
+  method: "GET",
+  headers: { "Authorization": "Bearer {token}" }
+});
+const page1 = await res.json();
+
+// Next page
+const res2 = await fetch(`https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat?limit=50&orderByDirection=DESC&nextId=${page1.nextId}`, {
+  method: "GET",
+  headers: { "Authorization": "Bearer {token}" }
+});
+const page2 = await res2.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// First page
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat?limit=50&orderByDirection=DESC&expandDetails=true");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$page1 = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+// Next page
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat?limit=50&orderByDirection=DESC&nextId=" . $page1["nextId"]);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$page2 = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+# First page
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat",
+    headers={"Authorization": "Bearer {token}"},
+    params={"limit": 50, "orderByDirection": "DESC", "expandDetails": "true"}
+)
+page1 = response.json()
+
+# Next page
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat",
+    headers={"Authorization": "Bearer {token}"},
+    params={"limit": 50, "orderByDirection": "DESC", "nextId": page1["nextId"]}
+)
+page2 = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# First page
+curl -X GET "https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat?limit=50&orderByDirection=DESC&expandDetails=true" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
+```javascript
 // Response shape
 // {
 //   data: [
@@ -583,6 +2086,9 @@ const page2 = await api.video.getChatMessages('room-xyz789', {
 
 Edit a previously sent message. Only the original sender can edit.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 await api.video.editChatMessage('room-xyz789', 'msg-abc123', [
     {
@@ -592,15 +2098,143 @@ await api.video.editChatMessage('room-xyz789', 'msg-abc123', [
 ]);
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat/msg-abc123", {
+  method: "PUT",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    content: [
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: "Corrected message text." }]
+      }
+    ]
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat/msg-abc123");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "content" => [
+        [
+            "type" => "paragraph",
+            "content" => [["type" => "text", "text" => "Corrected message text."]]
+        ]
+    ]
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.put(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat/msg-abc123",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "content": [
+            {
+                "type": "paragraph",
+                "content": [{"type": "text", "text": "Corrected message text."}]
+            }
+        ]
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X PUT "https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat/msg-abc123" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": [
+      {
+        "type": "paragraph",
+        "content": [{"type": "text", "text": "Corrected message text."}]
+      }
+    ]
+  }'
+```
+
+</TabItem>
+</Tabs>
+
 ---
 
 ### `video.deleteChatMessage(roomId, messageId)`
 
 Delete a chat message. Hosts can delete any message; participants can only delete their own.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 await api.video.deleteChatMessage('room-xyz789', 'msg-abc123');
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat/msg-abc123", {
+  method: "DELETE",
+  headers: { "Authorization": "Bearer {token}" }
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat/msg-abc123");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.delete(
+    "https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat/msg-abc123",
+    headers={"Authorization": "Bearer {token}"}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X DELETE "https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat/msg-abc123" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
 
 ---
 
@@ -609,6 +2243,9 @@ await api.video.deleteChatMessage('room-xyz789', 'msg-abc123');
 ### `video.submitSurvey(options)`
 
 Submit a quality survey after a meeting ends.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 await api.video.submitSurvey({
@@ -620,6 +2257,85 @@ await api.video.submitSurvey({
     feedback: 'Great call, very clear audio.',
 });
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/video/survey", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    videoRoomId: "room-xyz789",
+    participantId: "p-abc123",
+    email: "alice@example.com",
+    videoQuality: 4,
+    audioQuality: 5,
+    feedback: "Great call, very clear audio."
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/survey");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "videoRoomId" => "room-xyz789",
+    "participantId" => "p-abc123",
+    "email" => "alice@example.com",
+    "videoQuality" => 4,
+    "audioQuality" => 5,
+    "feedback" => "Great call, very clear audio."
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/video/survey",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "videoRoomId": "room-xyz789",
+        "participantId": "p-abc123",
+        "email": "alice@example.com",
+        "videoQuality": 4,
+        "audioQuality": 5,
+        "feedback": "Great call, very clear audio."
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/video/survey" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "videoRoomId": "room-xyz789",
+    "participantId": "p-abc123",
+    "email": "alice@example.com",
+    "videoQuality": 4,
+    "audioQuality": 5,
+    "feedback": "Great call, very clear audio."
+  }'
+```
+
+</TabItem>
+</Tabs>
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -637,6 +2353,9 @@ await api.video.submitSurvey({
 Apply per-user defaults so every new room they create inherits these settings.
 
 ### `video.createUserSettings(settings)` / `video.updateUserSettings(settings)`
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 // Set defaults for the current user
@@ -668,6 +2387,148 @@ await api.video.createUserSettings({
 });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Set defaults for the current user
+const res = await fetch("https://{namespace}.api.unbound.cx/video/user-settings", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    waitingRoom: true,
+    enableChat: true,
+    startMicrophoneMuted: true,
+    startMicrophoneMutedAfter: 5,
+    startCameraMuted: false,
+    startCameraMutedAfter: 10,
+    maxVideoResolution: 1080,
+    startRecordingOn: false,
+    startTranscribingOn: true,
+    endMeetingWithoutHostTimeLimit: 300,
+    hosts: ["always-a-host@company.com"]
+  })
+});
+const data = await res.json();
+
+// Update specific fields
+await fetch("https://{namespace}.api.unbound.cx/video/user-settings", {
+  method: "PUT",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    maxVideoResolution: 720,
+    startTranscribingOn: false
+  })
+});
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// Set defaults for the current user
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/user-settings");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "waitingRoom" => true,
+    "enableChat" => true,
+    "startMicrophoneMuted" => true,
+    "startMicrophoneMutedAfter" => 5,
+    "startCameraMuted" => false,
+    "startCameraMutedAfter" => 10,
+    "maxVideoResolution" => 1080,
+    "startRecordingOn" => false,
+    "startTranscribingOn" => true,
+    "endMeetingWithoutHostTimeLimit" => 300,
+    "hosts" => ["always-a-host@company.com"]
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+// Update specific fields
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/user-settings");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "maxVideoResolution" => 720,
+    "startTranscribingOn" => false
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+# Set defaults for the current user
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/video/user-settings",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "waitingRoom": True,
+        "enableChat": True,
+        "startMicrophoneMuted": True,
+        "startMicrophoneMutedAfter": 5,
+        "startCameraMuted": False,
+        "startCameraMutedAfter": 10,
+        "maxVideoResolution": 1080,
+        "startRecordingOn": False,
+        "startTranscribingOn": True,
+        "endMeetingWithoutHostTimeLimit": 300,
+        "hosts": ["always-a-host@company.com"]
+    }
+)
+data = response.json()
+
+# Update specific fields
+response = requests.put(
+    "https://{namespace}.api.unbound.cx/video/user-settings",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "maxVideoResolution": 720,
+        "startTranscribingOn": False
+    }
+)
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Set defaults for the current user
+curl -X POST "https://{namespace}.api.unbound.cx/video/user-settings" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "waitingRoom": true,
+    "enableChat": true,
+    "startMicrophoneMuted": true,
+    "startMicrophoneMutedAfter": 5,
+    "startCameraMuted": false,
+    "startCameraMutedAfter": 10,
+    "maxVideoResolution": 1080,
+    "startRecordingOn": false,
+    "startTranscribingOn": true,
+    "endMeetingWithoutHostTimeLimit": 300,
+    "hosts": ["always-a-host@company.com"]
+  }'
+
+# Update specific fields
+curl -X PUT "https://{namespace}.api.unbound.cx/video/user-settings" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"maxVideoResolution": 720, "startTranscribingOn": false}'
+```
+
+</TabItem>
+</Tabs>
+
 | Parameter | Type | Description |
 |---|---|---|
 | `userId` | string | Target user (omit for current user) |
@@ -686,6 +2547,9 @@ await api.video.createUserSettings({
 
 ### `video.getUserSettings(userId?)`
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 // Current user's settings
 const settings = await api.video.getUserSettings();
@@ -693,6 +2557,82 @@ const settings = await api.video.getUserSettings();
 // Another user's settings (admin)
 const adminSettings = await api.video.getUserSettings('user-abc123');
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Current user's settings
+const res = await fetch("https://{namespace}.api.unbound.cx/video/user-settings", {
+  method: "GET",
+  headers: { "Authorization": "Bearer {token}" }
+});
+const settings = await res.json();
+
+// Another user's settings (admin)
+const res2 = await fetch("https://{namespace}.api.unbound.cx/video/user-settings?userId=user-abc123", {
+  method: "GET",
+  headers: { "Authorization": "Bearer {token}" }
+});
+const adminSettings = await res2.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// Current user's settings
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/user-settings");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$settings = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+// Another user's settings (admin)
+$ch = curl_init("https://{namespace}.api.unbound.cx/video/user-settings?userId=user-abc123");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$adminSettings = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+# Current user's settings
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/video/user-settings",
+    headers={"Authorization": "Bearer {token}"}
+)
+settings = response.json()
+
+# Another user's settings (admin)
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/video/user-settings",
+    headers={"Authorization": "Bearer {token}"},
+    params={"userId": "user-abc123"}
+)
+admin_settings = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Current user's settings
+curl -X GET "https://{namespace}.api.unbound.cx/video/user-settings" \
+  -H "Authorization: Bearer {token}"
+
+# Another user's settings (admin)
+curl -X GET "https://{namespace}.api.unbound.cx/video/user-settings?userId=user-abc123" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
 
 ---
 

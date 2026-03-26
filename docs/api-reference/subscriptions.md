@@ -3,6 +3,9 @@ id: subscriptions
 title: Subscriptions
 ---
 
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
 # Subscriptions
 
 `api.subscriptions` — Real-time event subscriptions via WebSocket. Subscribe to platform events and react as they happen.
@@ -13,11 +16,18 @@ title: Subscriptions
 
 The subscriptions service uses Socket.io under the hood. In browser environments it uses WebSocket transport automatically. Pass `socketStore` to your SDK constructor for optimized performance in Svelte/browser apps.
 
+**Base URL:** `https://{namespace}.api.unbound.cx`
+
+**Authentication:** `Authorization: Bearer {token}`
+
 ---
 
 ## `subscriptions.socket.getConnection(sessionId?)`
 
 Get or create a WebSocket connection for subscriptions.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const connection = await api.subscriptions.socket.getConnection();
@@ -25,11 +35,60 @@ const connection = await api.subscriptions.socket.getConnection();
 // connection.endpoint → WebSocket endpoint
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/subscription/socket/connection", {
+  method: "GET",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" }
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/subscription/socket/connection");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/subscription/socket/connection",
+    headers={"Authorization": "Bearer {token}"}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X GET "https://{namespace}.api.unbound.cx/subscription/socket/connection" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json"
+```
+
+</TabItem>
+</Tabs>
+
 ---
 
 ## `subscriptions.socket.create(sessionId, subscriptionParams)`
 
 Subscribe to a specific event or data stream.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const sub = await api.subscriptions.socket.create(sessionId, {
@@ -40,6 +99,85 @@ const sub = await api.subscriptions.socket.create(sessionId, {
     },
 });
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/subscription/socket", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    sessionId: "{sessionId}",
+    channel: "engagements",
+    filters: {
+      queueId: "queue-id",
+      status: ["new", "working"]
+    }
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/subscription/socket");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "sessionId" => "{sessionId}",
+    "channel" => "engagements",
+    "filters" => [
+        "queueId" => "queue-id",
+        "status" => ["new", "working"]
+    ]
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/subscription/socket",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "sessionId": "{sessionId}",
+        "channel": "engagements",
+        "filters": {
+            "queueId": "queue-id",
+            "status": ["new", "working"]
+        }
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/subscription/socket" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionId": "{sessionId}",
+    "channel": "engagements",
+    "filters": {
+      "queueId": "queue-id",
+      "status": ["new", "working"]
+    }
+  }'
+```
+
+</TabItem>
+</Tabs>
 
 ### Common Subscription Channels
 
@@ -97,9 +235,59 @@ socket.on('message:received', (data) => {
 
 Unsubscribe from a specific subscription.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 await api.subscriptions.socket.delete(subscriptionId, sessionId);
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/subscription/socket/{subscriptionId}", {
+  method: "DELETE",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" }
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/subscription/socket/{subscriptionId}");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.delete(
+    "https://{namespace}.api.unbound.cx/subscription/socket/{subscriptionId}",
+    headers={"Authorization": "Bearer {token}"}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X DELETE "https://{namespace}.api.unbound.cx/subscription/socket/{subscriptionId}" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json"
+```
+
+</TabItem>
+</Tabs>
 
 ---
 

@@ -3,6 +3,9 @@ id: ai
 title: AI Services
 ---
 
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
 # AI Services
 
 `sdk.ai` — Generative chat, text-to-speech, real-time speech-to-text streaming, AI playbooks, and data extraction.
@@ -14,6 +17,9 @@ title: AI Services
 ### `ai.generative.chat(options)`
 
 Send a conversation to a generative AI model and receive a response.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const response = await sdk.ai.generative.chat({
@@ -29,6 +35,96 @@ const response = await sdk.ai.generative.chat({
 
 console.log(response.choices[0].message.content);
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/chat", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    messages: [
+      { role: "system", content: "You are a helpful support agent." },
+      { role: "user", content: "What is your return policy?" }
+    ],
+    provider: "openai",
+    model: "gpt-4o",
+    temperature: 0.7,
+    subscriptionId: "sub_123"
+  })
+});
+const data = await res.json();
+console.log(data.choices[0].message.content);
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/chat");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "messages" => [
+        ["role" => "system", "content" => "You are a helpful support agent."],
+        ["role" => "user", "content" => "What is your return policy?"]
+    ],
+    "provider" => "openai",
+    "model" => "gpt-4o",
+    "temperature" => 0.7,
+    "subscriptionId" => "sub_123"
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+echo $response["choices"][0]["message"]["content"];
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/chat",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "messages": [
+            {"role": "system", "content": "You are a helpful support agent."},
+            {"role": "user", "content": "What is your return policy?"}
+        ],
+        "provider": "openai",
+        "model": "gpt-4o",
+        "temperature": 0.7,
+        "subscriptionId": "sub_123"
+    }
+)
+data = response.json()
+print(data["choices"][0]["message"]["content"])
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/chat" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {"role": "system", "content": "You are a helpful support agent."},
+      {"role": "user", "content": "What is your return policy?"}
+    ],
+    "provider": "openai",
+    "model": "gpt-4o",
+    "temperature": 0.7,
+    "subscriptionId": "sub_123"
+  }'
+```
+
+</TabItem>
+</Tabs>
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
@@ -100,6 +196,9 @@ while (true) {
 
 Run a playbook-driven generative chat. The playbook defines the system prompt, model, and behavior.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 const response = await sdk.ai.generative.playbook({
     playbookId: 'pb_support_triage',
@@ -109,6 +208,81 @@ const response = await sdk.ai.generative.playbook({
     sessionId: 'session_abc123',  // maintain conversation state
 });
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/playbook", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    playbookId: "pb_support_triage",
+    messages: [
+      { role: "user", content: "My internet is down." }
+    ],
+    sessionId: "session_abc123"
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "playbookId" => "pb_support_triage",
+    "messages" => [
+        ["role" => "user", "content" => "My internet is down."]
+    ],
+    "sessionId" => "session_abc123"
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/playbook",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "playbookId": "pb_support_triage",
+        "messages": [
+            {"role": "user", "content": "My internet is down."}
+        ],
+        "sessionId": "session_abc123"
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/playbook" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "playbookId": "pb_support_triage",
+    "messages": [
+      {"role": "user", "content": "My internet is down."}
+    ],
+    "sessionId": "session_abc123"
+  }'
+```
+
+</TabItem>
+</Tabs>
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -130,6 +304,9 @@ const response = await sdk.ai.generative.playbook({
 
 Synthesize text to audio using Google Cloud TTS.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 const audio = await sdk.ai.tts.create({
     text: 'Hello, thank you for calling Acme Support.',
@@ -146,6 +323,93 @@ const audio = await sdk.ai.tts.create({
 // audio.url — hosted URL (if createAccessKey: true)
 // audio.storageId — ID of stored audio file
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/tts", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    text: "Hello, thank you for calling Acme Support.",
+    voice: "en-US-Neural2-C",
+    languageCode: "en-US",
+    audioEncoding: "MP3",
+    speakingRate: 1.0,
+    pitch: 0,
+    volumeGainDb: 0,
+    createAccessKey: true
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/tts");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "text" => "Hello, thank you for calling Acme Support.",
+    "voice" => "en-US-Neural2-C",
+    "languageCode" => "en-US",
+    "audioEncoding" => "MP3",
+    "speakingRate" => 1.0,
+    "pitch" => 0,
+    "volumeGainDb" => 0,
+    "createAccessKey" => true
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/tts",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "text": "Hello, thank you for calling Acme Support.",
+        "voice": "en-US-Neural2-C",
+        "languageCode": "en-US",
+        "audioEncoding": "MP3",
+        "speakingRate": 1.0,
+        "pitch": 0,
+        "volumeGainDb": 0,
+        "createAccessKey": True
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/tts" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Hello, thank you for calling Acme Support.",
+    "voice": "en-US-Neural2-C",
+    "languageCode": "en-US",
+    "audioEncoding": "MP3",
+    "speakingRate": 1.0,
+    "pitch": 0,
+    "volumeGainDb": 0,
+    "createAccessKey": true
+  }'
+```
+
+</TabItem>
+</Tabs>
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
@@ -177,6 +441,9 @@ const audio = await sdk.ai.tts.create({
 
 List all available TTS voices.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 const voices = await sdk.ai.tts.list();
 // voices.voices → [{ name: 'en-US-Neural2-A', gender: 'FEMALE', languageCodes: ['en-US'], ... }, ...]
@@ -185,11 +452,58 @@ const voices = await sdk.ai.tts.list();
 // voices.supportedLanguages → ['en-US', 'es-MX', 'fr-FR', ...]
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/tts/voices", {
+  headers: { "Authorization": "Bearer {token}" }
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/tts/voices");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/ai/tts/voices",
+    headers={"Authorization": "Bearer {token}"}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl "https://{namespace}.api.unbound.cx/ai/tts/voices" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
 ---
 
 ## Speech-to-Text
 
 ### `ai.stt.create(options)` — File/Batch Transcription
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const transcription = await sdk.ai.stt.create({
@@ -209,6 +523,117 @@ const transcription = await sdk.ai.stt.create({
     direction: 'inbound',
 });
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/stt", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    sourceType: "storage",
+    storageId: "store_audio_xyz",
+    engine: "google",
+    languageCode: "en-US",
+    metadata: {
+      diarizationEnabled: true,
+      speakerCount: 2,
+      enableAutomaticPunctuation: true
+    },
+    engagementSessionId: "eng_123",
+    playbookId: "pb_456",
+    name: "Support Call 2024-01-15",
+    role: "agent",
+    direction: "inbound"
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/stt");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "sourceType" => "storage",
+    "storageId" => "store_audio_xyz",
+    "engine" => "google",
+    "languageCode" => "en-US",
+    "metadata" => [
+        "diarizationEnabled" => true,
+        "speakerCount" => 2,
+        "enableAutomaticPunctuation" => true
+    ],
+    "engagementSessionId" => "eng_123",
+    "playbookId" => "pb_456",
+    "name" => "Support Call 2024-01-15",
+    "role" => "agent",
+    "direction" => "inbound"
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/stt",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "sourceType": "storage",
+        "storageId": "store_audio_xyz",
+        "engine": "google",
+        "languageCode": "en-US",
+        "metadata": {
+            "diarizationEnabled": True,
+            "speakerCount": 2,
+            "enableAutomaticPunctuation": True
+        },
+        "engagementSessionId": "eng_123",
+        "playbookId": "pb_456",
+        "name": "Support Call 2024-01-15",
+        "role": "agent",
+        "direction": "inbound"
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/stt" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sourceType": "storage",
+    "storageId": "store_audio_xyz",
+    "engine": "google",
+    "languageCode": "en-US",
+    "metadata": {
+      "diarizationEnabled": true,
+      "speakerCount": 2,
+      "enableAutomaticPunctuation": true
+    },
+    "engagementSessionId": "eng_123",
+    "playbookId": "pb_456",
+    "name": "Support Call 2024-01-15",
+    "role": "agent",
+    "direction": "inbound"
+  }'
+```
+
+</TabItem>
+</Tabs>
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -263,6 +688,9 @@ const transcription = await sdk.ai.stt.create({
 STT streaming requires a Node.js environment. Browser-based streaming is not supported.
 :::
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 const stream = await sdk.ai.stt.stream({
     engine: 'google',
@@ -299,6 +727,119 @@ stream.on('close', () => console.log('Stream ended. Session ID:', stream.session
 stream.write(audioBuffer);
 stream.end();  // Finalize when done
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const WebSocket = require("ws");
+const ws = new WebSocket("wss://{namespace}.api.unbound.cx/ai/stt/stream", {
+  headers: { "Authorization": "Bearer {token}" }
+});
+
+ws.on("open", () => {
+  ws.send(JSON.stringify({
+    engine: "google",
+    model: "phone_call",
+    languageCode: "en-US",
+    encoding: "LINEAR16",
+    sampleRateHertz: 8000,
+    audioChannelCount: 1,
+    interimResults: true,
+    enableAutomaticPunctuation: true,
+    diarizationEnabled: false,
+    vadEnabled: false,
+    generateTranscriptSummary: true,
+    generateSentiment: true,
+    engagementSessionId: "eng_123"
+  }));
+  // Then send binary audio frames via ws.send(audioBuffer)
+});
+
+ws.on("message", (data) => {
+  const msg = JSON.parse(data);
+  console.log(msg);
+});
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// PHP WebSocket requires a library such as textalk/websocket
+use WebSocket\Client;
+
+$client = new Client("wss://{namespace}.api.unbound.cx/ai/stt/stream", [
+    "headers" => ["Authorization" => "Bearer {token}"]
+]);
+
+$client->text(json_encode([
+    "engine" => "google",
+    "model" => "phone_call",
+    "languageCode" => "en-US",
+    "encoding" => "LINEAR16",
+    "sampleRateHertz" => 8000,
+    "audioChannelCount" => 1,
+    "interimResults" => true,
+    "enableAutomaticPunctuation" => true,
+    "diarizationEnabled" => false,
+    "vadEnabled" => false,
+    "generateTranscriptSummary" => true,
+    "generateSentiment" => true,
+    "engagementSessionId" => "eng_123"
+]));
+// Then send binary audio frames via $client->binary($audioData)
+
+while ($msg = $client->receive()) {
+    echo $msg . "\n";
+}
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import websockets, asyncio, json
+
+async def stream_stt():
+    uri = "wss://{namespace}.api.unbound.cx/ai/stt/stream"
+    headers = {"Authorization": "Bearer {token}"}
+    async with websockets.connect(uri, extra_headers=headers) as ws:
+        await ws.send(json.dumps({
+            "engine": "google",
+            "model": "phone_call",
+            "languageCode": "en-US",
+            "encoding": "LINEAR16",
+            "sampleRateHertz": 8000,
+            "audioChannelCount": 1,
+            "interimResults": True,
+            "enableAutomaticPunctuation": True,
+            "diarizationEnabled": False,
+            "vadEnabled": False,
+            "generateTranscriptSummary": True,
+            "generateSentiment": True,
+            "engagementSessionId": "eng_123"
+        }))
+        # Send binary audio frames via await ws.send(audio_bytes)
+        async for message in ws:
+            print(json.loads(message))
+
+asyncio.run(stream_stt())
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# WebSocket-based endpoint — use a WebSocket client such as websocat
+websocat "wss://{namespace}.api.unbound.cx/ai/stt/stream" \
+  -H "Authorization: Bearer {token}" \
+  --text '{"engine":"google","model":"phone_call","languageCode":"en-US","encoding":"LINEAR16","sampleRateHertz":8000,"audioChannelCount":1,"interimResults":true,"enableAutomaticPunctuation":true,"generateTranscriptSummary":true,"generateSentiment":true,"engagementSessionId":"eng_123"}'
+# Then pipe binary audio data into the WebSocket connection
+```
+
+</TabItem>
+</Tabs>
 
 **Stream options:**
 
@@ -363,15 +904,66 @@ stream.end();  // Finalize when done
 
 ### `ai.stt.get(id, options?)` — Retrieve a Transcript
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 const transcript = await sdk.ai.stt.get('stt_abc123', {
     includeMessages: true,  // default: true
 });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/stt/stt_abc123?includeMessages=true", {
+  headers: { "Authorization": "Bearer {token}" }
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/stt/stt_abc123?includeMessages=true");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/ai/stt/stt_abc123",
+    headers={"Authorization": "Bearer {token}"},
+    params={"includeMessages": True}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl "https://{namespace}.api.unbound.cx/ai/stt/stt_abc123?includeMessages=true" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
 ---
 
 ### `ai.stt.list(filters?)` — List Transcriptions
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const results = await sdk.ai.stt.list({
@@ -387,11 +979,91 @@ const results = await sdk.ai.stt.list({
 });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const params = new URLSearchParams({
+  engagementSessionId: "eng_123",
+  status: "completed",
+  engine: "google",
+  sourceType: "storage",
+  playbookId: "pb_456",
+  startDate: "2024-01-01",
+  endDate: "2024-01-31",
+  limit: "50",
+  offset: "0"
+});
+const res = await fetch(`https://{namespace}.api.unbound.cx/ai/stt?${params}`, {
+  headers: { "Authorization": "Bearer {token}" }
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$query = http_build_query([
+    "engagementSessionId" => "eng_123",
+    "status" => "completed",
+    "engine" => "google",
+    "sourceType" => "storage",
+    "playbookId" => "pb_456",
+    "startDate" => "2024-01-01",
+    "endDate" => "2024-01-31",
+    "limit" => 50,
+    "offset" => 0
+]);
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/stt?" . $query);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/ai/stt",
+    headers={"Authorization": "Bearer {token}"},
+    params={
+        "engagementSessionId": "eng_123",
+        "status": "completed",
+        "engine": "google",
+        "sourceType": "storage",
+        "playbookId": "pb_456",
+        "startDate": "2024-01-01",
+        "endDate": "2024-01-31",
+        "limit": 50,
+        "offset": 0
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl "https://{namespace}.api.unbound.cx/ai/stt?engagementSessionId=eng_123&status=completed&engine=google&sourceType=storage&playbookId=pb_456&startDate=2024-01-01&endDate=2024-01-31&limit=50&offset=0" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
 ---
 
 ### `ai.stt.logMessage(sessionId, message)` — Log a Transcript Segment
 
 Manually log a message to a streaming session (for custom or external STT integrations).
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 await sdk.ai.stt.logMessage('stt_stream_abc', {
@@ -420,9 +1092,155 @@ await sdk.ai.stt.logMessage('stt_stream_abc', {
 });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/stt/stt_stream_abc/message", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    messageId: "msg_001",
+    timestamp: Date.now(),
+    text: "Hello, how can I help you today?",
+    role: "agent",
+    side: "send",
+    confidence: 0.98,
+    duration: 2.4,
+    languageCode: "en-US",
+    userId: "user_123",
+    sipCallId: "sip_abc",
+    bridgeId: "bridge_xyz",
+    sentiment: {
+      score: 15,
+      previousScore: 10,
+      delta: 5,
+      agentScore: 20,
+      customerScore: 10,
+      intensity: 0.4,
+      emotions: ["neutral", "friendly"],
+      trend: "improving",
+      source: "llm+acoustic"
+    }
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/stt/stt_stream_abc/message");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "messageId" => "msg_001",
+    "timestamp" => time() * 1000,
+    "text" => "Hello, how can I help you today?",
+    "role" => "agent",
+    "side" => "send",
+    "confidence" => 0.98,
+    "duration" => 2.4,
+    "languageCode" => "en-US",
+    "userId" => "user_123",
+    "sipCallId" => "sip_abc",
+    "bridgeId" => "bridge_xyz",
+    "sentiment" => [
+        "score" => 15,
+        "previousScore" => 10,
+        "delta" => 5,
+        "agentScore" => 20,
+        "customerScore" => 10,
+        "intensity" => 0.4,
+        "emotions" => ["neutral", "friendly"],
+        "trend" => "improving",
+        "source" => "llm+acoustic"
+    ]
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests, time
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/stt/stt_stream_abc/message",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "messageId": "msg_001",
+        "timestamp": int(time.time() * 1000),
+        "text": "Hello, how can I help you today?",
+        "role": "agent",
+        "side": "send",
+        "confidence": 0.98,
+        "duration": 2.4,
+        "languageCode": "en-US",
+        "userId": "user_123",
+        "sipCallId": "sip_abc",
+        "bridgeId": "bridge_xyz",
+        "sentiment": {
+            "score": 15,
+            "previousScore": 10,
+            "delta": 5,
+            "agentScore": 20,
+            "customerScore": 10,
+            "intensity": 0.4,
+            "emotions": ["neutral", "friendly"],
+            "trend": "improving",
+            "source": "llm+acoustic"
+        }
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/stt/stt_stream_abc/message" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messageId": "msg_001",
+    "timestamp": 1705339200000,
+    "text": "Hello, how can I help you today?",
+    "role": "agent",
+    "side": "send",
+    "confidence": 0.98,
+    "duration": 2.4,
+    "languageCode": "en-US",
+    "userId": "user_123",
+    "sipCallId": "sip_abc",
+    "bridgeId": "bridge_xyz",
+    "sentiment": {
+      "score": 15,
+      "previousScore": 10,
+      "delta": 5,
+      "agentScore": 20,
+      "customerScore": 10,
+      "intensity": 0.4,
+      "emotions": ["neutral", "friendly"],
+      "trend": "improving",
+      "source": "llm+acoustic"
+    }
+  }'
+```
+
+</TabItem>
+</Tabs>
+
 ---
 
 ### `ai.stt.complete(sessionId, options?)` — Finalize a Session
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 // Mark as successful
@@ -435,6 +1253,89 @@ await sdk.ai.stt.complete('stt_stream_abc', {
 });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Mark as successful
+await fetch("https://{namespace}.api.unbound.cx/ai/stt/stt_stream_abc/complete", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({ status: "completed" })
+});
+
+// Mark as failed
+await fetch("https://{namespace}.api.unbound.cx/ai/stt/stt_stream_abc/complete", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({ status: "failed", error: "WebSocket connection dropped unexpectedly" })
+});
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// Mark as successful
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/stt/stt_stream_abc/complete");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(["status" => "completed"]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+// Mark as failed
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/stt/stt_stream_abc/complete");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(["status" => "failed", "error" => "WebSocket connection dropped unexpectedly"]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+# Mark as successful
+requests.post(
+    "https://{namespace}.api.unbound.cx/ai/stt/stt_stream_abc/complete",
+    headers={"Authorization": "Bearer {token}"},
+    json={"status": "completed"}
+)
+
+# Mark as failed
+requests.post(
+    "https://{namespace}.api.unbound.cx/ai/stt/stt_stream_abc/complete",
+    headers={"Authorization": "Bearer {token}"},
+    json={"status": "failed", "error": "WebSocket connection dropped unexpectedly"}
+)
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Mark as successful
+curl -X POST "https://{namespace}.api.unbound.cx/ai/stt/stt_stream_abc/complete" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "completed"}'
+
+# Mark as failed
+curl -X POST "https://{namespace}.api.unbound.cx/ai/stt/stt_stream_abc/complete" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "failed", "error": "WebSocket connection dropped unexpectedly"}'
+```
+
+</TabItem>
+</Tabs>
+
 ---
 
 ## Data Extraction
@@ -442,6 +1343,9 @@ await sdk.ai.stt.complete('stt_stream_abc', {
 `sdk.ai.extract` — Extract and validate structured data from unstructured text using AI.
 
 ### Extract a Phone Number
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const result = await sdk.ai.extract.phone({
@@ -455,7 +1359,77 @@ const result = await sdk.ai.extract.phone({
 // result.metadata → { country: 'US', type: 'TOLL_FREE', nationalNumber: '8005551212' }
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/extract/phone", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    value: "Call me at eight hundred five five five twelve twelve",
+    country: "US",
+    format: "E164"
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/extract/phone");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "value" => "Call me at eight hundred five five five twelve twelve",
+    "country" => "US",
+    "format" => "E164"
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/extract/phone",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "value": "Call me at eight hundred five five five twelve twelve",
+        "country": "US",
+        "format": "E164"
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/extract/phone" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "value": "Call me at eight hundred five five five twelve twelve",
+    "country": "US",
+    "format": "E164"
+  }'
+```
+
+</TabItem>
+</Tabs>
+
 ### Extract an Email
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const result = await sdk.ai.extract.email({
@@ -466,7 +1440,61 @@ const result = await sdk.ai.extract.email({
 // result.metadata → { domain: 'example.com' }
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/extract/email", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({ value: "Reach me at jane at example dot com" })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/extract/email");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(["value" => "Reach me at jane at example dot com"]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/extract/email",
+    headers={"Authorization": "Bearer {token}"},
+    json={"value": "Reach me at jane at example dot com"}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/extract/email" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"value": "Reach me at jane at example dot com"}'
+```
+
+</TabItem>
+</Tabs>
+
 ### Extract an Address
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const result = await sdk.ai.extract.address({
@@ -478,7 +1506,70 @@ const result = await sdk.ai.extract.address({
 // result.metadata.components → { streetNumber: '123', route: 'Main St', ... }
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/extract/address", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    value: "123 Main Street, Springfield, IL 62701",
+    useAI: true
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/extract/address");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "value" => "123 Main Street, Springfield, IL 62701",
+    "useAI" => true
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/extract/address",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "value": "123 Main Street, Springfield, IL 62701",
+        "useAI": True
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/extract/address" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"value": "123 Main Street, Springfield, IL 62701", "useAI": true}'
+```
+
+</TabItem>
+</Tabs>
+
 ### Extract a Name
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const result = await sdk.ai.extract.personName({
@@ -491,7 +1582,61 @@ const result = await sdk.ai.extract.personName({
 // result.title → null
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/extract/person-name", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({ value: "My name is Jane Marie Smith", useAI: true })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/extract/person-name");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(["value" => "My name is Jane Marie Smith", "useAI" => true]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/extract/person-name",
+    headers={"Authorization": "Bearer {token}"},
+    json={"value": "My name is Jane Marie Smith", "useAI": True}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/extract/person-name" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"value": "My name is Jane Marie Smith", "useAI": true}'
+```
+
+</TabItem>
+</Tabs>
+
 ### Detect Yes/No from Natural Language
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const result = await sdk.ai.extract.correctIncorrect({
@@ -501,7 +1646,61 @@ const result = await sdk.ai.extract.correctIncorrect({
 // result.booleanValue → true
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/extract/correct-incorrect", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({ value: "Yeah that sounds right" })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/extract/correct-incorrect");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(["value" => "Yeah that sounds right"]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/extract/correct-incorrect",
+    headers={"Authorization": "Bearer {token}"},
+    json={"value": "Yeah that sounds right"}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/extract/correct-incorrect" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"value": "Yeah that sounds right"}'
+```
+
+</TabItem>
+</Tabs>
+
 ### Extract a Credit Card Number
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const result = await sdk.ai.extract.creditCard({
@@ -513,7 +1712,61 @@ const result = await sdk.ai.extract.creditCard({
 // result.metadata → { cardType: 'Visa', length: 16 }
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/extract/credit-card", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({ value: "4111 1111 1111 1111", maskOutput: true })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/extract/credit-card");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(["value" => "4111 1111 1111 1111", "maskOutput" => true]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/extract/credit-card",
+    headers={"Authorization": "Bearer {token}"},
+    json={"value": "4111 1111 1111 1111", "maskOutput": True}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/extract/credit-card" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"value": "4111 1111 1111 1111", "maskOutput": true}'
+```
+
+</TabItem>
+</Tabs>
+
 ### Extract an SSN
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const result = await sdk.ai.extract.ssn({
@@ -524,7 +1777,61 @@ const result = await sdk.ai.extract.ssn({
 // result.parsedValue → '*****6789'
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/extract/ssn", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({ value: "My social is 123-45-6789", maskOutput: true })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/extract/ssn");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(["value" => "My social is 123-45-6789", "maskOutput" => true]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/extract/ssn",
+    headers={"Authorization": "Bearer {token}"},
+    json={"value": "My social is 123-45-6789", "maskOutput": True}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/extract/ssn" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"value": "My social is 123-45-6789", "maskOutput": true}'
+```
+
+</TabItem>
+</Tabs>
+
 ### Extract a Phone Extension
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const result = await sdk.ai.extract.extension({
@@ -535,7 +1842,61 @@ const result = await sdk.ai.extract.extension({
 // result.parsedValue → '421'
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/extract/extension", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({ value: "extension four two one", minLength: 1, maxLength: 10 })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/extract/extension");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(["value" => "extension four two one", "minLength" => 1, "maxLength" => 10]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/extract/extension",
+    headers={"Authorization": "Bearer {token}"},
+    json={"value": "extension four two one", "minLength": 1, "maxLength": 10}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/extract/extension" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"value": "extension four two one", "minLength": 1, "maxLength": 10}'
+```
+
+</TabItem>
+</Tabs>
+
 ### Detect Intent
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const result = await sdk.ai.extract.intent({
@@ -553,7 +1914,101 @@ const result = await sdk.ai.extract.intent({
 // result.isValid → true
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/extract/intent", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    value: "I need help with my bill",
+    params: {
+      question: "What can I help you with today?",
+      validOptions: [
+        { value: "billing", label: "Billing" },
+        { value: "technical", label: "Technical Support" },
+        { value: "sales", label: "Sales" }
+      ]
+    }
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/extract/intent");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "value" => "I need help with my bill",
+    "params" => [
+        "question" => "What can I help you with today?",
+        "validOptions" => [
+            ["value" => "billing", "label" => "Billing"],
+            ["value" => "technical", "label" => "Technical Support"],
+            ["value" => "sales", "label" => "Sales"]
+        ]
+    ]
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/extract/intent",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "value": "I need help with my bill",
+        "params": {
+            "question": "What can I help you with today?",
+            "validOptions": [
+                {"value": "billing", "label": "Billing"},
+                {"value": "technical", "label": "Technical Support"},
+                {"value": "sales", "label": "Sales"}
+            ]
+        }
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/extract/intent" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "value": "I need help with my bill",
+    "params": {
+      "question": "What can I help you with today?",
+      "validOptions": [
+        {"value": "billing", "label": "Billing"},
+        {"value": "technical", "label": "Technical Support"},
+        {"value": "sales", "label": "Sales"}
+      ]
+    }
+  }'
+```
+
+</TabItem>
+</Tabs>
+
 ### Extract All Entities
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const result = await sdk.ai.extract.all({
@@ -568,7 +2023,77 @@ const result = await sdk.ai.extract.all({
 // ]
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/extract/all", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    value: "Call John Smith at 555-1234 or john@example.com",
+    types: ["phone", "email", "personName"],
+    question: "What is the caller contact information?"
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/extract/all");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "value" => "Call John Smith at 555-1234 or john@example.com",
+    "types" => ["phone", "email", "personName"],
+    "question" => "What is the caller contact information?"
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/extract/all",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "value": "Call John Smith at 555-1234 or john@example.com",
+        "types": ["phone", "email", "personName"],
+        "question": "What is the caller contact information?"
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/extract/all" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "value": "Call John Smith at 555-1234 or john@example.com",
+    "types": ["phone", "email", "personName"],
+    "question": "What is the caller contact information?"
+  }'
+```
+
+</TabItem>
+</Tabs>
+
 ### Custom Regex Extraction
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const result = await sdk.ai.extract.regex({
@@ -580,6 +2105,77 @@ const result = await sdk.ai.extract.regex({
 // result.parsedValue → 'AB-123456'
 // result.isValid → true
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/extract/regex", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    value: "Order number is AB-123456",
+    pattern: "[A-Z]{2}-\\d{6}",
+    flags: "g",
+    replaceNumbers: true
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/extract/regex");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "value" => "Order number is AB-123456",
+    "pattern" => "[A-Z]{2}-\\d{6}",
+    "flags" => "g",
+    "replaceNumbers" => true
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/extract/regex",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "value": "Order number is AB-123456",
+        "pattern": "[A-Z]{2}-\\d{6}",
+        "flags": "g",
+        "replaceNumbers": True
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/extract/regex" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "value": "Order number is AB-123456",
+    "pattern": "[A-Z]{2}-\\d{6}",
+    "flags": "g",
+    "replaceNumbers": true
+  }'
+```
+
+</TabItem>
+</Tabs>
 
 **Supported extraction types:**
 
@@ -607,6 +2203,9 @@ Playbooks define scripted AI evaluation frameworks — goals are scored against 
 
 #### `ai.playbooks.listPlaybooks(options?)`
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 const playbooks = await sdk.ai.playbooks.listPlaybooks({
     isPublished: true,
@@ -618,7 +2217,75 @@ const playbooks = await sdk.ai.playbooks.listPlaybooks({
 // playbooks.results → [{ id, name, isPublished, goals, recordTypeId, ... }]
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const params = new URLSearchParams({
+  isPublished: "true",
+  recordTypeId: "rt_support",
+  limit: "50",
+  orderBy: "createdAt",
+  orderDirection: "DESC"
+});
+const res = await fetch(`https://{namespace}.api.unbound.cx/ai/playbook?${params}`, {
+  headers: { "Authorization": "Bearer {token}" }
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$query = http_build_query([
+    "isPublished" => "true",
+    "recordTypeId" => "rt_support",
+    "limit" => 50,
+    "orderBy" => "createdAt",
+    "orderDirection" => "DESC"
+]);
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook?" . $query);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/ai/playbook",
+    headers={"Authorization": "Bearer {token}"},
+    params={
+        "isPublished": True,
+        "recordTypeId": "rt_support",
+        "limit": 50,
+        "orderBy": "createdAt",
+        "orderDirection": "DESC"
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl "https://{namespace}.api.unbound.cx/ai/playbook?isPublished=true&recordTypeId=rt_support&limit=50&orderBy=createdAt&orderDirection=DESC" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
 #### `ai.playbooks.getPlaybook({ playbookId })`
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const pb = await sdk.ai.playbooks.getPlaybook({
@@ -630,7 +2297,54 @@ const pb = await sdk.ai.playbooks.getPlaybook({
 // pb.goals → [...] (ordered array of PlaybookGoal objects)
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/playbook/pb_123456", {
+  headers: { "Authorization": "Bearer {token}" }
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/pb_123456");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/ai/playbook/pb_123456",
+    headers={"Authorization": "Bearer {token}"}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl "https://{namespace}.api.unbound.cx/ai/playbook/pb_123456" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
 #### `ai.playbooks.createPlaybook(options)`
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const pb = await sdk.ai.playbooks.createPlaybook({
@@ -640,7 +2354,61 @@ const pb = await sdk.ai.playbooks.createPlaybook({
 // Returns: { id: 'pb_new', name, recordTypeId, createdAt, ... }
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/playbook", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({ name: "Sales Discovery Call", recordTypeId: "rt_sales" })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(["name" => "Sales Discovery Call", "recordTypeId" => "rt_sales"]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/playbook",
+    headers={"Authorization": "Bearer {token}"},
+    json={"name": "Sales Discovery Call", "recordTypeId": "rt_sales"}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/playbook" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Sales Discovery Call", "recordTypeId": "rt_sales"}'
+```
+
+</TabItem>
+</Tabs>
+
 #### `ai.playbooks.updatePlaybook(options)`
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const updated = await sdk.ai.playbooks.updatePlaybook({
@@ -650,11 +2418,109 @@ const updated = await sdk.ai.playbooks.updatePlaybook({
 });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/playbook/pb_123456", {
+  method: "PUT",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({ name: "Sales Discovery Call v2", isPublished: true })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/pb_123456");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(["name" => "Sales Discovery Call v2", "isPublished" => true]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.put(
+    "https://{namespace}.api.unbound.cx/ai/playbook/pb_123456",
+    headers={"Authorization": "Bearer {token}"},
+    json={"name": "Sales Discovery Call v2", "isPublished": True}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X PUT "https://{namespace}.api.unbound.cx/ai/playbook/pb_123456" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Sales Discovery Call v2", "isPublished": true}'
+```
+
+</TabItem>
+</Tabs>
+
 #### `ai.playbooks.deletePlaybook({ playbookId })`
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 await sdk.ai.playbooks.deletePlaybook({ playbookId: 'pb_123456' });
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+await fetch("https://{namespace}.api.unbound.cx/ai/playbook/pb_123456", {
+  method: "DELETE",
+  headers: { "Authorization": "Bearer {token}" }
+});
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/pb_123456");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+curl_exec($ch);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+requests.delete(
+    "https://{namespace}.api.unbound.cx/ai/playbook/pb_123456",
+    headers={"Authorization": "Bearer {token}"}
+)
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X DELETE "https://{namespace}.api.unbound.cx/ai/playbook/pb_123456" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
 
 ---
 
@@ -664,6 +2530,9 @@ Goal types are reusable templates that categorize the kind of behavior being mea
 
 #### `ai.playbooks.listPlaybookGoalTypes(options?)`
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 const goalTypes = await sdk.ai.playbooks.listPlaybookGoalTypes({
     recommendedPhase: 'early',   // 'early' | 'middle' | 'late' | 'any'
@@ -672,7 +2541,61 @@ const goalTypes = await sdk.ai.playbooks.listPlaybookGoalTypes({
 });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const params = new URLSearchParams({
+  recommendedPhase: "early",
+  recordTypeId: "rt_sales",
+  limit: "50"
+});
+const res = await fetch(`https://{namespace}.api.unbound.cx/ai/playbook/goal-type?${params}`, {
+  headers: { "Authorization": "Bearer {token}" }
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$query = http_build_query(["recommendedPhase" => "early", "recordTypeId" => "rt_sales", "limit" => 50]);
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/goal-type?" . $query);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/ai/playbook/goal-type",
+    headers={"Authorization": "Bearer {token}"},
+    params={"recommendedPhase": "early", "recordTypeId": "rt_sales", "limit": 50}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl "https://{namespace}.api.unbound.cx/ai/playbook/goal-type?recommendedPhase=early&recordTypeId=rt_sales&limit=50" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
 #### `ai.playbooks.getPlaybookGoalType({ goalTypeId })`
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const gt = await sdk.ai.playbooks.getPlaybookGoalType({
@@ -680,7 +2603,54 @@ const gt = await sdk.ai.playbooks.getPlaybookGoalType({
 });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/playbook/goal-type/gt_greeting", {
+  headers: { "Authorization": "Bearer {token}" }
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/goal-type/gt_greeting");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/ai/playbook/goal-type/gt_greeting",
+    headers={"Authorization": "Bearer {token}"}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl "https://{namespace}.api.unbound.cx/ai/playbook/goal-type/gt_greeting" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
 #### `ai.playbooks.createPlaybookGoalType(options)`
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const goalType = await sdk.ai.playbooks.createPlaybookGoalType({
@@ -692,6 +2662,81 @@ const goalType = await sdk.ai.playbooks.createPlaybookGoalType({
 });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/playbook/goal-type", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    name: "Opening/Greeting",
+    description: "Initial greeting and rapport building",
+    keywords: ["hello", "hi", "good morning", "thanks for taking the call"],
+    recommendedPhase: "early",
+    recordTypeId: "rt_sales"
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/goal-type");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "name" => "Opening/Greeting",
+    "description" => "Initial greeting and rapport building",
+    "keywords" => ["hello", "hi", "good morning", "thanks for taking the call"],
+    "recommendedPhase" => "early",
+    "recordTypeId" => "rt_sales"
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/playbook/goal-type",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "name": "Opening/Greeting",
+        "description": "Initial greeting and rapport building",
+        "keywords": ["hello", "hi", "good morning", "thanks for taking the call"],
+        "recommendedPhase": "early",
+        "recordTypeId": "rt_sales"
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/playbook/goal-type" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Opening/Greeting",
+    "description": "Initial greeting and rapport building",
+    "keywords": ["hello", "hi", "good morning", "thanks for taking the call"],
+    "recommendedPhase": "early",
+    "recordTypeId": "rt_sales"
+  }'
+```
+
+</TabItem>
+</Tabs>
+
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `name` | string | ✓ | Display name for this goal type |
@@ -702,6 +2747,9 @@ const goalType = await sdk.ai.playbooks.createPlaybookGoalType({
 
 #### `ai.playbooks.updatePlaybookGoalType(options)`
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 await sdk.ai.playbooks.updatePlaybookGoalType({
     goalTypeId: 'gt_greeting',
@@ -709,11 +2757,111 @@ await sdk.ai.playbooks.updatePlaybookGoalType({
 });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+await fetch("https://{namespace}.api.unbound.cx/ai/playbook/goal-type/gt_greeting", {
+  method: "PUT",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    keywords: ["hello", "hi", "good morning", "greetings", "thanks for calling"]
+  })
+});
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/goal-type/gt_greeting");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "keywords" => ["hello", "hi", "good morning", "greetings", "thanks for calling"]
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+requests.put(
+    "https://{namespace}.api.unbound.cx/ai/playbook/goal-type/gt_greeting",
+    headers={"Authorization": "Bearer {token}"},
+    json={"keywords": ["hello", "hi", "good morning", "greetings", "thanks for calling"]}
+)
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X PUT "https://{namespace}.api.unbound.cx/ai/playbook/goal-type/gt_greeting" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"keywords": ["hello", "hi", "good morning", "greetings", "thanks for calling"]}'
+```
+
+</TabItem>
+</Tabs>
+
 #### `ai.playbooks.deletePlaybookGoalType({ goalTypeId })`
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 await sdk.ai.playbooks.deletePlaybookGoalType({ goalTypeId: 'gt_greeting' });
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+await fetch("https://{namespace}.api.unbound.cx/ai/playbook/goal-type/gt_greeting", {
+  method: "DELETE",
+  headers: { "Authorization": "Bearer {token}" }
+});
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/goal-type/gt_greeting");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+curl_exec($ch);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+requests.delete(
+    "https://{namespace}.api.unbound.cx/ai/playbook/goal-type/gt_greeting",
+    headers={"Authorization": "Bearer {token}"}
+)
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X DELETE "https://{namespace}.api.unbound.cx/ai/playbook/goal-type/gt_greeting" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
 
 ---
 
@@ -723,6 +2871,9 @@ Goals are the specific evaluation criteria attached to a playbook. Each goal can
 
 #### `ai.playbooks.listPlaybookGoals({ playbookId })`
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 const goals = await sdk.ai.playbooks.listPlaybookGoals({
     playbookId: 'pb_123456',
@@ -730,7 +2881,54 @@ const goals = await sdk.ai.playbooks.listPlaybookGoals({
 // goals.results → [{ id, goal, description, weight, scoreType, requiredForPass, ... }]
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/playbook/pb_123456/goal", {
+  headers: { "Authorization": "Bearer {token}" }
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/pb_123456/goal");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/ai/playbook/pb_123456/goal",
+    headers={"Authorization": "Bearer {token}"}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl "https://{namespace}.api.unbound.cx/ai/playbook/pb_123456/goal" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
 #### `ai.playbooks.getPlaybookGoal({ playbookId, goalId })`
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const goal = await sdk.ai.playbooks.getPlaybookGoal({
@@ -739,7 +2937,54 @@ const goal = await sdk.ai.playbooks.getPlaybookGoal({
 });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/playbook/pb_123456/goal/goal_789", {
+  headers: { "Authorization": "Bearer {token}" }
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/pb_123456/goal/goal_789");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/ai/playbook/pb_123456/goal/goal_789",
+    headers={"Authorization": "Bearer {token}"}
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl "https://{namespace}.api.unbound.cx/ai/playbook/pb_123456/goal/goal_789" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
 #### `ai.playbooks.createPlaybookGoal(options)`
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const goal = await sdk.ai.playbooks.createPlaybookGoal({
@@ -753,6 +2998,89 @@ const goal = await sdk.ai.playbooks.createPlaybookGoal({
     recordTypeId: 'rt_sales',
 });
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/playbook/pb_123456/goal", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    playbookGoalTypeId: "gt_discovery",
+    goal: "Identify customer pain points",
+    description: "Agent should discover at least 2 key pain points",
+    scoreType: "scale",
+    weight: 25,
+    requiredForPass: false,
+    recordTypeId: "rt_sales"
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/pb_123456/goal");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "playbookGoalTypeId" => "gt_discovery",
+    "goal" => "Identify customer pain points",
+    "description" => "Agent should discover at least 2 key pain points",
+    "scoreType" => "scale",
+    "weight" => 25,
+    "requiredForPass" => false,
+    "recordTypeId" => "rt_sales"
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/playbook/pb_123456/goal",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "playbookGoalTypeId": "gt_discovery",
+        "goal": "Identify customer pain points",
+        "description": "Agent should discover at least 2 key pain points",
+        "scoreType": "scale",
+        "weight": 25,
+        "requiredForPass": False,
+        "recordTypeId": "rt_sales"
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/playbook/pb_123456/goal" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "playbookGoalTypeId": "gt_discovery",
+    "goal": "Identify customer pain points",
+    "description": "Agent should discover at least 2 key pain points",
+    "scoreType": "scale",
+    "weight": 25,
+    "requiredForPass": false,
+    "recordTypeId": "rt_sales"
+  }'
+```
+
+</TabItem>
+</Tabs>
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -768,6 +3096,9 @@ const goal = await sdk.ai.playbooks.createPlaybookGoal({
 
 #### `ai.playbooks.updatePlaybookGoal(options)`
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 await sdk.ai.playbooks.updatePlaybookGoal({
     goalId: 'goal_789',
@@ -777,13 +3108,128 @@ await sdk.ai.playbooks.updatePlaybookGoal({
 });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+await fetch("https://{namespace}.api.unbound.cx/ai/playbook/goal/goal_789", {
+  method: "PUT",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    playbookGoalTypeId: "gt_discovery",
+    weight: 30,
+    description: "Updated: discover at least 3 pain points"
+  })
+});
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/goal/goal_789");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "playbookGoalTypeId" => "gt_discovery",
+    "weight" => 30,
+    "description" => "Updated: discover at least 3 pain points"
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+requests.put(
+    "https://{namespace}.api.unbound.cx/ai/playbook/goal/goal_789",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "playbookGoalTypeId": "gt_discovery",
+        "weight": 30,
+        "description": "Updated: discover at least 3 pain points"
+    }
+)
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X PUT "https://{namespace}.api.unbound.cx/ai/playbook/goal/goal_789" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "playbookGoalTypeId": "gt_discovery",
+    "weight": 30,
+    "description": "Updated: discover at least 3 pain points"
+  }'
+```
+
+</TabItem>
+</Tabs>
+
 #### `ai.playbooks.deletePlaybookGoal({ goalId })`
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 await sdk.ai.playbooks.deletePlaybookGoal({ goalId: 'goal_789' });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+await fetch("https://{namespace}.api.unbound.cx/ai/playbook/goal/goal_789", {
+  method: "DELETE",
+  headers: { "Authorization": "Bearer {token}" }
+});
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/goal/goal_789");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+curl_exec($ch);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+requests.delete(
+    "https://{namespace}.api.unbound.cx/ai/playbook/goal/goal_789",
+    headers={"Authorization": "Bearer {token}"}
+)
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X DELETE "https://{namespace}.api.unbound.cx/ai/playbook/goal/goal_789" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
 #### `ai.playbooks.reorderPlaybookGoals({ playbookId, goalOrder })`
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 await sdk.ai.playbooks.reorderPlaybookGoals({
@@ -791,6 +3237,55 @@ await sdk.ai.playbooks.reorderPlaybookGoals({
     goalOrder: ['goal_3', 'goal_1', 'goal_2'],  // IDs in desired display order
 });
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+await fetch("https://{namespace}.api.unbound.cx/ai/playbook/pb_123456/goal/reorder", {
+  method: "PUT",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({ goalOrder: ["goal_3", "goal_1", "goal_2"] })
+});
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/pb_123456/goal/reorder");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(["goalOrder" => ["goal_3", "goal_1", "goal_2"]]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+requests.put(
+    "https://{namespace}.api.unbound.cx/ai/playbook/pb_123456/goal/reorder",
+    headers={"Authorization": "Bearer {token}"},
+    json={"goalOrder": ["goal_3", "goal_1", "goal_2"]}
+)
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X PUT "https://{namespace}.api.unbound.cx/ai/playbook/pb_123456/goal/reorder" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"goalOrder": ["goal_3", "goal_1", "goal_2"]}'
+```
+
+</TabItem>
+</Tabs>
 
 ---
 
@@ -801,6 +3296,9 @@ A playbook session tracks one instance of a playbook being run against a convers
 #### `ai.playbooks.createSession(options)`
 
 Start a new evaluation session for a published playbook.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const session = await sdk.ai.playbooks.createSession({
@@ -817,7 +3315,93 @@ const session = await sdk.ai.playbooks.createSession({
 // session.goals → [{ id, goal, weight, scoreType, ... }]  // ordered goal list
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/playbook/session", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    playbookId: "pb_sales_call",
+    transcriptionSessionId: "stt_abc",
+    method: "ai",
+    userId: "user_789",
+    sipCallId: "sip_xyz",
+    taskId: "task_123",
+    workerId: "worker_456"
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/session");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "playbookId" => "pb_sales_call",
+    "transcriptionSessionId" => "stt_abc",
+    "method" => "ai",
+    "userId" => "user_789",
+    "sipCallId" => "sip_xyz",
+    "taskId" => "task_123",
+    "workerId" => "worker_456"
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/playbook/session",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "playbookId": "pb_sales_call",
+        "transcriptionSessionId": "stt_abc",
+        "method": "ai",
+        "userId": "user_789",
+        "sipCallId": "sip_xyz",
+        "taskId": "task_123",
+        "workerId": "worker_456"
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/ai/playbook/session" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "playbookId": "pb_sales_call",
+    "transcriptionSessionId": "stt_abc",
+    "method": "ai",
+    "userId": "user_789",
+    "sipCallId": "sip_xyz",
+    "taskId": "task_123",
+    "workerId": "worker_456"
+  }'
+```
+
+</TabItem>
+</Tabs>
+
 #### `ai.playbooks.getSession(options)`
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 // By session ID
@@ -837,6 +3421,90 @@ const session = await sdk.ai.playbooks.getSession({
     userId: 'user_789',
 });
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// By session ID
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_abc123", {
+  headers: { "Authorization": "Bearer {token}" }
+});
+const session = await res.json();
+
+// By taskId + workerId
+const res2 = await fetch("https://{namespace}.api.unbound.cx/ai/playbook/session?taskId=task_123&workerId=worker_456", {
+  headers: { "Authorization": "Bearer {token}" }
+});
+const session2 = await res2.json();
+
+// By taskId + userId
+const res3 = await fetch("https://{namespace}.api.unbound.cx/ai/playbook/session?taskId=task_123&userId=user_789", {
+  headers: { "Authorization": "Bearer {token}" }
+});
+const session3 = await res3.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// By session ID
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_abc123");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$session = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+// By taskId + workerId
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/session?taskId=task_123&workerId=worker_456");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$session2 = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+# By session ID
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_abc123",
+    headers={"Authorization": "Bearer {token}"}
+)
+session = response.json()
+
+# By taskId + workerId
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/ai/playbook/session",
+    headers={"Authorization": "Bearer {token}"},
+    params={"taskId": "task_123", "workerId": "worker_456"}
+)
+session2 = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# By session ID
+curl "https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_abc123" \
+  -H "Authorization: Bearer {token}"
+
+# By taskId + workerId
+curl "https://{namespace}.api.unbound.cx/ai/playbook/session?taskId=task_123&workerId=worker_456" \
+  -H "Authorization: Bearer {token}"
+
+# By taskId + userId
+curl "https://{namespace}.api.unbound.cx/ai/playbook/session?taskId=task_123&userId=user_789" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
 
 **Session response shape:**
 
@@ -872,6 +3540,9 @@ const session = await sdk.ai.playbooks.getSession({
 #### `ai.playbooks.logGoal(options)` — Record Goal Achievement
 
 Log whether a specific goal was achieved during the session, including evidence.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 // Log a successful goal
@@ -909,6 +3580,138 @@ await sdk.ai.playbooks.logGoal({
 });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Log a successful goal
+await fetch("https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_abc123/goal", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    goalId: "goal_456",
+    achieved: true,
+    score: 10,
+    reason: "Customer clearly expressed interest in the product",
+    confidence: 0.95,
+    evidence: [
+      { type: "transcript", text: "I would love to learn more about this" },
+      { type: "transcript", text: "When can we schedule a demo?" }
+    ]
+  })
+});
+
+// Log a failed goal
+await fetch("https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_abc123/goal", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    goalId: "goal_789",
+    achieved: false,
+    score: 0,
+    reason: "Pricing was never discussed during the call",
+    confidence: 0.88
+  })
+});
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// Log a successful goal
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_abc123/goal");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "goalId" => "goal_456",
+    "achieved" => true,
+    "score" => 10,
+    "reason" => "Customer clearly expressed interest in the product",
+    "confidence" => 0.95,
+    "evidence" => [
+        ["type" => "transcript", "text" => "I would love to learn more about this"],
+        ["type" => "transcript", "text" => "When can we schedule a demo?"]
+    ]
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+# Log a successful goal
+requests.post(
+    "https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_abc123/goal",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "goalId": "goal_456",
+        "achieved": True,
+        "score": 10,
+        "reason": "Customer clearly expressed interest in the product",
+        "confidence": 0.95,
+        "evidence": [
+            {"type": "transcript", "text": "I would love to learn more about this"},
+            {"type": "transcript", "text": "When can we schedule a demo?"}
+        ]
+    }
+)
+
+# Log a failed goal
+requests.post(
+    "https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_abc123/goal",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "goalId": "goal_789",
+        "achieved": False,
+        "score": 0,
+        "reason": "Pricing was never discussed during the call",
+        "confidence": 0.88
+    }
+)
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Log a successful goal
+curl -X POST "https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_abc123/goal" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "goalId": "goal_456",
+    "achieved": true,
+    "score": 10,
+    "reason": "Customer clearly expressed interest in the product",
+    "confidence": 0.95,
+    "evidence": [
+      {"type": "transcript", "text": "I would love to learn more about this"},
+      {"type": "transcript", "text": "When can we schedule a demo?"}
+    ]
+  }'
+
+# Log a failed goal
+curl -X POST "https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_abc123/goal" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "goalId": "goal_789",
+    "achieved": false,
+    "score": 0,
+    "reason": "Pricing was never discussed during the call",
+    "confidence": 0.88
+  }'
+```
+
+</TabItem>
+</Tabs>
+
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `sessionId` | string | ✓ | Session to log the goal result for |
@@ -920,6 +3723,9 @@ await sdk.ai.playbooks.logGoal({
 | `evidence` | array | — | Supporting evidence items |
 
 #### `ai.playbooks.completeSession(options)` — Finalize Session
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 // Session passed
@@ -941,6 +3747,121 @@ await sdk.ai.playbooks.completeSession({
     totalGoals: 5,
 });
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Session passed
+const res = await fetch("https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_abc123/complete", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    passed: true,
+    totalScore: 85,
+    achievedGoals: 4,
+    totalGoals: 5
+  })
+});
+const data = await res.json();
+
+// Session failed
+await fetch("https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_xyz789/complete", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    passed: false,
+    totalScore: 45,
+    achievedGoals: 2,
+    totalGoals: 5
+  })
+});
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// Session passed
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_abc123/complete");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "passed" => true,
+    "totalScore" => 85,
+    "achievedGoals" => 4,
+    "totalGoals" => 5
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+// Session failed
+$ch = curl_init("https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_xyz789/complete");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "passed" => false,
+    "totalScore" => 45,
+    "achievedGoals" => 2,
+    "totalGoals" => 5
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+# Session passed
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_abc123/complete",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "passed": True,
+        "totalScore": 85,
+        "achievedGoals": 4,
+        "totalGoals": 5
+    }
+)
+data = response.json()
+
+# Session failed
+requests.post(
+    "https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_xyz789/complete",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "passed": False,
+        "totalScore": 45,
+        "achievedGoals": 2,
+        "totalGoals": 5
+    }
+)
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Session passed
+curl -X POST "https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_abc123/complete" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"passed": true, "totalScore": 85, "achievedGoals": 4, "totalGoals": 5}'
+
+# Session failed
+curl -X POST "https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_xyz789/complete" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"passed": false, "totalScore": 45, "achievedGoals": 2, "totalGoals": 5}'
+```
+
+</TabItem>
+</Tabs>
 
 ---
 

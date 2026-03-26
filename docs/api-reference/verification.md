@@ -3,6 +3,9 @@ id: verification
 title: Verification
 ---
 
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
 # Verification
 
 `api.verification` — Send and validate one-time verification codes via SMS and email. Use for identity verification, 2FA, and account confirmation flows.
@@ -15,17 +18,103 @@ title: Verification
 
 Send a verification code via SMS.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 const verification = await api.verification.createSmsVerification({
     phoneNumber: '+12135550100',
-    code: '123456',          // optional — auto-generated if omitted
-    expiresIn: 600,          // seconds (default: 600 = 10 min)
+    code: '123456',
+    expiresIn: 600,
     metadata: {
         userId: 'user-123',
         action: 'login',
     },
 });
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/verification/sms", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    phoneNumber: "+12135550100",
+    code: "123456",
+    expiresIn: 600,
+    metadata: {
+      userId: "user-123",
+      action: "login"
+    }
+  })
+});
+const verification = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/verification/sms");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    'phoneNumber' => '+12135550100',
+    'code' => '123456',
+    'expiresIn' => 600,
+    'metadata' => [
+        'userId' => 'user-123',
+        'action' => 'login',
+    ]
+]));
+$verification = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/verification/sms",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "phoneNumber": "+12135550100",
+        "code": "123456",
+        "expiresIn": 600,
+        "metadata": {
+            "userId": "user-123",
+            "action": "login"
+        }
+    }
+)
+verification = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/verification/sms" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNumber": "+12135550100",
+    "code": "123456",
+    "expiresIn": 600,
+    "metadata": {
+      "userId": "user-123",
+      "action": "login"
+    }
+  }'
+```
+
+</TabItem>
+</Tabs>
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -38,6 +127,9 @@ const verification = await api.verification.createSmsVerification({
 
 Validate a code the user entered.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 const result = await api.verification.validateSmsVerification(
     '+12135550100',
@@ -45,6 +137,72 @@ const result = await api.verification.validateSmsVerification(
 );
 // result.valid → true/false
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/verification/sms/validate", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    phoneNumber: "+12135550100",
+    code: "123456"
+  })
+});
+const result = await res.json();
+// result.valid → true/false
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/verification/sms/validate");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    'phoneNumber' => '+12135550100',
+    'code' => '123456'
+]));
+$result = json_decode(curl_exec($ch), true);
+curl_close($ch);
+// $result['valid'] → true/false
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/verification/sms/validate",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "phoneNumber": "+12135550100",
+        "code": "123456"
+    }
+)
+result = response.json()
+# result['valid'] → True/False
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/verification/sms/validate" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNumber": "+12135550100",
+    "code": "123456"
+  }'
+```
+
+</TabItem>
+</Tabs>
 
 ---
 
@@ -54,18 +212,103 @@ const result = await api.verification.validateSmsVerification(
 
 Send a verification code via email.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 await api.verification.createEmailVerification({
     email: 'user@example.com',
     code: '789012',
-    expiresIn: 3600,         // 1 hour
+    expiresIn: 3600,
     metadata: {
         action: 'signup',
     },
 });
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/verification/email", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "user@example.com",
+    code: "789012",
+    expiresIn: 3600,
+    metadata: {
+      action: "signup"
+    }
+  })
+});
+const data = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/verification/email");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    'email' => 'user@example.com',
+    'code' => '789012',
+    'expiresIn' => 3600,
+    'metadata' => [
+        'action' => 'signup',
+    ]
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/verification/email",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "email": "user@example.com",
+        "code": "789012",
+        "expiresIn": 3600,
+        "metadata": {
+            "action": "signup"
+        }
+    }
+)
+data = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/verification/email" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "code": "789012",
+    "expiresIn": 3600,
+    "metadata": {
+      "action": "signup"
+    }
+  }'
+```
+
+</TabItem>
+</Tabs>
+
 ### `verification.validateEmailVerification(email, code)`
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 const result = await api.verification.validateEmailVerification(
@@ -75,9 +318,79 @@ const result = await api.verification.validateEmailVerification(
 // result.valid → true/false
 ```
 
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch("https://{namespace}.api.unbound.cx/verification/email/validate", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "user@example.com",
+    code: "789012"
+  })
+});
+const result = await res.json();
+// result.valid → true/false
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/verification/email/validate");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    'email' => 'user@example.com',
+    'code' => '789012'
+]));
+$result = json_decode(curl_exec($ch), true);
+curl_close($ch);
+// $result['valid'] → true/false
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/verification/email/validate",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "email": "user@example.com",
+        "code": "789012"
+    }
+)
+result = response.json()
+# result['valid'] → True/False
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/verification/email/validate" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "code": "789012"
+  }'
+```
+
+</TabItem>
+</Tabs>
+
 ---
 
 ## Full Example: Login with SMS 2FA
+
+<Tabs groupId="lang">
+
+<TabItem value="sdk" label="SDK">
 
 ```javascript
 import SDK from '@unboundcx/sdk';
@@ -109,3 +422,182 @@ if (result.valid) {
     console.log('Invalid code');
 }
 ```
+
+</TabItem>
+
+<TabItem value="node" label="Node.js">
+
+```javascript
+const baseUrl = 'https://your-namespace.api.unbound.cx';
+const token = 'your-jwt';
+
+// 1. Send verification code
+await fetch(`${baseUrl}/verification/sms`, {
+    method: 'POST',
+    headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        phoneNumber: '+12135550100',
+        expiresIn: 300,
+        metadata: { userId: 'user-123' },
+    }),
+});
+
+// 2. User enters code in your UI...
+const userCode = '123456';
+
+// 3. Validate
+const response = await fetch(`${baseUrl}/verification/sms/validate`, {
+    method: 'POST',
+    headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        phoneNumber: '+12135550100',
+        code: userCode,
+    }),
+});
+
+const result = await response.json();
+
+if (result.valid) {
+    console.log('Identity verified');
+} else {
+    console.log('Invalid code');
+}
+```
+
+</TabItem>
+
+<TabItem value="php" label="PHP">
+
+```php
+$baseUrl = 'https://your-namespace.api.unbound.cx';
+$token = 'your-jwt';
+
+// 1. Send verification code
+$ch = curl_init("$baseUrl/verification/sms");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    "Authorization: Bearer $token",
+    'Content-Type: application/json',
+]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    'phoneNumber' => '+12135550100',
+    'expiresIn' => 300,
+    'metadata' => ['userId' => 'user-123'],
+]));
+curl_exec($ch);
+curl_close($ch);
+
+// 2. User enters code in your UI...
+$userCode = '123456';
+
+// 3. Validate
+$ch = curl_init("$baseUrl/verification/sms/validate");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    "Authorization: Bearer $token",
+    'Content-Type: application/json',
+]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    'phoneNumber' => '+12135550100',
+    'code' => $userCode,
+]));
+
+$result = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+if ($result['valid']) {
+    echo 'Identity verified';
+} else {
+    echo 'Invalid code';
+}
+```
+
+</TabItem>
+
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+base_url = 'https://your-namespace.api.unbound.cx'
+token = 'your-jwt'
+
+# 1. Send verification code
+requests.post(
+    f'{base_url}/verification/sms',
+    headers={
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json',
+    },
+    json={
+        'phoneNumber': '+12135550100',
+        'expiresIn': 300,
+        'metadata': {'userId': 'user-123'},
+    }
+)
+
+# 2. User enters code in your UI...
+user_code = '123456'
+
+# 3. Validate
+response = requests.post(
+    f'{base_url}/verification/sms/validate',
+    headers={
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json',
+    },
+    json={
+        'phoneNumber': '+12135550100',
+        'code': user_code,
+    }
+)
+
+result = response.json()
+
+if result['valid']:
+    print('Identity verified')
+else:
+    print('Invalid code')
+```
+
+</TabItem>
+
+<TabItem value="curl" label="cURL">
+
+```bash
+# 1. Send verification code
+curl -X POST https://your-namespace.api.unbound.cx/verification/sms \
+  -H "Authorization: Bearer your-jwt" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNumber": "+12135550100",
+    "expiresIn": 300,
+    "metadata": {"userId": "user-123"}
+  }'
+
+# 2. User enters code in your UI...
+# (assume code is 123456)
+
+# 3. Validate
+curl -X POST https://your-namespace.api.unbound.cx/verification/sms/validate \
+  -H "Authorization: Bearer your-jwt" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNumber": "+12135550100",
+    "code": "123456"
+  }'
+
+# Response: {"valid": true} or {"valid": false}
+```
+
+</TabItem>
+
+</Tabs>

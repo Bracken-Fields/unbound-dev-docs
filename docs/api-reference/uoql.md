@@ -3,6 +3,9 @@ id: uoql
 title: UOQL — Query Language
 ---
 
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
 # UOQL — Unbound Object Query Language
 
 UOQL is Unbound's SQL-style query engine. It lets you run full SQL queries against any object in the platform — contacts, CDRs, tasks, queues, recordings, and any custom type you've defined.
@@ -31,6 +34,9 @@ Use `objects.query()` for simple lookups. Use UOQL for analytics, reporting, and
 
 ## SDK Usage
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 import SDK from '@unboundcx/sdk';
 
@@ -48,9 +54,8 @@ const data = await api.objects.uoql({
 // data.query.objectName  — which object was queried
 ```
 
-### Direct REST
-
-If you're calling the API directly (without the SDK):
+</TabItem>
+<TabItem value="node" label="Node.js">
 
 ```javascript
 const response = await fetch(
@@ -71,6 +76,72 @@ const response = await fetch(
 const data = await response.json();
 console.log(data.results);
 ```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+<?php
+$ch = curl_init('https://your-namespace.api.unbound.cx/object/query/v2');
+
+curl_setopt_array($ch, [
+    CURLOPT_POST => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer your-jwt-token',
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'query' => 'SELECT id, firstName, lastName FROM people LIMIT 50',
+        'expandDetails' => false,
+    ]),
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+print_r($data['results']);
+?>
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+response = requests.post(
+    'https://your-namespace.api.unbound.cx/object/query/v2',
+    headers={
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer your-jwt-token',
+    },
+    json={
+        'query': 'SELECT id, firstName, lastName FROM people LIMIT 50',
+        'expandDetails': False,
+    }
+)
+
+data = response.json()
+print(data['results'])
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST https://your-namespace.api.unbound.cx/object/query/v2 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-jwt-token" \
+  -d '{
+    "query": "SELECT id, firstName, lastName FROM people LIMIT 50",
+    "expandDetails": false
+  }'
+```
+
+</TabItem>
+</Tabs>
 
 ---
 
@@ -269,6 +340,9 @@ The response includes pagination metadata:
 
 Pass `expandDetails: true` to resolve related object references (foreign keys) inline.
 
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
 ```javascript
 const data = await api.objects.uoql({
     query: 'SELECT id, direction, duration, userId FROM cdr LIMIT 25',
@@ -276,6 +350,95 @@ const data = await api.objects.uoql({
 });
 // userId field will be expanded to a full user object
 ```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const response = await fetch(
+    'https://your-namespace.api.unbound.cx/object/query/v2',
+    {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer your-jwt-token',
+        },
+        body: JSON.stringify({
+            query: 'SELECT id, direction, duration, userId FROM cdr LIMIT 25',
+            expandDetails: true,
+        }),
+    }
+);
+
+const data = await response.json();
+// userId field will be expanded to a full user object
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+<?php
+$ch = curl_init('https://your-namespace.api.unbound.cx/object/query/v2');
+
+curl_setopt_array($ch, [
+    CURLOPT_POST => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer your-jwt-token',
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'query' => 'SELECT id, direction, duration, userId FROM cdr LIMIT 25',
+        'expandDetails' => true,
+    ]),
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+// userId field will be expanded to a full user object
+?>
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+response = requests.post(
+    'https://your-namespace.api.unbound.cx/object/query/v2',
+    headers={
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer your-jwt-token',
+    },
+    json={
+        'query': 'SELECT id, direction, duration, userId FROM cdr LIMIT 25',
+        'expandDetails': True,
+    }
+)
+
+data = response.json()
+# userId field will be expanded to a full user object
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST https://your-namespace.api.unbound.cx/object/query/v2 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-jwt-token" \
+  -d '{
+    "query": "SELECT id, direction, duration, userId FROM cdr LIMIT 25",
+    "expandDetails": true
+  }'
+```
+
+</TabItem>
+</Tabs>
 
 ---
 

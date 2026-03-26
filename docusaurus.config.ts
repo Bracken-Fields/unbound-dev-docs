@@ -112,7 +112,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.oneDark,
       darkTheme: prismThemes.oneDark,
-      additionalLanguages: ['bash', 'json', 'typescript'],
+      additionalLanguages: ['bash', 'json', 'typescript', 'php', 'python'],
     },
     algolia: undefined,
   } satisfies Preset.ThemeConfig,
