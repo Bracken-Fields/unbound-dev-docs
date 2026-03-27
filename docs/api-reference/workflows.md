@@ -1097,3 +1097,293 @@ await api.workflows.connections.create({
 
 console.log('Workflow wired ✓');
 ```
+
+---
+
+## Workflow Versions
+
+Workflows use an immutable versioning model. Each published version is a permanent snapshot — you never edit a published version, you create a new one (optionally copying from an existing version). This preserves reporting data and audit history.
+
+### Version Lifecycle
+
+```
+Create Workflow
+     │
+     ▼
+Create Version (blank or copyFrom existing)
+     │  Auto-creates a start node
+     ▼
+Add Nodes + Connections
+     │  (versions are mutable until published)
+     ▼
+Publish Version  →  version is now immutable (isPublished: true)
+     │
+     ▼
+Set as Current   →  live traffic routes to this version (isCurrent: true)
+     │
+     ▼
+(need changes?)  →  Create new version with copyFrom, edit, publish, activate
+```
+
+:::important
+Every workflow version automatically receives a **start node** on creation. Do **not** create a start node manually — you will end up with two start nodes and the workflow will fail to open.
+:::
+
+:::warning
+Published versions **cannot be unpublished**. Once `isPublished: true`, the version is permanently locked. To make changes, create a new version with `copyFrom`.
+:::
+
+---
+
+### `POST /object/workflowVersions` — Create a new version
+
+**Blank version:**
+
+```json
+{
+  "workflowId": "074d...",
+  "name": "v1.0"
+}
+```
+
+**Fork from an existing version (recommended for edits):**
+
+```json
+{
+  "workflowId": "074d...",
+  "name": "v1.1",
+  "copyFrom": "075d..."
+}
+```
+
+When `copyFrom` is provided, all nodes, ports, connections, and settings are deep-copied into the new version with new IDs. Connections are automatically remapped.
+
+**Required fields:** `workflowId`, `name`
+
+**Optional fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Version label (e.g. `"v1.0"`, `"hotfix-jan"`) |
+| `description` | string | Human-readable description |
+| `copyFrom` | string | Version ID to fork from |
+| `variables` | array | Custom session variables |
+| `maxIdleTime` | number | Max session idle time in seconds (default: 7200) |
+| `maxSessionLength` | number | Max session length in seconds (default: 86400) |
+
+**Response:**
+
+```json
+{ "id": "075d0120260327..." }
+```
+
+---
+
+### `PUT /object/workflowVersions` — Publish a version
+
+Marks the version as immutable. Do this only when all nodes and connections are finalized.
+
+```json
+{
+  "where": { "id": "075d..." },
+  "update": { "isPublished": true }
+}
+```
+
+**Response:**
+
+```json
+{ "updated": ["075d..."] }
+```
+
+---
+
+### `PUT /object/workflowVersions` — Activate a version (set as current)
+
+Routes live traffic to this version. Automatically clears `isCurrent` from all other versions and updates `currentWorkflowVersionId` on the parent workflow.
+
+```json
+{
+  "where": { "id": "075d..." },
+  "update": { "isCurrent": true }
+}
+```
+
+:::info
+Publish before activating. The typical sequence is: publish → then set as current.
+:::
+
+---
+
+### Full version promotion example
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+// 1. Create a new workflow
+const workflow = await api.workflows.create({ name: 'Hello World', type: 'engagement' });
+
+// 2. Create a version (auto-creates start node)
+const version = await api.workflows.versions.create({
+  workflowId: workflow.id,
+  name: 'v1.0',
+});
+
+// 3. Add nodes (do NOT add a start node — it already exists)
+const sayNode = await api.workflows.items.create({
+  workflowVersionId: version.id,
+  category: 'engagement',
+  type: 'say',
+  label: 'Say Hello',
+  settings: { 'phone.playback.type': 'tts', 'phone.playback.message': 'Hello world' },
+});
+
+const hangupNode = await api.workflows.items.create({
+  workflowVersionId: version.id,
+  category: 'actions',
+  type: 'hangUp',
+  label: 'Hang Up',
+});
+
+// 4. Wire connections (start → say → hangup)
+// Fetch ports first to get port IDs
+const ports = await api.workflows.ports.list(version.id);
+// ... connect start.Continue → say, say.Continue → hangup
+
+// 5. Publish (locks the version)
+await api.workflows.versions.publish(version.id);
+
+// 6. Activate (routes live traffic here)
+await api.workflows.versions.activate(version.id);
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const BASE = 'https://{namespace}.api.unbound.cx';
+const headers = { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' };
+
+// 1. Create a new workflow
+const wf = await fetch(`${BASE}/object/workflows`, {
+  method: 'POST', headers,
+  body: JSON.stringify({ name: 'Hello World', type: 'engagement' })
+}).then(r => r.json());
+
+// 2. Create a version (blank — auto-creates start node)
+const ver = await fetch(`${BASE}/object/workflowVersions`, {
+  method: 'POST', headers,
+  body: JSON.stringify({ workflowId: wf.id, name: 'v1.0' })
+}).then(r => r.json());
+
+// 3. Get the auto-created start node ID
+const verData = await fetch(`${BASE}/object/query/workflowVersions?id=${ver.id}`, { headers })
+  .then(r => r.json());
+const startNodeId = verData.results[0].startWorkflowItemId;
+
+// 4. Add nodes (NOT a start node)
+const sayNode = await fetch(`${BASE}/object/workflowItems`, {
+  method: 'POST', headers,
+  body: JSON.stringify({
+    workflowVersionId: ver.id,
+    category: 'engagement',
+    type: 'say',
+    label: 'Say Hello',
+    settings: { 'phone.playback.type': 'tts', 'phone.playback.message': 'Hello world' },
+    position: { x: 200, y: 260 }
+  })
+}).then(r => r.json());
+
+const hangupNode = await fetch(`${BASE}/object/workflowItems`, {
+  method: 'POST', headers,
+  body: JSON.stringify({
+    workflowVersionId: ver.id,
+    category: 'actions',
+    type: 'hangUp',
+    label: 'Hang Up',
+    position: { x: 200, y: 420 }
+  })
+}).then(r => r.json());
+
+// 5. Fetch ports and wire connections
+const portsData = await fetch(`${BASE}/object/query/workflowItemPorts?workflowVersionId=${ver.id}`, { headers })
+  .then(r => r.json());
+// Find ports by item ID and direction, then create workflowItemConnections...
+
+// 6. Publish
+await fetch(`${BASE}/object/workflowVersions`, {
+  method: 'PUT', headers,
+  body: JSON.stringify({ where: { id: ver.id }, update: { isPublished: true } })
+});
+
+// 7. Activate
+await fetch(`${BASE}/object/workflowVersions`, {
+  method: 'PUT', headers,
+  body: JSON.stringify({ where: { id: ver.id }, update: { isCurrent: true } })
+});
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+BASE="https://{namespace}.api.unbound.cx"
+TOKEN="{token}"
+
+# 1. Create workflow
+WF_ID=$(curl -s -X POST "$BASE/object/workflows" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"Hello World","type":"engagement"}' | jq -r '.id')
+
+# 2. Create version (auto-creates start node)
+VER_ID=$(curl -s -X POST "$BASE/object/workflowVersions" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"workflowId\":\"$WF_ID\",\"name\":\"v1.0\"}" | jq -r '.id')
+
+# 3. Get auto-created start node
+START_ID=$(curl -s "$BASE/object/query/workflowVersions?id=$VER_ID" \
+  -H "Authorization: Bearer $TOKEN" | jq -r '.results[0].startWorkflowItemId')
+
+# 4. Add nodes (no start node!)
+SAY_ID=$(curl -s -X POST "$BASE/object/workflowItems" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"workflowVersionId\":\"$VER_ID\",\"category\":\"engagement\",\"type\":\"say\",\"label\":\"Say Hello\",\"position\":{\"x\":200,\"y\":260},\"settings\":{\"phone.playback.type\":\"tts\",\"phone.playback.message\":\"Hello world\"}}" | jq -r '.id')
+
+HANGUP_ID=$(curl -s -X POST "$BASE/object/workflowItems" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"workflowVersionId\":\"$VER_ID\",\"category\":\"actions\",\"type\":\"hangUp\",\"label\":\"Hang Up\",\"position\":{\"x\":200,\"y\":420}}" | jq -r '.id')
+
+# 5. Fetch ports, wire connections (see full port connection example above)
+
+# 6. Publish
+curl -s -X PUT "$BASE/object/workflowVersions" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"where\":{\"id\":\"$VER_ID\"},\"update\":{\"isPublished\":true}}"
+
+# 7. Activate
+curl -s -X PUT "$BASE/object/workflowVersions" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"where\":{\"id\":\"$VER_ID\"},\"update\":{\"isCurrent\":true}}"
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Fork a version to make edits
+
+The correct way to modify a live workflow:
+
+```json
+POST /object/workflowVersions
+{
+  "workflowId": "074d...",
+  "name": "v1.1",
+  "copyFrom": "075d..."
+}
+```
+
+This deep-copies the entire version — all nodes, ports, connections, and settings — with new IDs. The original published version is untouched. After editing, publish and activate the new version.
+
