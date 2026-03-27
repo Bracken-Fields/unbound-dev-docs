@@ -94,15 +94,20 @@ webhook = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "calendarId": "primary",
+  "eventTypes": ["created", "updated", "deleted"],
+  "webhookUrl": "https://yourapp.com/webhooks/gcal",
+  "expirationTime": 1672531200000
+}
+EOF
+)
+
 curl -X POST https://{namespace}.api.unbound.cx/google-calendar/webhooks \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "calendarId": "primary",
-    "eventTypes": ["created", "updated", "deleted"],
-    "webhookUrl": "https://yourapp.com/webhooks/gcal",
-    "expirationTime": 1672531200000
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -480,14 +485,19 @@ def handle_gcal_webhook():
 
 ```bash
 # Typically called from your webhook handler, not directly
+DATA=$(cat <<'EOF'
+{
+  "calendarId": "primary",
+  "eventId": "event-123",
+  "changeType": "updated"
+}
+EOF
+)
+
 curl -X POST https://{namespace}.api.unbound.cx/google-calendar/process-change \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "calendarId": "primary",
-    "eventId": "event-123",
-    "changeType": "updated"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>

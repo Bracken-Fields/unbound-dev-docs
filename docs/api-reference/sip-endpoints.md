@@ -107,16 +107,21 @@ data = response.json()
 
 ```bash
 # WebRTC endpoint (browser-based)
+DATA=$(cat <<'EOF'
+{
+  "type": "webRtc",
+  "name": "Jane Smith - Browser",
+  "userId": "user-id-123",
+  "recordTypeId": "record-type-id",
+  "useSecureCalling": true
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/sip-endpoint" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "type": "webRtc",
-    "name": "Jane Smith - Browser",
-    "userId": "user-id-123",
-    "recordTypeId": "record-type-id",
-    "useSecureCalling": true
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -286,15 +291,20 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "name": "Updated Endpoint Name",
+  "userId": "new-user-id",
+  "useSecureCalling": false,
+  "macAddress": "AA:BB:CC:DD:EE:FF"
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/sip-endpoint/{id}" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Updated Endpoint Name",
-    "userId": "new-user-id",
-    "useSecureCalling": false,
-    "macAddress": "AA:BB:CC:DD:EE:FF"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>

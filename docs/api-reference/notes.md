@@ -98,15 +98,20 @@ note = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "relatedId": "contact-id-123",
+  "recordTypeId": "record-type-id",
+  "title": "Follow-up call notes",
+  "content_html": "<p>Customer mentioned interest in <strong>Pro plan</strong>.</p>"
+}
+EOF
+)
+
 curl -X POST 'https://{namespace}.api.unbound.cx/note' \
   -H 'Authorization: Bearer {token}' \
   -H 'Content-Type: application/json' \
-  -d '{
-    "relatedId": "contact-id-123",
-    "recordTypeId": "record-type-id",
-    "title": "Follow-up call notes",
-    "content_html": "<p>Customer mentioned interest in <strong>Pro plan</strong>.</p>"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -357,13 +362,18 @@ note = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "title": "Updated call notes",
+  "content_html": "<p>Updated content.</p>"
+}
+EOF
+)
+
 curl -X PUT 'https://{namespace}.api.unbound.cx/note/note-id-456' \
   -H 'Authorization: Bearer {token}' \
   -H 'Content-Type: application/json' \
-  -d '{
-    "title": "Updated call notes",
-    "content_html": "<p>Updated content.</p>"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>

@@ -637,13 +637,18 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "tags": ["contract", "signed"],
+  "owner": "jane@example.com"
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/storage/storage-id-123/metadata" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "tags": ["contract", "signed"],
-    "owner": "jane@example.com"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>

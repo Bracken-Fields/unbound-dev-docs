@@ -237,14 +237,19 @@ results = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "query": "how to reset password",
+  "kbId": "kb-id-123",
+  "limit": 10
+}
+EOF
+)
+
 curl -X POST https://{namespace}.api.unbound.cx/knowledge-base/search \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "query": "how to reset password",
-    "kbId": "kb-id-123",
-    "limit": 10
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -328,13 +333,18 @@ requests.post(
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "url": "https://docs.yourcompany.com/faq",
+  "kbId": "kb-id-123"
+}
+EOF
+)
+
 curl -X POST https://{namespace}.api.unbound.cx/knowledge-base/ingest \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "url": "https://docs.yourcompany.com/faq",
-    "kbId": "kb-id-123"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>

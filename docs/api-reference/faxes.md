@@ -110,15 +110,20 @@ print(f"Status: {fax['status']}")
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "to": "+12135550100",
+  "from": "+18005551234",
+  "fileUrl": "https://example.com/document.pdf",
+  "mediaUrl": "https://example.com/attachment.pdf"
+}
+EOF
+)
+
 curl -X POST https://{namespace}.api.unbound.cx/messaging/fax \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "to": "+12135550100",
-    "from": "+18005551234",
-    "fileUrl": "https://example.com/document.pdf",
-    "mediaUrl": "https://example.com/attachment.pdf"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>

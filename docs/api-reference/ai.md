@@ -108,19 +108,24 @@ print(data["choices"][0]["message"]["content"])
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "messages": [
+    {"role": "system", "content": "You are a helpful support agent."},
+    {"role": "user", "content": "What is your return policy?"}
+  ],
+  "provider": "openai",
+  "model": "gpt-4o",
+  "temperature": 0.7,
+  "subscriptionId": "sub_123"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/ai/chat" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "messages": [
-      {"role": "system", "content": "You are a helpful support agent."},
-      {"role": "user", "content": "What is your return policy?"}
-    ],
-    "provider": "openai",
-    "model": "gpt-4o",
-    "temperature": 0.7,
-    "subscriptionId": "sub_123"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -269,16 +274,21 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "playbookId": "pb_support_triage",
+  "messages": [
+    {"role": "user", "content": "My internet is down."}
+  ],
+  "sessionId": "session_abc123"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/ai/playbook" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "playbookId": "pb_support_triage",
-    "messages": [
-      {"role": "user", "content": "My internet is down."}
-    ],
-    "sessionId": "session_abc123"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -393,19 +403,24 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "text": "Hello, thank you for calling Acme Support.",
+  "voice": "en-US-Neural2-C",
+  "languageCode": "en-US",
+  "audioEncoding": "MP3",
+  "speakingRate": 1.0,
+  "pitch": 0,
+  "volumeGainDb": 0,
+  "createAccessKey": true
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/ai/tts" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "text": "Hello, thank you for calling Acme Support.",
-    "voice": "en-US-Neural2-C",
-    "languageCode": "en-US",
-    "audioEncoding": "MP3",
-    "speakingRate": 1.0,
-    "pitch": 0,
-    "volumeGainDb": 0,
-    "createAccessKey": true
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -611,25 +626,30 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "sourceType": "storage",
+  "storageId": "store_audio_xyz",
+  "engine": "google",
+  "languageCode": "en-US",
+  "metadata": {
+    "diarizationEnabled": true,
+    "speakerCount": 2,
+    "enableAutomaticPunctuation": true
+  },
+  "engagementSessionId": "eng_123",
+  "playbookId": "pb_456",
+  "name": "Support Call 2024-01-15",
+  "role": "agent",
+  "direction": "inbound"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/ai/stt" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "sourceType": "storage",
-    "storageId": "store_audio_xyz",
-    "engine": "google",
-    "languageCode": "en-US",
-    "metadata": {
-      "diarizationEnabled": true,
-      "speakerCount": 2,
-      "enableAutomaticPunctuation": true
-    },
-    "engagementSessionId": "eng_123",
-    "playbookId": "pb_456",
-    "name": "Support Call 2024-01-15",
-    "role": "agent",
-    "direction": "inbound"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1203,33 +1223,38 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "messageId": "msg_001",
+  "timestamp": 1705339200000,
+  "text": "Hello, how can I help you today?",
+  "role": "agent",
+  "side": "send",
+  "confidence": 0.98,
+  "duration": 2.4,
+  "languageCode": "en-US",
+  "userId": "user_123",
+  "sipCallId": "sip_abc",
+  "bridgeId": "bridge_xyz",
+  "sentiment": {
+    "score": 15,
+    "previousScore": 10,
+    "delta": 5,
+    "agentScore": 20,
+    "customerScore": 10,
+    "intensity": 0.4,
+    "emotions": ["neutral", "friendly"],
+    "trend": "improving",
+    "source": "llm+acoustic"
+  }
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/ai/stt/stt_stream_abc/message" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "messageId": "msg_001",
-    "timestamp": 1705339200000,
-    "text": "Hello, how can I help you today?",
-    "role": "agent",
-    "side": "send",
-    "confidence": 0.98,
-    "duration": 2.4,
-    "languageCode": "en-US",
-    "userId": "user_123",
-    "sipCallId": "sip_abc",
-    "bridgeId": "bridge_xyz",
-    "sentiment": {
-      "score": 15,
-      "previousScore": 10,
-      "delta": 5,
-      "agentScore": 20,
-      "customerScore": 10,
-      "intensity": 0.4,
-      "emotions": ["neutral", "friendly"],
-      "trend": "improving",
-      "source": "llm+acoustic"
-    }
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1413,14 +1438,19 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "value": "Call me at eight hundred five five five twelve twelve",
+  "country": "US",
+  "format": "E164"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/ai/extract/phone" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "value": "Call me at eight hundred five five five twelve twelve",
-    "country": "US",
-    "format": "E164"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1986,20 +2016,25 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "value": "I need help with my bill",
+  "params": {
+    "question": "What can I help you with today?",
+    "validOptions": [
+      {"value": "billing", "label": "Billing"},
+      {"value": "technical", "label": "Technical Support"},
+      {"value": "sales", "label": "Sales"}
+    ]
+  }
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/ai/extract/intent" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "value": "I need help with my bill",
-    "params": {
-      "question": "What can I help you with today?",
-      "validOptions": [
-        {"value": "billing", "label": "Billing"},
-        {"value": "technical", "label": "Technical Support"},
-        {"value": "sales", "label": "Sales"}
-      ]
-    }
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -2077,14 +2112,19 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "value": "Call John Smith at 555-1234 or john@example.com",
+  "types": ["phone", "email", "personName"],
+  "question": "What is the caller contact information?"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/ai/extract/all" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "value": "Call John Smith at 555-1234 or john@example.com",
-    "types": ["phone", "email", "personName"],
-    "question": "What is the caller contact information?"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -2163,15 +2203,20 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "value": "Order number is AB-123456",
+  "pattern": "[A-Z]{2}-\\d{6}",
+  "flags": "g",
+  "replaceNumbers": true
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/ai/extract/regex" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "value": "Order number is AB-123456",
-    "pattern": "[A-Z]{2}-\\d{6}",
-    "flags": "g",
-    "replaceNumbers": true
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -2722,16 +2767,21 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "name": "Opening/Greeting",
+  "description": "Initial greeting and rapport building",
+  "keywords": ["hello", "hi", "good morning", "thanks for taking the call"],
+  "recommendedPhase": "early",
+  "recordTypeId": "rt_sales"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/ai/playbook/goal-type" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Opening/Greeting",
-    "description": "Initial greeting and rapport building",
-    "keywords": ["hello", "hi", "good morning", "thanks for taking the call"],
-    "recommendedPhase": "early",
-    "recordTypeId": "rt_sales"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -3065,18 +3115,23 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "playbookGoalTypeId": "gt_discovery",
+  "goal": "Identify customer pain points",
+  "description": "Agent should discover at least 2 key pain points",
+  "scoreType": "scale",
+  "weight": 25,
+  "requiredForPass": false,
+  "recordTypeId": "rt_sales"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/ai/playbook/pb_123456/goal" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "playbookGoalTypeId": "gt_discovery",
-    "goal": "Identify customer pain points",
-    "description": "Agent should discover at least 2 key pain points",
-    "scoreType": "scale",
-    "weight": 25,
-    "requiredForPass": false,
-    "recordTypeId": "rt_sales"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -3160,14 +3215,19 @@ requests.put(
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "playbookGoalTypeId": "gt_discovery",
+  "weight": 30,
+  "description": "Updated: discover at least 3 pain points"
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/ai/playbook/goal/goal_789" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "playbookGoalTypeId": "gt_discovery",
-    "weight": 30,
-    "description": "Updated: discover at least 3 pain points"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -3381,18 +3441,23 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "playbookId": "pb_sales_call",
+  "transcriptionSessionId": "stt_abc",
+  "method": "ai",
+  "userId": "user_789",
+  "sipCallId": "sip_xyz",
+  "taskId": "task_123",
+  "workerId": "worker_456"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/ai/playbook/session" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "playbookId": "pb_sales_call",
-    "transcriptionSessionId": "stt_abc",
-    "method": "ai",
-    "userId": "user_789",
-    "sipCallId": "sip_xyz",
-    "taskId": "task_123",
-    "workerId": "worker_456"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -3681,32 +3746,42 @@ requests.post(
 
 ```bash
 # Log a successful goal
+DATA=$(cat <<'EOF'
+{
+  "goalId": "goal_456",
+  "achieved": true,
+  "score": 10,
+  "reason": "Customer clearly expressed interest in the product",
+  "confidence": 0.95,
+  "evidence": [
+    {"type": "transcript", "text": "I would love to learn more about this"},
+    {"type": "transcript", "text": "When can we schedule a demo?"}
+  ]
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_abc123/goal" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "goalId": "goal_456",
-    "achieved": true,
-    "score": 10,
-    "reason": "Customer clearly expressed interest in the product",
-    "confidence": 0.95,
-    "evidence": [
-      {"type": "transcript", "text": "I would love to learn more about this"},
-      {"type": "transcript", "text": "When can we schedule a demo?"}
-    ]
-  }'
+  -d "$DATA"
 
 # Log a failed goal
+DATA=$(cat <<'EOF'
+{
+  "goalId": "goal_789",
+  "achieved": false,
+  "score": 0,
+  "reason": "Pricing was never discussed during the call",
+  "confidence": 0.88
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/ai/playbook/session/pbs_abc123/goal" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "goalId": "goal_789",
-    "achieved": false,
-    "score": 0,
-    "reason": "Pricing was never discussed during the call",
-    "confidence": 0.88
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>

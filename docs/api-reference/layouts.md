@@ -232,25 +232,30 @@ layout = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "name": "Contact Detail",
+  "objectName": "contacts",
+  "sections": [
+    {
+      "label": "Basic Info",
+      "columns": 2,
+      "fields": ["firstName", "lastName", "email", "phone"]
+    },
+    {
+      "label": "Company",
+      "columns": 1,
+      "fields": ["company", "title", "department"]
+    }
+  ]
+}
+EOF
+)
+
 curl -X POST https://{namespace}.api.unbound.cx/layouts \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Contact Detail",
-    "objectName": "contacts",
-    "sections": [
-      {
-        "label": "Basic Info",
-        "columns": 2,
-        "fields": ["firstName", "lastName", "email", "phone"]
-      },
-      {
-        "label": "Company",
-        "columns": 1,
-        "fields": ["company", "title", "department"]
-      }
-    ]
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -349,18 +354,23 @@ requests.put(
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "sections": [
+    {
+      "label": "Contact Info",
+      "columns": 2,
+      "fields": ["firstName", "lastName", "email", "phone", "mobile"]
+    }
+  ]
+}
+EOF
+)
+
 curl -X PUT https://{namespace}.api.unbound.cx/layouts/layout-id-123 \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "sections": [
-      {
-        "label": "Contact Info",
-        "columns": 2,
-        "fields": ["firstName", "lastName", "email", "phone", "mobile"]
-      }
-    ]
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -510,15 +520,20 @@ results = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "objectName": "companies",
+  "field": "name",
+  "search": "Acme",
+  "limit": 10
+}
+EOF
+)
+
 curl -X POST https://{namespace}.api.unbound.cx/layouts/dynamic-select-search \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "objectName": "companies",
-    "field": "name",
-    "search": "Acme",
-    "limit": 10
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>

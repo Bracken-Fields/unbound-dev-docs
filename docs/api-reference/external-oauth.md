@@ -117,21 +117,26 @@ oauth = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "name": "Salesforce CRM",
+  "provider": "salesforce",
+  "scopes": ["read", "write", "offline_access"],
+  "credentials": {
+    "clientId": "your-client-id",
+    "clientSecret": "your-client-secret"
+  },
+  "configuration": {
+    "instanceUrl": "https://yourorg.salesforce.com"
+  }
+}
+EOF
+)
+
 curl -X POST https://{namespace}.api.unbound.cx/external-oauth \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Salesforce CRM",
-    "provider": "salesforce",
-    "scopes": ["read", "write", "offline_access"],
-    "credentials": {
-      "clientId": "your-client-id",
-      "clientSecret": "your-client-secret"
-    },
-    "configuration": {
-      "instanceUrl": "https://yourorg.salesforce.com"
-    }
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -220,14 +225,19 @@ requests.put(
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "name": "Salesforce CRM (Production)",
+  "scopes": ["read", "write", "offline_access", "api"],
+  "credentials": {"clientSecret": "new-secret"}
+}
+EOF
+)
+
 curl -X PUT https://{namespace}.api.unbound.cx/external-oauth/oauth-id-123 \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Salesforce CRM (Production)",
-    "scopes": ["read", "write", "offline_access", "api"],
-    "credentials": {"clientSecret": "new-secret"}
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>

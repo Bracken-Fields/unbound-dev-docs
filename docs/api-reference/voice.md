@@ -162,25 +162,30 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "to": "+12135550100",
+  "from": "+18005551234",
+  "timeout": 30,
+  "app": {
+    "version": "2.0",
+    "name": "welcome-ivr",
+    "commands": [
+      {"command": "play", "file": "welcome.wav"},
+      {"command": "gather", "numDigits": 1, "timeout": 10}
+    ]
+  },
+  "customHeaders": {
+    "X-Tenant-Id": "tenant-abc"
+  }
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/voice/calls" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "to": "+12135550100",
-    "from": "+18005551234",
-    "timeout": 30,
-    "app": {
-      "version": "2.0",
-      "name": "welcome-ivr",
-      "commands": [
-        {"command": "play", "file": "welcome.wav"},
-        {"command": "gather", "numDigits": 1, "timeout": 10}
-      ]
-    },
-    "customHeaders": {
-      "X-Tenant-Id": "tenant-abc"
-    }
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -395,24 +400,29 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "app": {
+    "version": "2.0",
+    "name": "post-hold-menu",
+    "commands": [
+      {"command": "play", "file": "thank-you-for-holding.wav"},
+      {
+        "command": "gather",
+        "numDigits": 1,
+        "timeout": 10,
+        "action": "https://api.example.com/ivr/choice"
+      }
+    ]
+  }
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/voice/calls/call-9f3a2c1b/replace-app" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "app": {
-      "version": "2.0",
-      "name": "post-hold-menu",
-      "commands": [
-        {"command": "play", "file": "thank-you-for-holding.wav"},
-        {
-          "command": "gather",
-          "numDigits": 1,
-          "timeout": 10,
-          "action": "https://api.example.com/ivr/choice"
-        }
-      ]
-    }
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -942,36 +952,46 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "channels": ["channel-id-abc"],
+  "to": "+15556667777",
+  "callerIdName": "Acme Support",
+  "callerIdNumber": "+18005551234",
+  "timeout": 30
+}
+EOF
+)
+
 # Blind transfer to a number
 curl -X POST "https://{namespace}.api.unbound.cx/voice/transfer" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "channels": ["channel-id-abc"],
-    "to": "+15556667777",
-    "callerIdName": "Acme Support",
-    "callerIdNumber": "+18005551234",
-    "timeout": 30
-  }'
+  -d "$DATA"
+
+DATA=$(cat <<'EOF'
+{
+  "channels": ["channel-id-abc"],
+  "to": "+15556667777",
+  "timeout": 20,
+  "voiceApp": {
+    "version": "2.0",
+    "name": "voicemail-prompt",
+    "commands": [
+      {"command": "say", "text": "Please leave a message after the tone."},
+      {"command": "record", "maxLength": 60, "finishOnKey": "#"},
+      {"command": "hangup"}
+    ]
+  }
+}
+EOF
+)
 
 # Transfer with a fallback voice app (if no answer)
 curl -X POST "https://{namespace}.api.unbound.cx/voice/transfer" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "channels": ["channel-id-abc"],
-    "to": "+15556667777",
-    "timeout": 20,
-    "voiceApp": {
-      "version": "2.0",
-      "name": "voicemail-prompt",
-      "commands": [
-        {"command": "say", "text": "Please leave a message after the tone."},
-        {"command": "record", "maxLength": 60, "finishOnKey": "#"},
-        {"command": "hangup"}
-      ]
-    }
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1623,33 +1643,43 @@ curl -X POST "https://{namespace}.api.unbound.cx/voice/channels/channel-id-abc/t
   -H "Content-Type: application/json" \
   -d '{"action": "start", "direction": "in"}'
 
+DATA=$(cat <<'EOF'
+{
+  "action": "start",
+  "direction": "in",
+  "forwardText": {
+    "url": "https://api.example.com/transcripts",
+    "method": "POST",
+    "headers": {"Authorization": "Bearer my-webhook-token"}
+  }
+}
+EOF
+)
+
 # Forward transcript text to a webhook in real-time
 curl -X POST "https://{namespace}.api.unbound.cx/voice/channels/channel-id-abc/transcribe" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "action": "start",
-    "direction": "in",
-    "forwardText": {
-      "url": "https://api.example.com/transcripts",
-      "method": "POST",
-      "headers": {"Authorization": "Bearer my-webhook-token"}
-    }
-  }'
+  -d "$DATA"
+
+DATA=$(cat <<'EOF'
+{
+  "action": "start",
+  "direction": "in",
+  "forwardRtp": {
+    "host": "10.0.0.5",
+    "port": 5004,
+    "codec": "PCMU"
+  }
+}
+EOF
+)
 
 # Forward raw RTP audio to a media server
 curl -X POST "https://{namespace}.api.unbound.cx/voice/channels/channel-id-abc/transcribe" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "action": "start",
-    "direction": "in",
-    "forwardRtp": {
-      "host": "10.0.0.5",
-      "port": 5004,
-      "codec": "PCMU"
-    }
-  }'
+  -d "$DATA"
 
 # Stop transcription
 curl -X POST "https://{namespace}.api.unbound.cx/voice/channels/channel-id-abc/stop-transcribing" \
@@ -1873,37 +1903,42 @@ def run_survey_call(to_number):
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "to": "+12135550100",
+  "from": "+18005551234",
+  "timeout": 30,
+  "app": {
+    "version": "2.0",
+    "name": "nps-survey",
+    "commands": [
+      {
+        "command": "say",
+        "text": "Thank you for being a customer. On a scale of 1 to 5, how satisfied are you? Press 1 through 5 now.",
+        "voice": "Polly.Joanna"
+      },
+      {
+        "command": "gather",
+        "numDigits": 1,
+        "timeout": 8,
+        "action": "https://api.example.com/survey/response",
+        "method": "POST"
+      },
+      {
+        "command": "say",
+        "text": "We did not receive your response. Goodbye."
+      },
+      {"command": "hangup"}
+    ]
+  }
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/voice/calls" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "to": "+12135550100",
-    "from": "+18005551234",
-    "timeout": 30,
-    "app": {
-      "version": "2.0",
-      "name": "nps-survey",
-      "commands": [
-        {
-          "command": "say",
-          "text": "Thank you for being a customer. On a scale of 1 to 5, how satisfied are you? Press 1 through 5 now.",
-          "voice": "Polly.Joanna"
-        },
-        {
-          "command": "gather",
-          "numDigits": 1,
-          "timeout": 8,
-          "action": "https://api.example.com/survey/response",
-          "method": "POST"
-        },
-        {
-          "command": "say",
-          "text": "We did not receive your response. Goodbye."
-        },
-        {"command": "hangup"}
-      ]
-    }
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -2236,29 +2271,34 @@ curl -X POST "https://{namespace}.api.unbound.cx/voice/record" \
   -H "Content-Type: application/json" \
   -d '{"callId": "call-9f3a2c1b", "action": "pause"}'
 
+DATA=$(cat <<'EOF'
+{
+  "app": {
+    "version": "2.0",
+    "name": "payment-collect",
+    "commands": [
+      {
+        "command": "say",
+        "text": "Please enter your 16-digit card number followed by the pound key."
+      },
+      {
+        "command": "gather",
+        "numDigits": 16,
+        "timeout": 30,
+        "finishOnKey": "#",
+        "action": "https://api.example.com/payment/card"
+      }
+    ]
+  }
+}
+EOF
+)
+
 # Replace call app to collect card number via DTMF (never transcribed)
 curl -X POST "https://{namespace}.api.unbound.cx/voice/calls/call-9f3a2c1b/replace-app" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "app": {
-      "version": "2.0",
-      "name": "payment-collect",
-      "commands": [
-        {
-          "command": "say",
-          "text": "Please enter your 16-digit card number followed by the pound key."
-        },
-        {
-          "command": "gather",
-          "numDigits": 16,
-          "timeout": 30,
-          "finishOnKey": "#",
-          "action": "https://api.example.com/payment/card"
-        }
-      ]
-    }
-  }'
+  -d "$DATA"
 
 # Resume recording after card is processed
 curl -X POST "https://{namespace}.api.unbound.cx/voice/record" \
@@ -2401,21 +2441,26 @@ def start_agent_transcription(channel_id):
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "action": "start",
+  "direction": "out",
+  "forwardText": {
+    "url": "https://api.example.com/transcripts/live",
+    "method": "POST",
+    "headers": {
+      "Authorization": "Bearer {WEBHOOK_SECRET}",
+      "X-Channel-Id": "{channelId}"
+    }
+  }
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/voice/channels/{channelId}/transcribe" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "action": "start",
-    "direction": "out",
-    "forwardText": {
-      "url": "https://api.example.com/transcripts/live",
-      "method": "POST",
-      "headers": {
-        "Authorization": "Bearer {WEBHOOK_SECRET}",
-        "X-Channel-Id": "{channelId}"
-      }
-    }
-  }'
+  -d "$DATA"
 
 # Webhook receives events like:
 # POST /transcripts/live
@@ -2568,15 +2613,20 @@ transfer_with_dtmf('channel-id-abc', '+18005554321', '2#1234567890#')
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "channels": ["channel-id-abc"],
+  "to": "+18005554321",
+  "timeout": 30
+}
+EOF
+)
+
 # Transfer to external IVR
 curl -X POST "https://{namespace}.api.unbound.cx/voice/transfer" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "channels": ["channel-id-abc"],
-    "to": "+18005554321",
-    "timeout": 30
-  }'
+  -d "$DATA"
 
 # Wait for the IVR to answer and play its prompt (sleep 3 seconds)
 # Then navigate IVR menus automatically by sending DTMF digits:
@@ -2771,26 +2821,31 @@ curl -X POST "https://{namespace}.api.unbound.cx/voice/hold" \
   -H "Content-Type: application/json" \
   -d '{"channels": ["channel-id-abc"]}'
 
+DATA=$(cat <<'EOF'
+{
+  "app": {
+    "version": "2.0",
+    "name": "hold-message",
+    "commands": [
+      {
+        "command": "say",
+        "text": "Your estimated wait time is 5 minutes. Please hold."
+      },
+      {
+        "command": "play",
+        "file": "hold-music.wav"
+      }
+    ]
+  }
+}
+EOF
+)
+
 # Play dynamic wait time message via replaceCallApp
 curl -X POST "https://{namespace}.api.unbound.cx/voice/calls/call-9f3a2c1b/replace-app" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "app": {
-      "version": "2.0",
-      "name": "hold-message",
-      "commands": [
-        {
-          "command": "say",
-          "text": "Your estimated wait time is 5 minutes. Please hold."
-        },
-        {
-          "command": "play",
-          "file": "hold-music.wav"
-        }
-      ]
-    }
-  }'
+  -d "$DATA"
 
 # Transfer when an agent becomes available
 # (triggered via queue event or task router)

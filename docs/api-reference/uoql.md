@@ -131,13 +131,18 @@ print(data['results'])
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "query": "SELECT id, firstName, lastName FROM people LIMIT 50",
+  "expandDetails": false
+}
+EOF
+)
+
 curl -X POST https://your-namespace.api.unbound.cx/object/query/v2 \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-jwt-token" \
-  -d '{
-    "query": "SELECT id, firstName, lastName FROM people LIMIT 50",
-    "expandDetails": false
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -428,13 +433,18 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "query": "SELECT id, direction, duration, userId FROM cdr LIMIT 25",
+  "expandDetails": true
+}
+EOF
+)
+
 curl -X POST https://your-namespace.api.unbound.cx/object/query/v2 \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-jwt-token" \
-  -d '{
-    "query": "SELECT id, direction, duration, userId FROM cdr LIMIT 25",
-    "expandDetails": true
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>

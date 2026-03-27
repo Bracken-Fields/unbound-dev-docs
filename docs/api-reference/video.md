@@ -135,27 +135,32 @@ room = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "name": "Team Standup",
+  "password": "secret123",
+  "startTime": "2024-06-01T14:00:00Z",
+  "endTime": "2024-06-01T15:00:00Z",
+  "duration": 60,
+  "durationUnit": "minutes",
+  "timezone": "America/New_York",
+  "waitingRoom": true,
+  "hosts": ["host@yourcompany.com"],
+  "participants": ["alice@example.com", "bob@example.com"],
+  "startCameraMuted": false,
+  "startCameraMutedAfter": 10,
+  "startMicrophoneMuted": true,
+  "startMicrophoneMutedAfter": 5,
+  "enableChat": true,
+  "engagementSessionId": "eng-abc123"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/video/room" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Team Standup",
-    "password": "secret123",
-    "startTime": "2024-06-01T14:00:00Z",
-    "endTime": "2024-06-01T15:00:00Z",
-    "duration": 60,
-    "durationUnit": "minutes",
-    "timezone": "America/New_York",
-    "waitingRoom": true,
-    "hosts": ["host@yourcompany.com"],
-    "participants": ["alice@example.com", "bob@example.com"],
-    "startCameraMuted": false,
-    "startCameraMutedAfter": 10,
-    "startMicrophoneMuted": true,
-    "startMicrophoneMutedAfter": 5,
-    "enableChat": true,
-    "engagementSessionId": "eng-abc123"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -282,17 +287,22 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "name": "New Name",
+  "waitingRoom": false,
+  "startRecordingOn": true,
+  "startTranscribingOn": true,
+  "hosts": ["newhost@yourcompany.com"],
+  "endTime": "2024-06-01T16:00:00Z"
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/video/room/room-xyz789" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "New Name",
-    "waitingRoom": false,
-    "startRecordingOn": true,
-    "startTranscribingOn": true,
-    "hosts": ["newhost@yourcompany.com"],
-    "endTime": "2024-06-01T16:00:00Z"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -713,26 +723,36 @@ guest_session = response.json()
 
 ```bash
 # Authenticated user join
+DATA=$(cat <<'EOF'
+{
+  "password": "secret123",
+  "email": "alice@example.com",
+  "firstName": "Alice",
+  "lastName": "Smith"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/join" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "password": "secret123",
-    "email": "alice@example.com",
-    "firstName": "Alice",
-    "lastName": "Smith"
-  }'
+  -d "$DATA"
 
 # Guest join with JWT token
+DATA=$(cat <<'EOF'
+{
+  "email": "guest@example.com",
+  "name": "Guest User",
+  "tokenType": "jwt",
+  "token": "existing-jwt-token"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/join" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "guest@example.com",
-    "name": "Guest User",
-    "tokenType": "jwt",
-    "token": "existing-jwt-token"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -833,17 +853,22 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "password": "secret123",
+  "phoneNumber": "+13175551234",
+  "voiceChannelId": "vc-abc123",
+  "serverId": "sip-server-1",
+  "engagementSessionId": "eng-abc123",
+  "meetingJoinType": "outboundApi"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/join/sip" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "password": "secret123",
-    "phoneNumber": "+13175551234",
-    "voiceChannelId": "vc-abc123",
-    "serverId": "sip-server-1",
-    "engagementSessionId": "eng-abc123",
-    "meetingJoinType": "outboundApi"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1263,14 +1288,19 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "email": "newperson@example.com",
+  "role": "participant",
+  "name": "Bob Jones"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/participant" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "newperson@example.com",
-    "role": "participant",
-    "name": "Bob Jones"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1708,19 +1738,24 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "participantId": "p-abc123",
+  "timestamp": "2024-06-01T14:30:00Z",
+  "videoResolution": {"width": 1280, "height": 720},
+  "frameRate": 30,
+  "bitrate": 450000,
+  "packetLoss": 0.002,
+  "jitter": 5,
+  "rtt": 42
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/stats" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "participantId": "p-abc123",
-    "timestamp": "2024-06-01T14:30:00Z",
-    "videoResolution": {"width": 1280, "height": 720},
-    "frameRate": 30,
-    "bitrate": 450000,
-    "packetLoss": 0.002,
-    "jitter": 5,
-    "rtt": 42
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1800,13 +1835,18 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "phoneNumber": "+13175551234",
+  "callerIdNumber": "+18005550001"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/call" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "phoneNumber": "+13175551234",
-    "callerIdNumber": "+18005550001"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1935,17 +1975,22 @@ data = response.json()
 
 ```bash
 # Simple text message
+DATA=$(cat <<'EOF'
+{
+  "content": [
+    {
+      "type": "paragraph",
+      "content": [{"type": "text", "text": "Hello everyone!"}]
+    }
+  ]
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "content": [
-      {
-        "type": "paragraph",
-        "content": [{"type": "text", "text": "Hello everyone!"}]
-      }
-    ]
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -2161,17 +2206,22 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "content": [
+    {
+      "type": "paragraph",
+      "content": [{"type": "text", "text": "Corrected message text."}]
+    }
+  ]
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/video/room/room-xyz789/chat/msg-abc123" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "content": [
-      {
-        "type": "paragraph",
-        "content": [{"type": "text", "text": "Corrected message text."}]
-      }
-    ]
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -2321,17 +2371,22 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "videoRoomId": "room-xyz789",
+  "participantId": "p-abc123",
+  "email": "alice@example.com",
+  "videoQuality": 4,
+  "audioQuality": 5,
+  "feedback": "Great call, very clear audio."
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/video/survey" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "videoRoomId": "room-xyz789",
-    "participantId": "p-abc123",
-    "email": "alice@example.com",
-    "videoQuality": 4,
-    "audioQuality": 5,
-    "feedback": "Great call, very clear audio."
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -2502,22 +2557,27 @@ response = requests.put(
 
 ```bash
 # Set defaults for the current user
+DATA=$(cat <<'EOF'
+{
+  "waitingRoom": true,
+  "enableChat": true,
+  "startMicrophoneMuted": true,
+  "startMicrophoneMutedAfter": 5,
+  "startCameraMuted": false,
+  "startCameraMutedAfter": 10,
+  "maxVideoResolution": 1080,
+  "startRecordingOn": false,
+  "startTranscribingOn": true,
+  "endMeetingWithoutHostTimeLimit": 300,
+  "hosts": ["always-a-host@company.com"]
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/video/user-settings" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "waitingRoom": true,
-    "enableChat": true,
-    "startMicrophoneMuted": true,
-    "startMicrophoneMutedAfter": 5,
-    "startCameraMuted": false,
-    "startCameraMutedAfter": 10,
-    "maxVideoResolution": 1080,
-    "startRecordingOn": false,
-    "startTranscribingOn": true,
-    "endMeetingWithoutHostTimeLimit": 300,
-    "hosts": ["always-a-host@company.com"]
-  }'
+  -d "$DATA"
 
 # Update specific fields
 curl -X PUT "https://{namespace}.api.unbound.cx/video/user-settings" \

@@ -327,15 +327,20 @@ verification = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "phoneNumber": "+12135550100",
+  "code": "123456",
+  "expiresIn": 600,
+  "metadata": {"userId": "user-123"}
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/verification/sms" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "phoneNumber": "+12135550100",
-    "code": "123456",
-    "expiresIn": 600,
-    "metadata": {"userId": "user-123"}
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -408,13 +413,18 @@ result = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "phoneNumber": "+12135550100",
+  "code": "123456"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/verification/sms/validate" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "phoneNumber": "+12135550100",
-    "code": "123456"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -489,14 +499,19 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "email": "user@example.com",
+  "code": "789012",
+  "expiresIn": 3600
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/verification/email" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "code": "789012",
-    "expiresIn": 3600
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -565,13 +580,18 @@ result = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "email": "user@example.com",
+  "code": "789012"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/verification/email/validate" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "code": "789012"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>

@@ -118,22 +118,27 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "name": "Customer Support Portal",
+  "domain": "support.yourcompany.com",
+  "isPublic": true,
+  "settings": {
+    "theme": "dark",
+    "primaryColor": "#1D949A"
+  },
+  "customCss": "/* custom styles */",
+  "customJs": "/* custom scripts */",
+  "logo": "storage-id-for-logo",
+  "favicon": "storage-id-for-favicon"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/portal" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Customer Support Portal",
-    "domain": "support.yourcompany.com",
-    "isPublic": true,
-    "settings": {
-      "theme": "dark",
-      "primaryColor": "#1D949A"
-    },
-    "customCss": "/* custom styles */",
-    "customJs": "/* custom scripts */",
-    "logo": "storage-id-for-logo",
-    "favicon": "storage-id-for-favicon"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -371,14 +376,19 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "name": "Renamed Portal",
+  "settings": {"primaryColor": "#FF6600"},
+  "isPublic": false
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/portal/{id}" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Renamed Portal",
-    "settings": {"primaryColor": "#FF6600"},
-    "isPublic": false
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>

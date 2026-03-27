@@ -114,20 +114,25 @@ item = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "workflowVersionId": "wf-version-id",
+  "category": "communication",
+  "type": "sendSms",
+  "settings": {
+    "from": "+18005551234",
+    "messageTemplate": "appointment-reminder"
+  },
+  "description": "Send appointment reminder SMS",
+  "position": { "x": 200, "y": 150 }
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/workflow/item" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "workflowVersionId": "wf-version-id",
-    "category": "communication",
-    "type": "sendSms",
-    "settings": {
-      "from": "+18005551234",
-      "messageTemplate": "appointment-reminder"
-    },
-    "description": "Send appointment reminder SMS",
-    "position": { "x": 200, "y": 150 }
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -230,16 +235,21 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "settings": { "messageTemplate": "new-template" },
+  "position": { "x": 300, "y": 200 },
+  "label": "Send Reminder",
+  "labelBgColor": "#1D949A",
+  "labelTextColor": "#ffffff"
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/workflow/item/item-id" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "settings": { "messageTemplate": "new-template" },
-    "position": { "x": 300, "y": 200 },
-    "label": "Send Reminder",
-    "labelBgColor": "#1D949A",
-    "labelTextColor": "#ffffff"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -461,15 +471,20 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "workflowItemId": "item-1-id",
+  "workflowItemPortId": "output",
+  "inWorkflowItemId": "item-2-id",
+  "inWorkflowItemPortId": "input"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/workflow/connection" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "workflowItemId": "item-1-id",
-    "workflowItemPortId": "output",
-    "inWorkflowItemId": "item-2-id",
-    "inWorkflowItemPortId": "input"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -723,15 +738,20 @@ print(session["id"])
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "workflowVersionId": "wf-version-id",
+  "contactId": "contact-id",
+  "channel": "sms",
+  "input": { "phoneNumber": "+12135550100" }
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/workflow/session" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "workflowVersionId": "wf-version-id",
-    "contactId": "contact-id",
-    "channel": "sms",
-    "input": { "phoneNumber": "+12135550100" }
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -867,15 +887,20 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "variables": {
+    "accountNumber": "123456",
+    "verifiedIdentity": true
+  }
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/workflow/session/session-id" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "variables": {
-      "accountNumber": "123456",
-      "verifiedIdentity": true
-    }
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>

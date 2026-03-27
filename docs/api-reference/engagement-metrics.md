@@ -97,18 +97,23 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "queueIds": ["queue-1", "queue-2"],
+  "statuses": ["new", "working", "wrapUp"],
+  "userIds": ["user-1", "user-2"],
+  "includeSummary": true,
+  "includeByQueue": true,
+  "includeQueuePerformance": true,
+  "includeAgentPerformance": true
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/engagement-metrics" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "queueIds": ["queue-1", "queue-2"],
-    "statuses": ["new", "working", "wrapUp"],
-    "userIds": ["user-1", "user-2"],
-    "includeSummary": true,
-    "includeByQueue": true,
-    "includeQueuePerformance": true,
-    "includeAgentPerformance": true
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -191,13 +196,18 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "queueIds": ["queue-1"],
+  "statuses": ["new", "working"]
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/engagement-metrics/summary" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "queueIds": ["queue-1"],
-    "statuses": ["new", "working"]
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -262,12 +272,17 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "queueIds": ["queue-1", "queue-2"]
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/engagement-metrics/by-queue" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "queueIds": ["queue-1", "queue-2"]
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -332,12 +347,17 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "queueIds": ["queue-1"]
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/engagement-metrics/queue-performance" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "queueIds": ["queue-1"]
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -406,13 +426,18 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "queueIds": ["queue-1"],
+  "userIds": ["user-1", "user-2"]
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/engagement-metrics/agent-performance" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "queueIds": ["queue-1"],
-    "userIds": ["user-1", "user-2"]
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -487,14 +512,19 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "queueIds": ["queue-1"],
+  "statuses": ["new", "working"],
+  "userIds": []
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/engagement-metrics/dashboard" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "queueIds": ["queue-1"],
-    "statuses": ["new", "working"],
-    "userIds": []
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>

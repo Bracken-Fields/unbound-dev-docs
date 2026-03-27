@@ -163,17 +163,22 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "sessionId": "{sessionId}",
+  "channel": "engagements",
+  "filters": {
+    "queueId": "queue-id",
+    "status": ["new", "working"]
+  }
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/subscription/socket" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "sessionId": "{sessionId}",
-    "channel": "engagements",
-    "filters": {
-      "queueId": "queue-id",
-      "status": ["new", "working"]
-    }
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>

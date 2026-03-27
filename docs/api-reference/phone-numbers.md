@@ -165,13 +165,18 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "phoneNumbers": ["+12135550100", "+12135550101"],
+  "name": "LA Support Line"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/phone-number/order" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "phoneNumbers": ["+12135550100", "+12135550101"],
-    "name": "LA Support Line"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -263,18 +268,23 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "name": "Main Support",
+  "voiceWebHookUrl": "https://yourapp.com/webhooks/voice",
+  "messagingWebHookUrl": "https://yourapp.com/webhooks/sms",
+  "voiceApp": "workflow",
+  "recordCalls": true,
+  "voiceRecordTypeId": "record-type-id",
+  "messagingRecordTypeId": "record-type-id"
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/phone-number/number-id" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Main Support",
-    "voiceWebHookUrl": "https://yourapp.com/webhooks/voice",
-    "messagingWebHookUrl": "https://yourapp.com/webhooks/sms",
-    "voiceApp": "workflow",
-    "recordCalls": true,
-    "voiceRecordTypeId": "record-type-id",
-    "messagingRecordTypeId": "record-type-id"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -345,13 +355,18 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "phone": "+12135550100",
+  "cnam": "Acme Support"
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/phone-number/cnam" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "phone": "+12135550100",
-    "cnam": "Acme Support"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -731,22 +746,32 @@ full_check = requests.post(
 
 ```bash
 # Phase 1: Internal validation
+DATA=$(cat <<'EOF'
+{
+  "phoneNumbers": ["+15551234567", "+15551234568"]
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/phone-number/porting/check" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "phoneNumbers": ["+15551234567", "+15551234568"]
-  }'
+  -d "$DATA"
 
 # Phase 2: External carrier validation
+DATA=$(cat <<'EOF'
+{
+  "phoneNumbers": ["+15551234567"],
+  "portingOrderId": "order-id",
+  "runPortabilityCheck": true
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/phone-number/porting/check" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "phoneNumbers": ["+15551234567"],
-    "portingOrderId": "order-id",
-    "runPortabilityCheck": true
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -896,33 +921,38 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "customerReference": "CUST-2024-001",
+  "endUser": {
+    "admin": {
+      "entityName": "Acme Corp",
+      "authPersonName": "Jane Smith",
+      "billingPhoneNumber": "+18005551234",
+      "accountNumber": "ACC-123456",
+      "pinPasscode": "1234"
+    },
+    "location": {
+      "streetAddress": "123 Main St",
+      "locality": "Los Angeles",
+      "administrativeArea": "CA",
+      "postalCode": "90001",
+      "countryCode": "US"
+    }
+  },
+  "activationSettings": {
+    "focDatetimeRequested": "2024-06-15T08:00:00Z",
+    "fastPortEligible": true
+  },
+  "portOrderType": "full"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/phone-number/porting/order" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "customerReference": "CUST-2024-001",
-    "endUser": {
-      "admin": {
-        "entityName": "Acme Corp",
-        "authPersonName": "Jane Smith",
-        "billingPhoneNumber": "+18005551234",
-        "accountNumber": "ACC-123456",
-        "pinPasscode": "1234"
-      },
-      "location": {
-        "streetAddress": "123 Main St",
-        "locality": "Los Angeles",
-        "administrativeArea": "CA",
-        "postalCode": "90001",
-        "countryCode": "US"
-      }
-    },
-    "activationSettings": {
-      "focDatetimeRequested": "2024-06-15T08:00:00Z",
-      "fastPortEligible": true
-    },
-    "portOrderType": "full"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1198,14 +1228,19 @@ loa = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "portingOrderId": "order-id",
+  "signerName": "Jane Smith",
+  "signerTitle": "Director of IT"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/phone-number/porting/loa" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "portingOrderId": "order-id",
-    "signerName": "Jane Smith",
-    "signerTitle": "Director of IT"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1329,24 +1364,34 @@ result = requests.post(
 
 ```bash
 # Preview groupings
+DATA=$(cat <<'EOF'
+{
+  "phoneNumbers": ["+15551234567", "+15551234568", "+15551234569"],
+  "name": "Q1 2024 Port",
+  "dryRun": true
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/phone-number/porting/auto-create" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "phoneNumbers": ["+15551234567", "+15551234568", "+15551234569"],
-    "name": "Q1 2024 Port",
-    "dryRun": true
-  }'
+  -d "$DATA"
 
 # Create orders
+DATA=$(cat <<'EOF'
+{
+  "phoneNumbers": ["+15551234567", "+15551234568", "+15551234569"],
+  "name": "Q1 2024 Port",
+  "dryRun": false
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/phone-number/porting/auto-create" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "phoneNumbers": ["+15551234567", "+15551234568", "+15551234569"],
-    "name": "Q1 2024 Port",
-    "dryRun": false
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1484,22 +1529,32 @@ curl -X GET "https://{namespace}.api.unbound.cx/phone-number/porting/order/order
   -H "Authorization: Bearer {token}"
 
 # Post a public comment (shared with carrier)
+DATA=$(cat <<'EOF'
+{
+  "comment": "Please expedite — customer is switching providers.",
+  "isInternal": false
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/phone-number/porting/order/order-id/comment" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "comment": "Please expedite — customer is switching providers.",
-    "isInternal": false
-  }'
+  -d "$DATA"
 
 # Post an internal note
+DATA=$(cat <<'EOF'
+{
+  "comment": "Called customer — confirmed details.",
+  "isInternal": true
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/phone-number/porting/order/order-id/comment" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "comment": "Called customer — confirmed details.",
-    "isInternal": true
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>

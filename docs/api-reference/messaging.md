@@ -89,16 +89,21 @@ msg = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "to": "+10987654321",
+  "from": "+11234567890",
+  "message": "Your appointment is tomorrow at 3pm.",
+  "mediaUrls": ["https://example.com/image.jpg"],
+  "webhookUrl": "https://yourapp.com/webhooks/sms"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/message/sms" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "to": "+10987654321",
-    "from": "+11234567890",
-    "message": "Your appointment is tomorrow at 3pm.",
-    "mediaUrls": ["https://example.com/image.jpg"],
-    "webhookUrl": "https://yourapp.com/webhooks/sms"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -239,14 +244,19 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "name": "appointment-reminder",
+  "message": "Hi {{name}}, your appointment is at {{time}}.",
+  "variables": {"name": "string", "time": "string"}
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/message/sms/template" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "appointment-reminder",
-    "message": "Hi {{name}}, your appointment is at {{time}}.",
-    "variables": {"name": "string", "time": "string"}
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -489,25 +499,30 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "from": "support@yourcompany.com",
+  "to": ["customer@example.com"],
+  "cc": ["manager@yourcompany.com"],
+  "subject": "Your order is confirmed",
+  "html": "<h1>Thanks for your order!</h1>",
+  "text": "Thanks for your order!",
+  "storageId": ["file-id-123"],
+  "replyToEmailId": "email-id-456",
+  "templateId": "tpl-789",
+  "variables": {"orderId": "ORD-001"},
+  "emailType": "transactional",
+  "tracking": true,
+  "mailboxId": "mailbox-id-abc",
+  "engagementSessionId": "eng-123"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/message/email" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "from": "support@yourcompany.com",
-    "to": ["customer@example.com"],
-    "cc": ["manager@yourcompany.com"],
-    "subject": "Your order is confirmed",
-    "html": "<h1>Thanks for your order!</h1>",
-    "text": "Thanks for your order!",
-    "storageId": ["file-id-123"],
-    "replyToEmailId": "email-id-456",
-    "templateId": "tpl-789",
-    "variables": {"orderId": "ORD-001"},
-    "emailType": "transactional",
-    "tracking": true,
-    "mailboxId": "mailbox-id-abc",
-    "engagementSessionId": "eng-123"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -845,19 +860,24 @@ draft = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "from": "support@yourcompany.com",
+  "to": ["customer@example.com"],
+  "subject": "Following up on your request",
+  "html": "<p>Hi there...</p>",
+  "mailboxId": "mailbox-id",
+  "replyToEmailId": "email-id-456",
+  "replyType": "reply",
+  "engagementSessionId": "eng-123"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/message/email/draft" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "from": "support@yourcompany.com",
-    "to": ["customer@example.com"],
-    "subject": "Following up on your request",
-    "html": "<p>Hi there...</p>",
-    "mailboxId": "mailbox-id",
-    "replyToEmailId": "email-id-456",
-    "replyType": "reply",
-    "engagementSessionId": "eng-123"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1102,18 +1122,23 @@ mailbox = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "mailbox": "support",
+  "name": "Support Team",
+  "useEngagementSessions": true,
+  "queueId": "queue-id",
+  "ticketPrefix": "SUP",
+  "ticketCreateEmailTemplateId": "template-id",
+  "ticketCreateEmailFrom": "support@yourcompany.com"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/message/email/mailbox" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "mailbox": "support",
-    "name": "Support Team",
-    "useEngagementSessions": true,
-    "queueId": "queue-id",
-    "ticketPrefix": "SUP",
-    "ticketCreateEmailTemplateId": "template-id",
-    "ticketCreateEmailFrom": "support@yourcompany.com"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1372,18 +1397,23 @@ emails = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "folder": "open",
+  "includeDrafts": false,
+  "search": "invoice",
+  "sortBy": "dateTime",
+  "sortOrder": "desc",
+  "limit": 25,
+  "offset": 0
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/message/email/mailbox/mailbox-id/emails" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "folder": "open",
-    "includeDrafts": false,
-    "search": "invoice",
-    "sortBy": "dateTime",
-    "sortOrder": "desc",
-    "limit": 25,
-    "offset": 0
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1687,16 +1717,21 @@ requests.delete("https://{namespace}.api.unbound.cx/message/email/template/templ
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "name": "Welcome Email",
+  "subject": "Welcome {{firstName}}!",
+  "html": "<h1>Hello {{firstName}} {{lastName}}</h1>",
+  "text": "Hello {{firstName}} {{lastName}}"
+}
+EOF
+)
+
 # Create template
 curl -X POST "https://{namespace}.api.unbound.cx/message/email/template" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Welcome Email",
-    "subject": "Welcome {{firstName}}!",
-    "html": "<h1>Hello {{firstName}} {{lastName}}</h1>",
-    "text": "Hello {{firstName}} {{lastName}}"
-  }'
+  -d "$DATA"
 
 # Get template
 curl -X GET "https://{namespace}.api.unbound.cx/message/email/template/template-id" \
@@ -2630,16 +2665,21 @@ campaign = requests.get("https://{namespace}.api.unbound.cx/message/campaign/tol
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "companyName": "Acme Corp",
+  "phoneNumber": "+18005551234",
+  "description": "Customer support SMS",
+  "useCase": "customer_care"
+}
+EOF
+)
+
 # Create toll-free campaign
 curl -X POST "https://{namespace}.api.unbound.cx/message/campaign/toll-free" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "companyName": "Acme Corp",
-    "phoneNumber": "+18005551234",
-    "description": "Customer support SMS",
-    "useCase": "customer_care"
-  }'
+  -d "$DATA"
 
 # List toll-free campaigns
 curl -X GET "https://{namespace}.api.unbound.cx/message/campaign/toll-free" \
@@ -2861,24 +2901,29 @@ requests.delete("https://{namespace}.api.unbound.cx/message/campaign/10dlc/brand
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "name": "Acme Support",
+  "entityType": "PRIVATE_PROFIT",
+  "companyName": "Acme Corp",
+  "address1": "123 Main St",
+  "city": "Los Angeles",
+  "state": "CA",
+  "postalCode": "90001",
+  "country": "US",
+  "pocEmail": "admin@acme.com",
+  "pocPhone": "+13235550100",
+  "vertical": "RETAIL",
+  "website": "https://acme.com"
+}
+EOF
+)
+
 # Register a brand
 curl -X POST "https://{namespace}.api.unbound.cx/message/campaign/10dlc/brand" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Acme Support",
-    "entityType": "PRIVATE_PROFIT",
-    "companyName": "Acme Corp",
-    "address1": "123 Main St",
-    "city": "Los Angeles",
-    "state": "CA",
-    "postalCode": "90001",
-    "country": "US",
-    "pocEmail": "admin@acme.com",
-    "pocPhone": "+13235550100",
-    "vertical": "RETAIL",
-    "website": "https://acme.com"
-  }'
+  -d "$DATA"
 
 # Get brand
 curl -X GET "https://{namespace}.api.unbound.cx/message/campaign/10dlc/brand/brand-id" \
@@ -3080,29 +3125,39 @@ requests.delete("https://{namespace}.api.unbound.cx/message/campaign/10dlc/campa
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "brandId": "brand-id",
+  "description": "Customer support and appointment reminders",
+  "messageFlow": "Users opt-in via web form at acme.com/subscribe",
+  "helpMessage": "For help, text HELP or call 1-800-555-0100",
+  "optInMessage": "You've subscribed to Acme alerts. Msg&data rates may apply. Reply STOP to unsubscribe.",
+  "optOutMessage": "You've been unsubscribed. Reply START to re-subscribe.",
+  "useCase": "CUSTOMER_CARE"
+}
+EOF
+)
+
 # Create 10DLC campaign
 curl -X POST "https://{namespace}.api.unbound.cx/message/campaign/10dlc" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "brandId": "brand-id",
-    "description": "Customer support and appointment reminders",
-    "messageFlow": "Users opt-in via web form at acme.com/subscribe",
-    "helpMessage": "For help, text HELP or call 1-800-555-0100",
-    "optInMessage": "You'\''ve subscribed to Acme alerts. Msg&data rates may apply. Reply STOP to unsubscribe.",
-    "optOutMessage": "You'\''ve been unsubscribed. Reply START to re-subscribe.",
-    "useCase": "CUSTOMER_CARE"
-  }'
+  -d "$DATA"
+
+DATA=$(cat <<'EOF'
+{
+  "samples": ["Your appt is tomorrow at 3pm", "Your order shipped!"],
+  "embeddedLink": false,
+  "subscriberOptout": true
+}
+EOF
+)
 
 # Update campaign
 curl -X PUT "https://{namespace}.api.unbound.cx/message/campaign/10dlc/campaign-id" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "samples": ["Your appt is tomorrow at 3pm", "Your order shipped!"],
-    "embeddedLink": false,
-    "subscriberOptout": true
-  }'
+  -d "$DATA"
 
 # Get campaign
 curl -X GET "https://{namespace}.api.unbound.cx/message/campaign/10dlc/campaign-id" \

@@ -1087,22 +1087,27 @@ curl -X POST "https://{namespace}.api.unbound.cx/task-router/task" \
   -d '{"type": "phoneCall", "queueId": "queue-id"}'
 
 # Full example — inbound call with skills and engagement
+DATA=$(cat <<'EOF'
+{
+  "type": "phoneCall",
+  "queueId": "queue-id",
+  "priority": 5,
+  "subject": "Inbound sales call",
+  "requiredSkills": ["spanish", "enterprise-tier"],
+  "optionalSkills": ["billing"],
+  "cdrId": "cdr-id",
+  "sipCallId": "sip-call-id",
+  "peopleId": "person-id",
+  "companyId": "company-id",
+  "createEngagement": true
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/task-router/task" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "type": "phoneCall",
-    "queueId": "queue-id",
-    "priority": 5,
-    "subject": "Inbound sales call",
-    "requiredSkills": ["spanish", "enterprise-tier"],
-    "optionalSkills": ["billing"],
-    "cdrId": "cdr-id",
-    "sipCallId": "sip-call-id",
-    "peopleId": "person-id",
-    "companyId": "company-id",
-    "createEngagement": true
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1915,14 +1920,19 @@ data = response.json()
 
 ```bash
 # Update subject and disposition after wrap-up
+DATA=$(cat <<'EOF'
+{
+  "subject": "Billing inquiry — upgraded to Pro",
+  "disposition": "resolved",
+  "summary": "Customer upgraded from Core to Pro plan after a discount was offered."
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/task-router/task/task-id" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "subject": "Billing inquiry — upgraded to Pro",
-    "disposition": "resolved",
-    "summary": "Customer upgraded from Core to Pro plan after a discount was offered."
-  }'
+  -d "$DATA"
 
 # Update with sentiment data
 curl -X PUT "https://{namespace}.api.unbound.cx/task-router/task/task-id" \

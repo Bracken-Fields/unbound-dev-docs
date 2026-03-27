@@ -107,16 +107,21 @@ contact = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "name": "Jane Smith",
+  "email": "jane@example.com",
+  "phone": "+1234567890",
+  "company": "Acme Corp",
+  "status": "active"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/object/contacts" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Jane Smith",
-    "email": "jane@example.com",
-    "phone": "+1234567890",
-    "company": "Acme Corp",
-    "status": "active"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -342,16 +347,21 @@ results = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "where": {"company": "Acme Corp", "status": "active"},
+  "select": ["id", "name", "email", "company"],
+  "limit": 50,
+  "orderByDirection": "ASC",
+  "expandDetails": true
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/object/contacts/query" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "where": {"company": "Acme Corp", "status": "active"},
-    "select": ["id", "name", "email", "company"],
-    "limit": 50,
-    "orderByDirection": "ASC",
-    "expandDetails": true
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -483,13 +493,18 @@ updated = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "company": "New Corp",
+  "status": "inactive"
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/object/contacts/rec_abc123" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "company": "New Corp",
-    "status": "inactive"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -578,13 +593,18 @@ result = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "where": {"company": "Old Corp", "status": "active"},
+  "update": {"company": "Acquired Corp"}
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/object/contacts" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "where": {"company": "Old Corp", "status": "active"},
-    "update": {"company": "Acquired Corp"}
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -729,12 +749,17 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "where": {"status": "archived", "company": "Old Corp"}
+}
+EOF
+)
+
 curl -X DELETE "https://{namespace}.api.unbound.cx/object/contacts" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "where": {"status": "archived", "company": "Old Corp"}
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1099,29 +1124,39 @@ data = response.json()
 
 ```bash
 # Single column
+DATA=$(cat <<'EOF'
+{
+  "name": "amount",
+  "type": "decimal",
+  "isRequired": true
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/object/invoices/columns" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "amount",
-    "type": "decimal",
-    "isRequired": true
-  }'
+  -d "$DATA"
 
 # Batch — add multiple columns at once
+DATA=$(cat <<'EOF'
+{
+  "columns": [
+    {"name": "amount", "type": "decimal"},
+    {"name": "dueDate", "type": "datetime"},
+    {"name": "status", "type": "varchar", "length": 50},
+    {"name": "notes", "type": "text"},
+    {"name": "isPaid", "type": "boolean"},
+    {"name": "metadata", "type": "json"}
+  ]
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/object/invoices/columns" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "columns": [
-      {"name": "amount", "type": "decimal"},
-      {"name": "dueDate", "type": "datetime"},
-      {"name": "status", "type": "varchar", "length": 50},
-      {"name": "notes", "type": "text"},
-      {"name": "isPaid", "type": "boolean"},
-      {"name": "metadata", "type": "json"}
-    ]
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1282,14 +1317,19 @@ curl -X PUT "https://{namespace}.api.unbound.cx/object/invoices/columns/status" 
   -d '{"columnType": "varchar", "length": 100}'
 
 # Add a default value and make required
+DATA=$(cat <<'EOF'
+{
+  "columnType": "varchar",
+  "defaultValue": "standard",
+  "isRequired": true
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/object/contacts/columns/tier" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "columnType": "varchar",
-    "defaultValue": "standard",
-    "isRequired": true
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1475,16 +1515,21 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "objectName": "contacts",
+  "fieldName": "companyId",
+  "targetObject": "companies",
+  "lookupColumn": "id",
+  "expandFields": ["name", "website", "industry", "tier"]
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/object/expand-details" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "objectName": "contacts",
-    "fieldName": "companyId",
-    "targetObject": "companies",
-    "lookupColumn": "id",
-    "expandFields": ["name", "website", "industry", "tier"]
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -1810,12 +1855,17 @@ data = response.json()
 
 ```bash
 # Add more fields to the expansion
+DATA=$(cat <<'EOF'
+{
+  "expandFields": ["name", "website", "industry", "tier", "contractValue"]
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/object/expand-details/exp_xyz789" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "expandFields": ["name", "website", "industry", "tier", "contractValue"]
-  }'
+  -d "$DATA"
 
 # Disable without deleting
 curl -X PUT "https://{namespace}.api.unbound.cx/object/expand-details/exp_xyz789" \
@@ -2064,29 +2114,39 @@ data = response.json()
 
 ```bash
 # Concatenate first and last name
+DATA=$(cat <<'EOF'
+{
+  "objectName": "contacts",
+  "columnName": "fullName",
+  "value": "CONCAT(firstName, ' ', lastName)",
+  "type": "string",
+  "columnType": "varchar",
+  "length": "255"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/object/generated-columns" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "objectName": "contacts",
-    "columnName": "fullName",
-    "value": "CONCAT(firstName, '\''  '\'' , lastName)",
-    "type": "string",
-    "columnType": "varchar",
-    "length": "255"
-  }'
+  -d "$DATA"
 
 # Days since last contact
+DATA=$(cat <<'EOF'
+{
+  "objectName": "leads",
+  "columnName": "daysSinceContact",
+  "value": "DATEDIFF(NOW(), lastContactedAt)",
+  "type": "number",
+  "columnType": "int"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/object/generated-columns" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "objectName": "leads",
-    "columnName": "daysSinceContact",
-    "value": "DATEDIFF(NOW(), lastContactedAt)",
-    "type": "number",
-    "columnType": "int"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -2413,12 +2473,17 @@ data = response.json()
 
 ```bash
 # Fix the expression
+DATA=$(cat <<'EOF'
+{
+  "value": "TRIM(CONCAT(IFNULL(firstName, ''), ' ', IFNULL(lastName, '')))"
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/object/generated-columns/gen_abc123" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "value": "TRIM(CONCAT(IFNULL(firstName, '\''\\''), '\\'' '\\'', IFNULL(lastName, '\\'''\\'')))"
-  }'
+  -d "$DATA"
 
 # Disable without deleting
 curl -X PUT "https://{namespace}.api.unbound.cx/object/generated-columns/gen_abc123" \
@@ -2587,13 +2652,18 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "query": "SELECT direction, COUNT(*) as total FROM cdr GROUP BY direction",
+  "expandDetails": false
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/object/query/v2" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "query": "SELECT direction, COUNT(*) as total FROM cdr GROUP BY direction",
-    "expandDetails": false
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -3147,25 +3217,35 @@ for ticket in tickets["data"]:
 
 ```bash
 # 1. Define the relationship once
+DATA=$(cat <<'EOF'
+{
+  "objectName": "tickets",
+  "fieldName": "contactId",
+  "targetObject": "contacts",
+  "lookupColumn": "id",
+  "expandFields": ["name", "email", "company"]
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/object/expand-details" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "objectName": "tickets",
-    "fieldName": "contactId",
-    "targetObject": "contacts",
-    "lookupColumn": "id",
-    "expandFields": ["name", "email", "company"]
-  }'
+  -d "$DATA"
 
 # 2. Query with expansion enabled
+DATA=$(cat <<'EOF'
+{
+  "where": {"status": "open"},
+  "expandDetails": true
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/object/tickets/query" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "where": {"status": "open"},
-    "expandDetails": true
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -3376,35 +3456,45 @@ curl -X POST "https://{namespace}.api.unbound.cx/object/types" \
   -d '{"name": "leads"}'
 
 # Add all columns at once
+DATA=$(cat <<'EOF'
+{
+  "columns": [
+    {"name": "firstName", "type": "varchar", "length": 100},
+    {"name": "lastName", "type": "varchar", "length": 100},
+    {"name": "email", "type": "varchar", "length": 255, "isRequired": true},
+    {"name": "phone", "type": "varchar", "length": 20},
+    {"name": "company", "type": "varchar", "length": 255},
+    {"name": "status", "type": "varchar", "length": 50, "defaultValue": "new"},
+    {"name": "score", "type": "int"},
+    {"name": "notes", "type": "text"},
+    {"name": "metadata", "type": "json"},
+    {"name": "lastContactedAt", "type": "datetime"}
+  ]
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/object/leads/columns" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "columns": [
-      {"name": "firstName", "type": "varchar", "length": 100},
-      {"name": "lastName", "type": "varchar", "length": 100},
-      {"name": "email", "type": "varchar", "length": 255, "isRequired": true},
-      {"name": "phone", "type": "varchar", "length": 20},
-      {"name": "company", "type": "varchar", "length": 255},
-      {"name": "status", "type": "varchar", "length": 50, "defaultValue": "new"},
-      {"name": "score", "type": "int"},
-      {"name": "notes", "type": "text"},
-      {"name": "metadata", "type": "json"},
-      {"name": "lastContactedAt", "type": "datetime"}
-    ]
-  }'
+  -d "$DATA"
 
 # Add generated column for display name
+DATA=$(cat <<'EOF'
+{
+  "objectName": "leads",
+  "columnName": "fullName",
+  "value": "CONCAT(firstName, ' ', lastName)",
+  "columnType": "varchar",
+  "length": "200"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/object/generated-columns" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "objectName": "leads",
-    "columnName": "fullName",
-    "value": "CONCAT(firstName, '\''  '\'' , lastName)",
-    "columnType": "varchar",
-    "length": "200"
-  }'
+  -d "$DATA"
 
 echo "CRM schema ready"
 ```

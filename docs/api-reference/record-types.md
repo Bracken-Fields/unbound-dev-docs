@@ -169,30 +169,40 @@ rt2 = res2.json()
 
 ```bash
 # Universal access (default behavior)
+DATA=$(cat <<'EOF'
+{
+  "name": "Public",
+  "description": "Anyone can read and write",
+  "create": null,
+  "read": null,
+  "update": null,
+  "delete": null
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/record-type" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Public",
-    "description": "Anyone can read and write",
-    "create": null,
-    "read": null,
-    "update": null,
-    "delete": null
-  }'
+  -d "$DATA"
 
 # Restricted — only sales managers can create/delete
+DATA=$(cat <<'EOF'
+{
+  "name": "Sales - Restricted",
+  "description": "Sensitive sales records",
+  "create": ["user-mgr-1", "user-mgr-2"],
+  "read": null,
+  "update": ["user-mgr-1", "user-mgr-2"],
+  "delete": ["user-admin-1"]
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/record-type" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Sales - Restricted",
-    "description": "Sensitive sales records",
-    "create": ["user-mgr-1", "user-mgr-2"],
-    "read": null,
-    "update": ["user-mgr-1", "user-mgr-2"],
-    "delete": ["user-admin-1"]
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -290,17 +300,22 @@ rt = res.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "name": "Support Queue Records",
+  "description": "Visible to support team only",
+  "create": ["user-1", "user-2"],
+  "read": null,
+  "update": ["user-1", "user-2"],
+  "delete": ["user-admin"]
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/record-type" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Support Queue Records",
-    "description": "Visible to support team only",
-    "create": ["user-1", "user-2"],
-    "read": null,
-    "update": ["user-1", "user-2"],
-    "delete": ["user-admin"]
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -413,18 +428,23 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "add": {
+    "create": ["new-user-1", "new-user-2"],
+    "delete": ["manager-1"]
+  },
+  "remove": {
+    "update": ["old-user-1"]
+  }
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/record-type/rt-id-123" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "add": {
-      "create": ["new-user-1", "new-user-2"],
-      "delete": ["manager-1"]
-    },
-    "remove": {
-      "update": ["old-user-1"]
-    }
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -802,14 +822,19 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "recordTypeId": "rt-id-123",
+  "object": "contacts",
+  "userId": "user-id-456"
+}
+EOF
+)
+
 curl -X POST "https://{namespace}.api.unbound.cx/record-type/user-default" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "recordTypeId": "rt-id-123",
-    "object": "contacts",
-    "userId": "user-id-456"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
@@ -893,14 +918,19 @@ data = response.json()
 <TabItem value="curl" label="cURL">
 
 ```bash
+DATA=$(cat <<'EOF'
+{
+  "recordTypeId": "rt-id-new",
+  "object": "contacts",
+  "userId": "user-id-456"
+}
+EOF
+)
+
 curl -X PUT "https://{namespace}.api.unbound.cx/record-type/user-default" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "recordTypeId": "rt-id-new",
-    "object": "contacts",
-    "userId": "user-id-456"
-  }'
+  -d "$DATA"
 ```
 
 </TabItem>
