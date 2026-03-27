@@ -1559,3 +1559,515 @@ curl -X POST "https://{namespace}.api.unbound.cx/phone-number/porting/order/orde
 
 </TabItem>
 </Tabs>
+
+---
+
+## Supported Countries
+
+### `phoneNumbers.getSupportedCountries()`
+
+Returns a list of all countries where Unbound supports phone number ordering.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+const countries = await api.phoneNumbers.getSupportedCountries();
+// [
+//   { code: 'US', name: 'United States', supports: { local: true, tollFree: true } },
+//   { code: 'CA', name: 'Canada',        supports: { local: true, tollFree: true } },
+//   { code: 'GB', name: 'United Kingdom', supports: { local: true, tollFree: false } },
+//   ...
+// ]
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch(
+    'https://{namespace}.api.unbound.cx/phone-number/supported-countries',
+    { headers: { 'Authorization': 'Bearer {token}' } },
+);
+const countries = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init('https://{namespace}.api.unbound.cx/phone-number/supported-countries');
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer {token}']);
+$countries = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+countries = requests.get(
+    'https://{namespace}.api.unbound.cx/phone-number/supported-countries',
+    headers={'Authorization': 'Bearer {token}'},
+).json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X GET "https://{namespace}.api.unbound.cx/phone-number/supported-countries" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+## Carrier Sync
+
+`api.phoneNumbers.carrier` — Advanced carrier-level operations. Use these when you need to reconcile your Unbound account with carrier records (e.g. after a port-in completes externally) or retrieve deep carrier metadata for a specific DID.
+
+### `phoneNumbers.carrier.sync(carrier, options)`
+
+Pulls all phone numbers from a carrier's account and syncs them into Unbound. Optionally reconnects voice and/or messaging configurations during the sync.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `carrier` | string | ✅ | Carrier identifier (e.g. `'telnyx'`) |
+| `updateVoiceConnection` | boolean | — | Re-apply voice connection settings after sync |
+| `updateMessagingConnection` | boolean | — | Re-apply messaging connection settings after sync |
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+// Sync all numbers from Telnyx, reconnecting voice only
+const result = await api.phoneNumbers.carrier.sync('telnyx', {
+    updateVoiceConnection: true,
+    updateMessagingConnection: false,
+});
+console.log(result);
+// { synced: 42, created: 3, updated: 39, errors: [] }
+
+// Full sync — reconnect both voice and messaging
+const full = await api.phoneNumbers.carrier.sync('telnyx', {
+    updateVoiceConnection: true,
+    updateMessagingConnection: true,
+});
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch(
+    'https://{namespace}.api.unbound.cx/phone-number/carrier/syncPhoneNumbers/telnyx?updateVoiceConnection=true&updateMessagingConnection=false',
+    {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer {token}' },
+    },
+);
+const result = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init('https://{namespace}.api.unbound.cx/phone-number/carrier/syncPhoneNumbers/telnyx?updateVoiceConnection=true&updateMessagingConnection=false');
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer {token}']);
+$result = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+result = requests.post(
+    'https://{namespace}.api.unbound.cx/phone-number/carrier/syncPhoneNumbers/telnyx',
+    headers={'Authorization': 'Bearer {token}'},
+    params={'updateVoiceConnection': 'true', 'updateMessagingConnection': 'false'},
+).json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://{namespace}.api.unbound.cx/phone-number/carrier/syncPhoneNumbers/telnyx?updateVoiceConnection=true&updateMessagingConnection=false" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### `phoneNumbers.carrier.getDetails(phoneNumber)`
+
+Fetches carrier-level metadata for a phone number. Returns the raw carrier record including current routing, messaging profile, and connection assignments.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `phoneNumber` | string | ✅ | Phone number in E.164 format (e.g. `'+12135550100'`) |
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+const details = await api.phoneNumbers.carrier.getDetails('+12135550100');
+// {
+//   phoneNumber: '+12135550100',
+//   carrier: 'telnyx',
+//   carrierNumberId: 'telnyx-id-abc123',
+//   voiceConnectionId: 'vc-456',
+//   messagingProfileId: 'mp-789',
+//   status: 'active',
+//   purchasedAt: '2024-01-15T10:30:00.000Z'
+// }
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch(
+    'https://{namespace}.api.unbound.cx/phone-number/carrier/%2B12135550100',
+    { headers: { 'Authorization': 'Bearer {token}' } },
+);
+const details = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$number = urlencode('+12135550100');
+$ch = curl_init("https://{namespace}.api.unbound.cx/phone-number/carrier/{$number}");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer {token}']);
+$details = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+from urllib.parse import quote
+
+number = quote('+12135550100', safe='')
+details = requests.get(
+    f'https://{{namespace}}.api.unbound.cx/phone-number/carrier/{number}',
+    headers={'Authorization': 'Bearer {token}'},
+).json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X GET "https://{namespace}.api.unbound.cx/phone-number/carrier/%2B12135550100" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### `phoneNumbers.carrier.delete(phoneNumber)`
+
+Removes a phone number from the carrier account (hard delete at the carrier level). Use with caution — this permanently releases the DID from the carrier, not just from Unbound's database.
+
+:::warning
+This permanently releases the number at the carrier level. The number may be reassigned to another customer immediately. Use `phoneNumbers.remove()` to release from Unbound's routing only.
+:::
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `phoneNumber` | string | ✅ | Phone number in E.164 format |
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+await api.phoneNumbers.carrier.delete('+12135550100');
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+await fetch(
+    'https://{namespace}.api.unbound.cx/phone-number/carrier/%2B12135550100',
+    {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer {token}' },
+    },
+);
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$number = urlencode('+12135550100');
+$ch = curl_init("https://{namespace}.api.unbound.cx/phone-number/carrier/{$number}");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer {token}']);
+curl_exec($ch);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+from urllib.parse import quote
+
+number = quote('+12135550100', safe='')
+requests.delete(
+    f'https://{{namespace}}.api.unbound.cx/phone-number/carrier/{number}',
+    headers={'Authorization': 'Bearer {token}'},
+)
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X DELETE "https://{namespace}.api.unbound.cx/phone-number/carrier/%2B12135550100" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+## Common Patterns
+
+### Pattern 1 — Search, order, and configure in one flow
+
+The typical number provisioning flow: find an available number, order it, then attach it to a voice app.
+
+```javascript
+// 1. Search for a local number in area code 213 with SMS+MMS enabled
+const available = await api.phoneNumbers.search({
+    type: 'local',
+    country: 'US',
+    state: 'CA',
+    contains: '213',
+    sms: true,
+    mms: true,
+    voice: true,
+    limit: 5,
+});
+
+const picked = available.phoneNumbers[0].phoneNumber;
+console.log('Ordering:', picked);
+
+// 2. Order the number
+await api.phoneNumbers.order({ phoneNumbers: [picked] });
+
+// 3. Configure it with a voice app
+await api.phoneNumbers.update({
+    phoneNumber: picked,
+    voiceApp: {
+        appType: 'workflow',
+        workflowId: 'wf-inbound-ivr-001',
+    },
+});
+
+console.log(`${picked} is live and routing to IVR.`);
+```
+
+---
+
+### Pattern 2 — Full porting workflow (draft → validate → submit → activate)
+
+Port a block of numbers from an existing carrier into Unbound.
+
+```javascript
+// Step 1: Create a draft porting order
+const order = await api.phoneNumbers.createPortingOrder({
+    customerReference: 'CUST-2024-001',
+    portOrderType: 'full',
+    endUser: {
+        admin: {
+            entityName: 'Acme Corp',
+            authPersonName: 'Jane Smith',
+            billingPhoneNumber: '+12135550100',
+            accountNumber: 'ACME-12345',
+            pinPasscode: '1234',
+        },
+        location: {
+            streetAddress: '123 Main St',
+            locality: 'Los Angeles',
+            administrativeArea: 'CA',
+            postalCode: '90001',
+            countryCode: 'US',
+        },
+    },
+    activationSettings: {
+        focDatetimeRequested: '2025-09-01T14:00:00Z',
+        fastPortEligible: false,
+    },
+    tags: ['q3-migration', 'acme'],
+});
+console.log('Draft order:', order.id);
+
+// Step 2: Phase 1 — add numbers with internal validation
+await api.phoneNumbers.checkPortability({
+    phoneNumbers: ['+12135550101', '+12135550102', '+12135550103'],
+    portingOrderId: order.id,
+    runPortabilityCheck: false,  // internal LRN validation only
+});
+
+// Step 3: Phase 2 — run external carrier portability check
+const portCheck = await api.phoneNumbers.checkPortability({
+    phoneNumbers: ['+12135550101', '+12135550102', '+12135550103'],
+    portingOrderId: order.id,
+    runPortabilityCheck: true,   // full carrier validation
+});
+
+// Check results
+const notPortable = portCheck.results?.filter(r => r.status !== 'portable');
+if (notPortable?.length) {
+    console.warn('Some numbers not portable:', notPortable);
+}
+
+// Step 4: Generate LOA document
+const loa = await api.phoneNumbers.generateLoa({
+    portingOrderId: order.id,
+    signerName: 'Jane Smith',
+    signerTitle: 'IT Director',
+});
+console.log('LOA attached, document ID:', loa.loaDocumentId);
+
+// Step 5: Get available FOC windows and pick one
+const windows = await api.phoneNumbers.getFocWindows(order.id);
+const preferred = windows.availableDates?.find(d => d.type === 'Standard' && d.available);
+console.log('Requested FOC date:', preferred?.date);
+
+// Step 6: Submit the order
+const submitted = await api.phoneNumbers.submitPortingOrder(order.id);
+console.log('Order submitted, status:', submitted.status);
+
+// Step 7: Monitor progress
+const events = await api.phoneNumbers.getPortingEvents(order.id);
+console.log('Events so far:', events.length);
+```
+
+---
+
+### Pattern 3 — Auto-create orders by carrier (bulk port)
+
+When porting a large number block that may span multiple carriers, let Unbound group them automatically.
+
+```javascript
+const numbersToPort = [
+    '+12135550101', '+12135550102',  // AT&T
+    '+13105550201', '+13105550202',  // Verizon
+    '+14155550301',                  // T-Mobile
+];
+
+// Preview groupings first
+const preview = await api.phoneNumbers.autoCreateOrders({
+    phoneNumbers: numbersToPort,
+    name: 'Q3 Migration',
+    dryRun: true,
+});
+
+console.log('Carrier groups:');
+preview.groups?.forEach(g => {
+    console.log(`  ${g.carrier}: ${g.phoneNumbers.length} numbers`);
+});
+// Carrier groups:
+//   att: 2 numbers
+//   verizon: 2 numbers
+//   tmobile: 1 numbers
+
+// If groupings look right, create the actual orders
+const result = await api.phoneNumbers.autoCreateOrders({
+    phoneNumbers: numbersToPort,
+    name: 'Q3 Migration',
+    dryRun: false,
+});
+
+result.orders?.forEach(o => {
+    console.log(`Created order ${o.id} for ${o.carrier} (${o.phoneNumbers.length} numbers)`);
+});
+```
+
+---
+
+### Pattern 4 — Post-port carrier sync
+
+After a port-in completes at the carrier level, sync the numbers into Unbound and restore their voice/messaging connections.
+
+```javascript
+// Sync all Telnyx numbers into Unbound, restoring voice + messaging connections
+const syncResult = await api.phoneNumbers.carrier.sync('telnyx', {
+    updateVoiceConnection: true,
+    updateMessagingConnection: true,
+});
+
+console.log(`Sync complete: ${syncResult.synced} numbers`);
+console.log(`  Created: ${syncResult.created}`);
+console.log(`  Updated: ${syncResult.updated}`);
+if (syncResult.errors?.length) {
+    console.warn('Errors:', syncResult.errors);
+}
+
+// Verify a specific number's carrier details
+const details = await api.phoneNumbers.carrier.getDetails('+12135550101');
+console.log('Voice connection:', details.voiceConnectionId);
+console.log('Messaging profile:', details.messagingProfileId);
+```
+
+---
+
+### Pattern 5 — Supported countries check before ordering
+
+Validate country support before presenting options in a provisioning UI.
+
+```javascript
+const countries = await api.phoneNumbers.getSupportedCountries();
+
+// Build a map for quick lookup
+const supported = new Map(
+    countries.map(c => [c.code, c])
+);
+
+function canOrderLocal(countryCode) {
+    return supported.get(countryCode)?.supports?.local ?? false;
+}
+
+function canOrderTollFree(countryCode) {
+    return supported.get(countryCode)?.supports?.tollFree ?? false;
+}
+
+// Example: check before ordering
+const country = 'DE';
+if (!canOrderLocal(country)) {
+    console.warn(`Local numbers not available in ${country}`);
+} else {
+    const numbers = await api.phoneNumbers.search({ type: 'local', country });
+    console.log(`Found ${numbers.phoneNumbers.length} numbers in ${country}`);
+}
+```
