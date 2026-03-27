@@ -1050,3 +1050,617 @@ curl -X GET "https://{namespace}.api.unbound.cx/storage/classifications" \
 
 </TabItem>
 </Tabs>
+
+---
+
+## Storage Configurations
+
+Storage configurations define how and where files are stored — which cloud providers, which regions, and how many providers are required for redundancy. The platform ships with built-in system configurations; you can also create custom ones.
+
+### `storage.listStorageConfigurations(options?)`
+
+List available storage configurations. Returns both system configurations and any custom ones you've created.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+// List all configurations
+const configs = await api.storage.listStorageConfigurations();
+
+// Filter by classification
+const voiceConfigs = await api.storage.listStorageConfigurations({
+    classification: 'recordings',
+});
+
+// Filter by country, exclude global
+const usConfigs = await api.storage.listStorageConfigurations({
+    country: 'US',
+    includeGlobal: false,
+});
+
+// Only custom configs (not system)
+const customOnly = await api.storage.listStorageConfigurations({
+    isSystem: false,
+});
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// List all configurations
+const res = await fetch(
+    "https://{namespace}.api.unbound.cx/storage/configurations",
+    {
+        method: "GET",
+        headers: { "Authorization": "Bearer {token}" }
+    }
+);
+const data = await res.json();
+
+// Filter by classification
+const res2 = await fetch(
+    "https://{namespace}.api.unbound.cx/storage/configurations?classification=recordings",
+    {
+        method: "GET",
+        headers: { "Authorization": "Bearer {token}" }
+    }
+);
+const filtered = await res2.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// List all configurations
+$ch = curl_init("https://{namespace}.api.unbound.cx/storage/configurations");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+// Filter by classification
+$ch = curl_init(
+    "https://{namespace}.api.unbound.cx/storage/configurations?classification=recordings"
+);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+# List all configurations
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/storage/configurations",
+    headers={"Authorization": "Bearer {token}"}
+)
+configs = response.json()
+
+# Filter by classification
+response = requests.get(
+    "https://{namespace}.api.unbound.cx/storage/configurations",
+    headers={"Authorization": "Bearer {token}"},
+    params={"classification": "recordings", "includeGlobal": "false"}
+)
+filtered = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# List all configurations
+curl -X GET "https://{namespace}.api.unbound.cx/storage/configurations" \
+  -H "Authorization: Bearer {token}"
+
+# Filter by classification
+curl -X GET "https://{namespace}.api.unbound.cx/storage/configurations?classification=recordings" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `classification` | string | — | Filter by file classification (e.g. `'recordings'`, `'documents'`) |
+| `country` | string | — | Filter by country code (e.g. `'US'`, `'EU'`) |
+| `isSystem` | boolean | — | `true` = system configs only; `false` = custom only |
+| `includeGlobal` | boolean | — | Whether to include global (non-country-specific) configs. Default: `true` |
+
+**Response**
+
+```javascript
+{
+    configurations: [
+        {
+            id: "config-id-123",
+            classification: "recordings",
+            country: "US",
+            isSystem: true,
+            s3Regions: ["us-east-1", "us-west-2"],
+            gccRegions: [],
+            azureRegions: [],
+            minimumProviders: 1,
+            minimumRegionsS3: 1,
+            minimumRegionsGCC: 0,
+            minimumRegionsAzure: 0,
+            createdAt: "2024-01-15T10:00:00Z",
+            updatedAt: "2024-01-15T10:00:00Z"
+        }
+    ],
+    summary: {
+        total: 8,
+        system: 6,
+        custom: 2
+    }
+}
+```
+
+---
+
+### `storage.createStorageConfiguration(config)`
+
+Create a custom storage configuration — for example, a EU-only config for GDPR compliance or a high-redundancy config for regulated recordings.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+// Create an EU-only config for GDPR-sensitive data
+const config = await api.storage.createStorageConfiguration({
+    classification: 'documents',
+    country: 'EU',
+    s3Regions: ['eu-west-1', 'eu-central-1'],
+    gccRegions: ['europe-west1'],
+    azureRegions: [],
+    minimumProviders: 2,
+    minimumRegionsS3: 1,
+    minimumRegionsGCC: 1,
+    minimumRegionsAzure: 0,
+});
+
+// Create a US-only high-redundancy config for call recordings
+const recordingConfig = await api.storage.createStorageConfiguration({
+    classification: 'recordings',
+    country: 'US',
+    s3Regions: ['us-east-1', 'us-west-2', 'us-east-2'],
+    gccRegions: [],
+    azureRegions: ['eastus', 'westus'],
+    minimumProviders: 2,
+    minimumRegionsS3: 2,
+    minimumRegionsGCC: 0,
+    minimumRegionsAzure: 1,
+});
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch(
+    "https://{namespace}.api.unbound.cx/storage/configurations",
+    {
+        method: "POST",
+        headers: {
+            "Authorization": "Bearer {token}",
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            classification: "documents",
+            country: "EU",
+            s3Regions: ["eu-west-1", "eu-central-1"],
+            gccRegions: ["europe-west1"],
+            azureRegions: [],
+            minimumProviders: 2,
+            minimumRegionsS3: 1,
+            minimumRegionsGCC: 1,
+            minimumRegionsAzure: 0
+        })
+    }
+);
+const config = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/storage/configurations");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    "Authorization: Bearer {token}",
+    "Content-Type: application/json"
+]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "classification"       => "documents",
+    "country"              => "EU",
+    "s3Regions"            => ["eu-west-1", "eu-central-1"],
+    "gccRegions"           => ["europe-west1"],
+    "azureRegions"         => [],
+    "minimumProviders"     => 2,
+    "minimumRegionsS3"     => 1,
+    "minimumRegionsGCC"    => 1,
+    "minimumRegionsAzure"  => 0
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/storage/configurations",
+    headers={
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "classification": "documents",
+        "country": "EU",
+        "s3Regions": ["eu-west-1", "eu-central-1"],
+        "gccRegions": ["europe-west1"],
+        "azureRegions": [],
+        "minimumProviders": 2,
+        "minimumRegionsS3": 1,
+        "minimumRegionsGCC": 1,
+        "minimumRegionsAzure": 0
+    }
+)
+config = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+DATA=$(cat <<'EOF'
+{
+  "classification": "documents",
+  "country": "EU",
+  "s3Regions": ["eu-west-1", "eu-central-1"],
+  "gccRegions": ["europe-west1"],
+  "azureRegions": [],
+  "minimumProviders": 2,
+  "minimumRegionsS3": 1,
+  "minimumRegionsGCC": 1,
+  "minimumRegionsAzure": 0
+}
+EOF
+)
+
+curl -X POST "https://{namespace}.api.unbound.cx/storage/configurations" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d "$DATA"
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `classification` | string | ✅ | File classification this config applies to |
+| `country` | string | ✅ | Country or region code (e.g. `'US'`, `'EU'`, `'AU'`) |
+| `s3Regions` | string[] | — | AWS S3 regions to use (e.g. `['us-east-1', 'us-west-2']`) |
+| `gccRegions` | string[] | — | Google Cloud regions to use (e.g. `['us-central1']`) |
+| `azureRegions` | string[] | — | Azure regions to use (e.g. `['eastus', 'westus']`) |
+| `minimumProviders` | number | — | Minimum number of cloud providers required. Default: `1` |
+| `minimumRegionsS3` | number | — | Minimum S3 regions required. Default: `1` |
+| `minimumRegionsGCC` | number | — | Minimum GCC regions required. Default: `1` |
+| `minimumRegionsAzure` | number | — | Minimum Azure regions required. Default: `1` |
+
+**Response**
+
+```javascript
+{
+    id: "config-id-456",
+    classification: "documents",
+    country: "EU",
+    isSystem: false,
+    s3Regions: ["eu-west-1", "eu-central-1"],
+    gccRegions: ["europe-west1"],
+    azureRegions: [],
+    minimumProviders: 2,
+    minimumRegionsS3: 1,
+    minimumRegionsGCC: 1,
+    minimumRegionsAzure: 0,
+    createdAt: "2024-03-01T12:00:00Z",
+    updatedAt: "2024-03-01T12:00:00Z"
+}
+```
+
+---
+
+### `storage.updateStorageConfiguration(id, updates)`
+
+Update a storage configuration. Custom configurations can update all fields. System configurations have limited update capabilities — only regions and minimum levels can be changed.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+// Add a new region to an existing config
+const updated = await api.storage.updateStorageConfiguration('config-id-456', {
+    s3Regions: ['eu-west-1', 'eu-central-1', 'eu-north-1'],
+    minimumRegionsS3: 2,
+});
+
+// Bump minimum provider requirement
+const stricter = await api.storage.updateStorageConfiguration('config-id-456', {
+    minimumProviders: 3,
+    minimumRegionsS3: 2,
+    minimumRegionsGCC: 1,
+});
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch(
+    "https://{namespace}.api.unbound.cx/storage/configurations/{configId}",
+    {
+        method: "PUT",
+        headers: {
+            "Authorization": "Bearer {token}",
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            s3Regions: ["eu-west-1", "eu-central-1", "eu-north-1"],
+            minimumRegionsS3: 2
+        })
+    }
+);
+const updated = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/storage/configurations/{configId}");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    "Authorization: Bearer {token}",
+    "Content-Type: application/json"
+]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "s3Regions"        => ["eu-west-1", "eu-central-1", "eu-north-1"],
+    "minimumRegionsS3" => 2
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+response = requests.put(
+    "https://{namespace}.api.unbound.cx/storage/configurations/{configId}",
+    headers={
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "s3Regions": ["eu-west-1", "eu-central-1", "eu-north-1"],
+        "minimumRegionsS3": 2
+    }
+)
+updated = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X PUT "https://{namespace}.api.unbound.cx/storage/configurations/{configId}" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"s3Regions": ["eu-west-1", "eu-central-1", "eu-north-1"], "minimumRegionsS3": 2}'
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | ✅ | Configuration ID to update |
+| `updates` | object | ✅ | Fields to update (same shape as create, all optional) |
+
+:::note System configuration limits
+System configurations (`isSystem: true`) only allow updates to `s3Regions`, `gccRegions`, `azureRegions`, `minimumProviders`, `minimumRegionsS3`, `minimumRegionsGCC`, and `minimumRegionsAzure`. Attempting to change `classification` or `country` on a system config will return an error.
+:::
+
+**Response**
+
+Returns the updated configuration object (same shape as create response).
+
+---
+
+### `storage.deleteStorageConfiguration(id)`
+
+Delete a custom storage configuration. System configurations cannot be deleted.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+await api.storage.deleteStorageConfiguration('config-id-456');
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch(
+    "https://{namespace}.api.unbound.cx/storage/configurations/{configId}",
+    {
+        method: "DELETE",
+        headers: { "Authorization": "Bearer {token}" }
+    }
+);
+const result = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/storage/configurations/{configId}");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+response = requests.delete(
+    "https://{namespace}.api.unbound.cx/storage/configurations/{configId}",
+    headers={"Authorization": "Bearer {token}"}
+)
+result = response.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X DELETE "https://{namespace}.api.unbound.cx/storage/configurations/{configId}" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | ✅ | Configuration ID to delete |
+
+:::warning
+Only custom configurations (`isSystem: false`) can be deleted. Attempting to delete a system configuration will return an error.
+:::
+
+**Response**
+
+```javascript
+{
+    id: "config-id-456",
+    deleted: true
+}
+```
+
+---
+
+## Common Patterns
+
+### GDPR-Compliant EU Storage
+
+Ensure documents and recordings for EU customers never leave EU infrastructure:
+
+```javascript
+// 1. Create a strict EU-only configuration
+const euConfig = await api.storage.createStorageConfiguration({
+    classification: 'documents',
+    country: 'EU',
+    s3Regions: ['eu-west-1', 'eu-central-1'],
+    gccRegions: ['europe-west1', 'europe-north1'],
+    azureRegions: ['westeurope', 'northeurope'],
+    minimumProviders: 2,
+    minimumRegionsS3: 1,
+    minimumRegionsGCC: 1,
+    minimumRegionsAzure: 0,
+});
+
+// 2. Upload a document using EU storage
+const uploadResult = await api.storage.upload({
+    file: documentBuffer,
+    fileName: 'contract.pdf',
+    classification: 'documents',
+    country: 'EU',
+    folder: 'contracts',
+});
+
+console.log('Stored at:', uploadResult.storageId);
+```
+
+### Audit Storage Configurations Before Upload
+
+```javascript
+// Check what configurations are active before uploading
+const { configurations } = await api.storage.listStorageConfigurations({
+    classification: 'recordings',
+});
+
+const euConfig = configurations.find(
+    c => c.country === 'EU' && c.classification === 'recordings'
+);
+
+if (!euConfig) {
+    console.warn('No EU recording config found — creating one');
+    await api.storage.createStorageConfiguration({
+        classification: 'recordings',
+        country: 'EU',
+        s3Regions: ['eu-west-1'],
+        minimumProviders: 1,
+        minimumRegionsS3: 1,
+        minimumRegionsGCC: 0,
+        minimumRegionsAzure: 0,
+    });
+}
+
+// Now safe to upload EU recordings
+const recording = await api.storage.upload({
+    file: audioBuffer,
+    fileName: 'call-recording.mp3',
+    classification: 'recordings',
+    country: 'EU',
+});
+```
+
+### Rotating Signed Access Keys
+
+Use `generateAccessKey` to create short-lived download URLs for temporary access:
+
+```javascript
+// Generate a 1-hour download link
+const { accessKey } = await api.storage.generateAccessKey(storageId, 3600);
+const downloadUrl = `https://{namespace}.api.unbound.cx/storage/file/${storageId}?key=${accessKey}`;
+
+// Default is 30 minutes (1800 seconds)
+const { accessKey: shortKey } = await api.storage.generateAccessKey(storageId);
+
+// Share the download URL with a user — expires automatically
+res.json({ url: downloadUrl, expiresIn: 3600 });
+```
