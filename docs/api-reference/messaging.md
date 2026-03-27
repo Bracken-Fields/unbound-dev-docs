@@ -3177,6 +3177,407 @@ curl -X DELETE "https://{namespace}.api.unbound.cx/message/campaign/10dlc/campai
 
 ---
 
+### 10DLC Brand — External Vetting & 2FA
+
+Some use cases require external vetting for higher throughput, and `PUBLIC_PROFIT` brands must verify via email 2FA before their brand is activated.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+// Submit external vetting request (for higher throughput tiers)
+const vetting = await api.messaging.campaigns.tenDlc.brands.createExternalVetting(
+    'brand-id',
+    {
+        evpId: 'ev-provider-id',          // External vetting provider ID
+        vettingClass: 'STANDARD',         // Vetting class requested
+    },
+);
+// {
+//   id: "vet-abc123",
+//   brandId: "brand-id",
+//   evpId: "ev-provider-id",
+//   vettingClass: "STANDARD",
+//   vettingScore: null,
+//   vettingStatus: "PENDING",
+//   vettingToken: "vt-xyz789",
+//   createDate: "2025-01-15T10:30:00Z"
+// }
+
+// Poll for vetting responses
+const responses = await api.messaging.campaigns.tenDlc.brands.getExternalVettingResponses('brand-id');
+// [
+//   {
+//     evpId: "ev-provider-id",
+//     vettingClass: "STANDARD",
+//     vettingScore: 75,
+//     vettingStatus: "VETTED_VERIFIED",
+//     vettingToken: "vt-xyz789",
+//     createDate: "2025-01-15T10:30:00Z",
+//     vettedDate: "2025-01-15T11:15:00Z"
+//   }
+// ]
+
+// Resend 2FA email for PUBLIC_PROFIT brands
+await api.messaging.campaigns.tenDlc.brands.resend2fa('brand-id');
+// { success: true, message: "2FA email sent to brand contact" }
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Submit external vetting
+const vetting = await (await fetch(
+    "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/brand/brand-id/externalVetting",
+    {
+        method: "POST",
+        headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+        body: JSON.stringify({ evpId: "ev-provider-id", vettingClass: "STANDARD" }),
+    }
+)).json();
+
+// Get vetting responses
+const responses = await (await fetch(
+    "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/brand/brand-id/externalvetting/responses",
+    { headers: { "Authorization": "Bearer {token}" } }
+)).json();
+
+// Resend 2FA
+await fetch(
+    "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/brand/brand-id/resend-2fa",
+    { method: "POST", headers: { "Authorization": "Bearer {token}" } }
+);
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// Submit external vetting
+$ch = curl_init("https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/brand/brand-id/externalVetting");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(["evpId" => "ev-provider-id", "vettingClass" => "STANDARD"]));
+$vetting = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+// Get vetting responses
+$ch = curl_init("https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/brand/brand-id/externalvetting/responses");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$responses = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+// Resend 2FA
+$ch = curl_init("https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/brand/brand-id/resend-2fa");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_exec($ch);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+headers = {"Authorization": "Bearer {token}"}
+
+# Submit external vetting
+vetting = requests.post(
+    "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/brand/brand-id/externalVetting",
+    headers=headers,
+    json={"evpId": "ev-provider-id", "vettingClass": "STANDARD"},
+).json()
+
+# Get vetting responses
+responses = requests.get(
+    "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/brand/brand-id/externalvetting/responses",
+    headers=headers,
+).json()
+
+# Resend 2FA
+requests.post(
+    "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/brand/brand-id/resend-2fa",
+    headers=headers,
+)
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+DATA=$(cat <<'EOF'
+{"evpId": "ev-provider-id", "vettingClass": "STANDARD"}
+EOF
+)
+
+# Submit external vetting
+curl -X POST "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/brand/brand-id/externalVetting" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d "$DATA"
+
+# Get vetting responses
+curl -X GET "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/brand/brand-id/externalvetting/responses" \
+  -H "Authorization: Bearer {token}"
+
+# Resend 2FA email
+curl -X POST "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/brand/brand-id/resend-2fa" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
+#### External Vetting Status Values
+
+| Status | Meaning |
+|---|---|
+| `PENDING` | Vetting request submitted, waiting for provider response |
+| `VETTED_VERIFIED` | Brand verified — higher throughput unlocked |
+| `VETTED_UNVERIFIED` | Vetting complete but brand did not meet requirements |
+| `SELF_DECLARED` | Brand self-declared (lower throughput tier) |
+
+#### 2FA Note for `PUBLIC_PROFIT` Brands
+
+When you create a `PUBLIC_PROFIT` brand, the point-of-contact email receives a 2FA verification email. The brand will not be approved until this step is completed. Use `resend2fa()` if the email was missed or expired.
+
+---
+
+### 10DLC Campaigns — Advanced Management
+
+Beyond basic CRUD, campaigns support MNO status inspection, operation tracking, and phone number assignment.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+// Check campaign operation status (async operations like create/update can be polled)
+const opStatus = await api.messaging.campaigns.tenDlc.campaigns.getOperationStatus('campaign-id');
+// {
+//   operationStatus: "COMPLETED",   // "PENDING" | "COMPLETED" | "FAILED"
+//   operation: "CREATE",
+//   completedDate: "2025-01-15T11:00:00Z"
+// }
+
+// Get MNO (Mobile Network Operator) metadata — carrier-level status per campaign
+const mnoData = await api.messaging.campaigns.tenDlc.campaigns.getMnoMetaData('campaign-id');
+// {
+//   mnoMetaData: {
+//     ATT:     { tpmScope: "CAMPAIGN", tpm: 2000, brandTier: "TOP" },
+//     TMOBILE: { tpmScope: "CAMPAIGN", tpm: 10000, brandTier: "STANDARD" },
+//     VERIZON: { tpmScope: "CAMPAIGN", tpm: 3600, brandTier: "STANDARD" }
+//   }
+// }
+
+// Add a phone number to a campaign
+await api.messaging.campaigns.tenDlc.campaigns.addPhoneNumber('campaign-id', {
+    phoneNumber: '+13175550100',
+});
+
+// Update a phone number's campaign association
+await api.messaging.campaigns.tenDlc.campaigns.updatePhoneNumber('campaign-id', {
+    phoneNumber: '+13175550100',
+    action: 'update',
+});
+
+// Remove a phone number from a campaign
+await api.messaging.campaigns.tenDlc.campaigns.removePhoneNumber('campaign-id', {
+    phoneNumber: '+13175550100',
+});
+
+// Check which campaign a phone number is registered to
+const status = await api.messaging.campaigns.tenDlc.getPhoneNumberCampaignStatus('+13175550100');
+// {
+//   phoneNumber: "+13175550100",
+//   campaignId: "campaign-id",
+//   campaignStatus: "ACTIVE",
+//   brandId: "brand-id",
+//   useCase: "CUSTOMER_CARE"
+// }
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Check campaign operation status
+const opStatus = await (await fetch(
+    "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/campaign/campaign-id/operationStatus",
+    { headers: { "Authorization": "Bearer {token}" } }
+)).json();
+
+// Get MNO metadata
+const mnoData = await (await fetch(
+    "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/campaign/campaign-id/mnoMetaData",
+    { headers: { "Authorization": "Bearer {token}" } }
+)).json();
+
+// Add phone number to campaign
+await fetch(
+    "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/campaign/campaign-id/phoneNumber",
+    {
+        method: "POST",
+        headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber: "+13175550100" }),
+    }
+);
+
+// Remove phone number from campaign
+await fetch(
+    "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/campaign/campaign-id/phoneNumber",
+    {
+        method: "DELETE",
+        headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber: "+13175550100" }),
+    }
+);
+
+// Check phone number campaign status
+const status = await (await fetch(
+    "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/phoneNumber/%2B13175550100/campaignStatus",
+    { headers: { "Authorization": "Bearer {token}" } }
+)).json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// Check campaign operation status
+$ch = curl_init("https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/campaign/campaign-id/operationStatus");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$opStatus = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+// Get MNO metadata
+$ch = curl_init("https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/campaign/campaign-id/mnoMetaData");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$mnoData = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+// Add phone number to campaign
+$ch = curl_init("https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/campaign/campaign-id/phoneNumber");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(["phoneNumber" => "+13175550100"]));
+curl_exec($ch);
+curl_close($ch);
+
+// Remove phone number from campaign
+$ch = curl_init("https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/campaign/campaign-id/phoneNumber");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(["phoneNumber" => "+13175550100"]));
+curl_exec($ch);
+curl_close($ch);
+
+// Check phone number campaign status
+$ph = urlencode("+13175550100");
+$ch = curl_init("https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/phoneNumber/$ph/campaignStatus");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$status = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+from urllib.parse import quote
+headers = {"Authorization": "Bearer {token}"}
+
+# Check campaign operation status
+op_status = requests.get(
+    "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/campaign/campaign-id/operationStatus",
+    headers=headers,
+).json()
+
+# Get MNO metadata
+mno_data = requests.get(
+    "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/campaign/campaign-id/mnoMetaData",
+    headers=headers,
+).json()
+
+# Add phone number to campaign
+requests.post(
+    "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/campaign/campaign-id/phoneNumber",
+    headers=headers,
+    json={"phoneNumber": "+13175550100"},
+)
+
+# Remove phone number from campaign
+requests.delete(
+    "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/campaign/campaign-id/phoneNumber",
+    headers=headers,
+    json={"phoneNumber": "+13175550100"},
+)
+
+# Check phone number campaign status
+phone = quote("+13175550100")
+status = requests.get(
+    f"https://{{namespace}}.api.unbound.cx/messaging/campaigns/10dlc/phoneNumber/{phone}/campaignStatus",
+    headers=headers,
+).json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Check campaign operation status
+curl -X GET "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/campaign/campaign-id/operationStatus" \
+  -H "Authorization: Bearer {token}"
+
+# Get MNO metadata
+curl -X GET "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/campaign/campaign-id/mnoMetaData" \
+  -H "Authorization: Bearer {token}"
+
+# Add phone number to campaign
+curl -X POST "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/campaign/campaign-id/phoneNumber" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"phoneNumber": "+13175550100"}'
+
+# Remove phone number from campaign
+curl -X DELETE "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/campaign/campaign-id/phoneNumber" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"phoneNumber": "+13175550100"}'
+
+# Check phone number campaign status (URL-encode the +)
+curl -X GET "https://{namespace}.api.unbound.cx/messaging/campaigns/10dlc/phoneNumber/%2B13175550100/campaignStatus" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
+#### MNO Throughput Reference
+
+MNO metadata tells you the actual throughput each carrier allows for your campaign. `tpmScope` determines whether the limit is per-campaign or per-brand.
+
+| MNO | Typical tpm (STANDARD brand) | Typical tpm (TOP brand) |
+|---|---|---|
+| AT&T | 2,000 | 10,000 |
+| T-Mobile | 10,000 | 200,000 |
+| Verizon | 3,600 | 72,000 |
+| US Cellular | 1,000 | 5,000 |
+
+> **Note:** `tpm` = messages per minute. Values vary by use case and are set by carriers. Always fetch live MNO metadata rather than relying on static values.
+
+---
+
 ## Common Patterns
 
 ### Pattern 1 — SMS appointment reminder with template
