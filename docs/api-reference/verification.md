@@ -406,6 +406,113 @@ curl -X POST "https://{namespace}.api.unbound.cx/verification/email/validate" \
 
 ---
 
+## Response Shapes
+
+### `createSmsVerification` / `createEmailVerification`
+
+```json
+{
+    "id": "ver_01j2kxp7b8rqtv3mxn9w",
+    "channel": "sms",
+    "phoneNumber": "+12135550100",
+    "status": "pending",
+    "expiresAt": "2024-03-15T10:15:00Z",
+    "createdAt": "2024-03-15T10:05:00Z",
+    "metadata": {
+        "userId": "user-123",
+        "action": "login"
+    }
+}
+```
+
+For email verifications, `phoneNumber` is replaced by `email`:
+
+```json
+{
+    "id": "ver_01j2kxp7b8rqtv3mxn9x",
+    "channel": "email",
+    "email": "user@example.com",
+    "status": "pending",
+    "expiresAt": "2024-03-15T11:05:00Z",
+    "createdAt": "2024-03-15T10:05:00Z",
+    "metadata": {
+        "action": "signup"
+    }
+}
+```
+
+**Status values:**
+
+| Status | Description |
+|---|---|
+| `pending` | Code was sent and is awaiting validation |
+| `verified` | Code was validated successfully |
+| `expired` | Code TTL elapsed before validation |
+| `failed` | Too many incorrect attempts |
+
+---
+
+### `validateSmsVerification` / `validateEmailVerification`
+
+**Success:**
+
+```json
+{
+    "valid": true,
+    "id": "ver_01j2kxp7b8rqtv3mxn9w",
+    "metadata": {
+        "userId": "user-123",
+        "action": "login"
+    }
+}
+```
+
+**Failure — wrong code:**
+
+```json
+{
+    "valid": false,
+    "reason": "invalid_code",
+    "attemptsRemaining": 2
+}
+```
+
+**Failure — expired:**
+
+```json
+{
+    "valid": false,
+    "reason": "expired",
+    "expiredAt": "2024-03-15T10:15:00Z"
+}
+```
+
+**Failure — too many attempts:**
+
+```json
+{
+    "valid": false,
+    "reason": "max_attempts_exceeded",
+    "attemptsRemaining": 0
+}
+```
+
+---
+
+## Error Codes
+
+| HTTP Status | Error | Description |
+|---|---|---|
+| `400` | `invalid_phone_number` | Phone number is not in E.164 format |
+| `400` | `invalid_email` | Email address is malformed |
+| `400` | `invalid_code_format` | Code must be a numeric string |
+| `404` | `verification_not_found` | No pending verification for this phone/email |
+| `410` | `verification_expired` | Code TTL has elapsed — create a new verification |
+| `429` | `rate_limit_exceeded` | Too many verifications sent to this number/address |
+| `422` | `max_attempts_exceeded` | Too many failed validate attempts — send a new code |
+
+---
+
 ## Full Example: Login with SMS 2FA
 
 <Tabs groupId="lang">
@@ -631,3 +738,239 @@ curl -X POST https://your-namespace.api.unbound.cx/verification/sms/validate \
 </TabItem>
 
 </Tabs>
+
+
+---
+
+## Common Patterns
+
+### Signup Flow with Email Verification
+
+Verify an email address before activating a new account:
+
+```javascript
+async function signupWithEmailVerification(email, password) {
+    // 1. Create the account in a pending state
+    const user = await api.objects.create({
+        object: 'users',
+        body: {
+            email,
+            passwordHash: hashPassword(password),
+            status: 'pending_verification',
+        },
+    });
+
+    // 2. Send a verification code (auto-generated, 1 hour TTL)
+    await api.verification.createEmailVerification({
+        email,
+        expiresIn: 3600,
+        metadata: {
+            userId: user.id,
+            action: 'signup',
+        },
+    });
+
+    return { userId: user.id, message: 'Check your email for a verification code.' };
+}
+
+async function confirmEmail(email, code) {
+    // 3. Validate the code
+    const result = await api.verification.validateEmailVerification(email, code);
+
+    if (!result.valid) {
+        const reasons = {
+            invalid_code: 'Incorrect code. Try again.',
+            expired: 'Code has expired. Request a new one.',
+            max_attempts_exceeded: 'Too many attempts. Request a new code.',
+        };
+        throw new Error(reasons[result.reason] || 'Verification failed.');
+    }
+
+    // 4. Activate the account
+    await api.objects.update({
+        object: 'users',
+        where: { email },
+        update: { status: 'active', emailVerifiedAt: new Date().toISOString() },
+    });
+
+    return { success: true };
+}
+```
+
+---
+
+### Password Reset with SMS
+
+Use SMS verification as the identity check before allowing a password change:
+
+```javascript
+async function requestPasswordReset(phoneNumber) {
+    // Verify user exists first (don't leak info on failure)
+    const [user] = await api.objects.query({
+        object: 'users',
+        where: { phone: phoneNumber },
+        select: ['id'],
+        limit: 1,
+    });
+
+    if (!user) {
+        // Return generic response regardless to prevent enumeration
+        return { message: 'If that number is registered, you will receive a code.' };
+    }
+
+    // Send a 10-minute code
+    await api.verification.createSmsVerification({
+        phoneNumber,
+        expiresIn: 600,
+        metadata: { userId: user.id, action: 'password_reset' },
+    });
+
+    return { message: 'If that number is registered, you will receive a code.' };
+}
+
+async function resetPassword(phoneNumber, code, newPassword) {
+    const result = await api.verification.validateSmsVerification(phoneNumber, code);
+
+    if (!result.valid) {
+        throw new Error('Invalid or expired verification code.');
+    }
+
+    // Code is valid — safe to update the password
+    await api.objects.update({
+        object: 'users',
+        where: { phone: phoneNumber },
+        update: {
+            passwordHash: hashPassword(newPassword),
+            passwordChangedAt: new Date().toISOString(),
+        },
+    });
+
+    return { success: true };
+}
+```
+
+---
+
+### Resend with Rate-Limit Awareness
+
+Handle the `429` rate limit gracefully and surface a sensible delay to the user:
+
+```javascript
+async function sendVerificationWithRetry(phoneNumber, options = {}) {
+    const MAX_RETRIES = 1;
+    let attempt = 0;
+
+    while (attempt <= MAX_RETRIES) {
+        try {
+            const result = await api.verification.createSmsVerification({
+                phoneNumber,
+                expiresIn: options.expiresIn || 300,
+                metadata: options.metadata || {},
+            });
+            return result;
+        } catch (err) {
+            if (err.status === 429) {
+                // Parse retry delay from headers or use a default
+                const retryAfter = parseInt(err.headers?.['retry-after'] || '60', 10);
+                throw new Error(
+                    `Too many verification requests. Please wait ${retryAfter} seconds before trying again.`
+                );
+            }
+
+            if (err.status === 400 && err.message?.includes('invalid_phone_number')) {
+                throw new Error('Phone number must be in E.164 format (e.g. +12135550100).');
+            }
+
+            throw err;
+        }
+    }
+}
+```
+
+---
+
+### Dual-Channel 2FA (SMS + Email Fallback)
+
+Try SMS first; fall back to email if the phone is unavailable:
+
+```javascript
+async function send2FACode(user) {
+    if (user.phone) {
+        try {
+            await api.verification.createSmsVerification({
+                phoneNumber: user.phone,
+                expiresIn: 300,
+                metadata: { userId: user.id, channel: 'sms' },
+            });
+            return { channel: 'sms', destination: maskPhone(user.phone) };
+        } catch (err) {
+            console.warn('SMS verification failed, falling back to email:', err.message);
+        }
+    }
+
+    // Fallback: email
+    await api.verification.createEmailVerification({
+        email: user.email,
+        expiresIn: 600,
+        metadata: { userId: user.id, channel: 'email' },
+    });
+
+    return { channel: 'email', destination: maskEmail(user.email) };
+}
+
+async function verify2FACode(user, channel, code) {
+    let result;
+
+    if (channel === 'sms') {
+        result = await api.verification.validateSmsVerification(user.phone, code);
+    } else {
+        result = await api.verification.validateEmailVerification(user.email, code);
+    }
+
+    if (!result.valid) {
+        throw new Error('Invalid verification code.');
+    }
+
+    return { verified: true, userId: user.id };
+}
+
+function maskPhone(phone) {
+    // Show last 4 digits only: ••••••6789
+    return '••••••' + phone.slice(-4);
+}
+
+function maskEmail(email) {
+    // Show first 2 chars and domain: jo***@example.com
+    const [local, domain] = email.split('@');
+    return local.slice(0, 2) + '***@' + domain;
+}
+```
+
+---
+
+### Custom Code for Branded SMS Messages
+
+Supply your own code so you can embed it in a branded message via another channel:
+
+```javascript
+async function sendBrandedVerification(phoneNumber, userId) {
+    // Generate a 6-digit code
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+
+    // Create the verification record (Unbound stores and tracks it)
+    await api.verification.createSmsVerification({
+        phoneNumber,
+        code,
+        expiresIn: 300,
+        metadata: { userId, action: 'login' },
+    });
+
+    // Send a branded SMS via your preferred template
+    await api.messaging.sms.send({
+        from: '+18005550100',
+        to: phoneNumber,
+        message: `Your Acme Corp login code is ${code}. It expires in 5 minutes. Do not share it.`,
+    });
+}
+```
+
