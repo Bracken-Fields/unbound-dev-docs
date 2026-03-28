@@ -1196,6 +1196,574 @@ interface EngagementSession {
 
 ---
 
+## External OAuth
+
+### ExternalOAuthCreateParams
+
+```typescript
+interface ExternalOAuthCreateParams {
+    /** Human-readable name for this integration */
+    name: string;
+    /** OAuth provider identifier (e.g. `"google"`, `"microsoft"`, `"salesforce"`) */
+    provider: string;
+    /** OAuth scopes to request */
+    scopes: string[];
+    /** Provider credentials (client_id, client_secret, etc.) — write-only */
+    credentials?: {
+        clientId?: string;
+        clientSecret?: string;
+        [key: string]: any;
+    };
+    /** Additional provider-specific configuration */
+    configuration?: Record<string, any>;
+}
+```
+
+### ExternalOAuthIntegration
+
+```typescript
+interface ExternalOAuthIntegration {
+    id: string;
+    name: string;
+    /** OAuth provider identifier */
+    provider: string;
+    /** Granted scopes */
+    scopes: string[];
+    /** Whether the token is currently valid and active */
+    isConnected: boolean;
+    /** Token expiry (ISO 8601); null if not applicable */
+    tokenExpiresAt: string | null;
+    /** Configuration (credentials are never returned) */
+    configuration?: Record<string, any>;
+    createdAt: string;
+    updatedAt: string;
+    namespace: string;
+}
+```
+
+### ExternalOAuthUpdateParams
+
+```typescript
+interface ExternalOAuthUpdateParams {
+    name?: string;
+    scopes?: string[];
+    /** Write-only — replaces stored credentials */
+    credentials?: {
+        clientId?: string;
+        clientSecret?: string;
+        [key: string]: any;
+    };
+    configuration?: Record<string, any>;
+}
+```
+
+---
+
+## Google Calendar
+
+### GoogleCalendarWebhook
+
+```typescript
+interface GoogleCalendarWebhook {
+    id: string;
+    /** Google Calendar ID being watched */
+    calendarId: string;
+    /** Webhook delivery URL */
+    webhookUrl: string;
+    /** Channel expiry (ISO 8601) */
+    expiresAt: string;
+    /** Google channel ID (internal) */
+    googleChannelId: string;
+    namespace: string;
+}
+```
+
+### GoogleCalendarItem
+
+```typescript
+interface GoogleCalendarItem {
+    /** Google Calendar ID */
+    id: string;
+    /** Calendar display name */
+    summary: string;
+    /** Optional description */
+    description?: string;
+    /** Calendar timezone (IANA, e.g. `"America/Indianapolis"`) */
+    timeZone?: string;
+    /** Whether this is the user's primary calendar */
+    primary?: boolean;
+    /** User's access role: `"owner"` | `"reader"` | `"writer"` | `"freeBusyReader"` */
+    accessRole: 'owner' | 'reader' | 'writer' | 'freeBusyReader';
+}
+```
+
+### GoogleCalendarEvent
+
+```typescript
+interface GoogleCalendarEvent {
+    id: string;
+    /** Event title */
+    summary: string;
+    description?: string;
+    location?: string;
+    status: 'confirmed' | 'tentative' | 'cancelled';
+    start: {
+        dateTime?: string;  // ISO 8601 — for timed events
+        date?: string;      // YYYY-MM-DD — for all-day events
+        timeZone?: string;
+    };
+    end: {
+        dateTime?: string;
+        date?: string;
+        timeZone?: string;
+    };
+    organizer?: {
+        email: string;
+        displayName?: string;
+    };
+    attendees?: Array<{
+        email: string;
+        displayName?: string;
+        responseStatus: 'accepted' | 'declined' | 'tentative' | 'needsAction';
+        optional?: boolean;
+    }>;
+    htmlLink?: string;
+    hangoutLink?: string;
+    conferenceData?: Record<string, any>;
+    created?: string;
+    updated?: string;
+}
+```
+
+### GoogleCalendarGetEventsParams
+
+```typescript
+interface GoogleCalendarGetEventsParams {
+    /** ISO 8601 lower bound for event start times */
+    timeMin?: string;
+    /** ISO 8601 upper bound for event start times */
+    timeMax?: string;
+    /** Full-text search across event fields */
+    q?: string;
+    /** Max events to return (default: 250, max: 2500) */
+    maxResults?: number;
+    /** Include cancelled events */
+    showDeleted?: boolean;
+    /** IANA timezone for start/end times in response */
+    timeZone?: string;
+    /** Pagination token */
+    pageToken?: string;
+}
+```
+
+---
+
+## Portals
+
+### PortalCreateParams
+
+```typescript
+interface PortalCreateParams {
+    /** Display name for the portal */
+    name: string;
+    /** Custom domain (e.g. `"support.acme.com"`) */
+    domain: string;
+    /** Portal-wide settings */
+    settings?: {
+        /** Allow guest (unauthenticated) access */
+        allowGuests?: boolean;
+        /** Custom login page title */
+        loginTitle?: string;
+        /** Primary brand color (hex) */
+        primaryColor?: string;
+        [key: string]: any;
+    };
+    /** Whether the portal is publicly accessible */
+    isPublic?: boolean;
+    /** Custom CSS injected into portal pages */
+    customCss?: string;
+    /** Custom JavaScript injected into portal pages */
+    customJs?: string;
+    /** Favicon URL or storage ID */
+    favicon?: string;
+    /** Logo URL or storage ID */
+    logo?: string;
+}
+```
+
+### Portal
+
+```typescript
+interface Portal {
+    id: string;
+    name: string;
+    domain: string;
+    /** Full portal URL */
+    url: string;
+    settings?: Record<string, any>;
+    isPublic: boolean;
+    customCss?: string;
+    customJs?: string;
+    favicon?: string;
+    logo?: string;
+    /** Whether DNS has been verified for this domain */
+    dnsVerified: boolean;
+    /** DNS verification token (add as TXT record) */
+    dnsVerificationToken?: string;
+    createdAt: string;
+    updatedAt: string;
+    namespace: string;
+}
+```
+
+### PortalDnsVerifyResult
+
+```typescript
+interface PortalDnsVerifyResult {
+    portalId: string;
+    domain: string;
+    /** Whether DNS verification passed */
+    verified: boolean;
+    /** Reason if verification failed */
+    reason?: string;
+}
+```
+
+---
+
+## Record Types
+
+### RecordTypeCreateParams
+
+```typescript
+interface RecordTypeCreateParams {
+    /** Record type display name */
+    name: string;
+    /** Human-readable description */
+    description: string;
+    /** User IDs allowed to create records of this type */
+    create?: string[];
+    /** User IDs allowed to update records */
+    update?: string[];
+    /** User IDs allowed to read records */
+    read?: string[];
+    /** User IDs allowed to delete records */
+    delete?: string[];
+}
+```
+
+### RecordType
+
+```typescript
+interface RecordType {
+    id: string;
+    name: string;
+    description: string;
+    /** Whether this is the account-wide default */
+    isAccountDefault: boolean;
+    /** Permission lists */
+    permissions: {
+        create: string[];
+        update: string[];
+        read: string[];
+        delete: string[];
+    };
+    /** Objects this record type governs */
+    objects: string[];
+    createdAt: string;
+    updatedAt: string;
+    namespace: string;
+}
+```
+
+### RecordTypeUpdateParams
+
+```typescript
+interface RecordTypeUpdateParams {
+    name?: string;
+    description?: string;
+    /** Permissions to add */
+    add?: {
+        create?: string[];
+        update?: string[];
+        read?: string[];
+        delete?: string[];
+    };
+    /** Permissions to remove */
+    remove?: {
+        create?: string[];
+        update?: string[];
+        read?: string[];
+        delete?: string[];
+    };
+}
+```
+
+### RecordTypeDefault
+
+```typescript
+interface RecordTypeDefault {
+    id: string;
+    /** Record type ID assigned as default */
+    recordTypeId: string;
+    /** Object name (e.g. `"contacts"`, `"companies"`) */
+    object: string;
+    /** User ID this default applies to, or null for account-wide */
+    userId?: string;
+}
+```
+
+---
+
+## SIP Endpoints
+
+### SipEndpointCreateParams
+
+```typescript
+interface SipEndpointCreateParams {
+    /** Endpoint type: `"webrtc"` | `"softphone"` | `"hardphone"` */
+    type: 'webrtc' | 'softphone' | 'hardphone';
+    /** Record type ID for access control */
+    recordTypeId?: string;
+    /** User ID to associate with this endpoint */
+    userId?: string;
+    /** Friendly name */
+    name?: string;
+    /** MAC address (for provisioned hardware phones) */
+    macAddress?: string;
+    /** Enable TLS / SRTP secure calling */
+    useSecureCalling?: boolean;
+    /** Additional provisioning fields (timezone, vlanId, etc.) */
+    [key: string]: any;
+}
+```
+
+### SipEndpoint
+
+```typescript
+interface SipEndpoint {
+    id: string;
+    /** Endpoint type */
+    type: 'webrtc' | 'softphone' | 'hardphone';
+    name?: string;
+    /** SIP username */
+    username?: string;
+    /** SIP domain */
+    domain?: string;
+    /** SIP proxy/registrar */
+    proxy?: string;
+    /** WebRTC registration details (type=webrtc only) */
+    webRtcDetails?: {
+        server: string;
+        port: number;
+        protocol: 'wss' | 'ws';
+    };
+    macAddress?: string;
+    userId?: string;
+    recordTypeId?: string;
+    useSecureCalling?: boolean;
+    /** Provisioning URL (for hardphones with HTTP provisioning) */
+    provisioningUrl?: string;
+    createdAt: string;
+    updatedAt: string;
+    namespace: string;
+}
+```
+
+### SipEndpointWebRtcDetails
+
+```typescript
+interface SipEndpointWebRtcDetails {
+    /** WebSocket server address */
+    server: string;
+    port: number;
+    protocol: 'wss' | 'ws';
+    /** STUN/TURN server list for ICE */
+    iceServers?: Array<{
+        urls: string | string[];
+        username?: string;
+        credential?: string;
+    }>;
+}
+```
+
+---
+
+## Layouts
+
+### LayoutField
+
+```typescript
+interface LayoutField {
+    /** Object attribute / column name */
+    fieldName: string;
+    /** Display label */
+    label?: string;
+    /** Whether this field is visible in this layout */
+    visible?: boolean;
+    /** Column width (for list layouts) */
+    width?: number;
+    /** Display order (lower = earlier) */
+    order?: number;
+    /** Field is editable inline */
+    editable?: boolean;
+    /** Field is required in forms */
+    required?: boolean;
+}
+```
+
+### Layout
+
+```typescript
+interface Layout {
+    id: string;
+    /** Object this layout applies to (e.g. `"contacts"`) */
+    objectName: string;
+    /** Layout type: `"list"` | `"detail"` | `"form"` | `"card"` */
+    type: 'list' | 'detail' | 'form' | 'card';
+    /** Display name for the layout */
+    name?: string;
+    /** Whether this is the default layout for this object+type */
+    isDefault?: boolean;
+    /** Ordered list of field definitions */
+    fields: LayoutField[];
+    /** Record type ID this layout is scoped to (null = all) */
+    recordTypeId?: string | null;
+    createdAt: string;
+    updatedAt: string;
+    namespace: string;
+}
+```
+
+### LayoutGetParams
+
+```typescript
+interface LayoutGetParams {
+    /** Object name to fetch layouts for */
+    objectName?: string;
+    /** Specific layout ID */
+    id?: string;
+    /** Additional query filters */
+    [key: string]: any;
+}
+```
+
+---
+
+## Phone Numbers
+
+### PhoneNumber
+
+```typescript
+interface PhoneNumber {
+    id: string;
+    /** E.164 format (e.g. `"+13175550100"`) */
+    phoneNumber: string;
+    /** Friendly label */
+    name?: string;
+    /** `"local"` | `"tollfree"` | `"shortcode"` */
+    type: 'local' | 'tollfree' | 'shortcode';
+    /** ISO 2-letter country code */
+    country: string;
+    /** Voice webhook URL */
+    voiceWebHookUrl?: string;
+    /** Messaging webhook URL */
+    messagingWebHookUrl?: string;
+    /** Voice workflow ID */
+    voiceApp?: string;
+    /** Whether call recording is enabled */
+    recordCalls?: boolean;
+    /** CNAM caller ID display string */
+    cnam?: string;
+    createdAt: string;
+    updatedAt: string;
+    namespace: string;
+}
+```
+
+### PhoneNumberSearchParams
+
+```typescript
+interface PhoneNumberSearchParams {
+    /** Area code to search (e.g. `"317"`) */
+    areaCode?: string;
+    /** ISO 2-letter country code (default: `"US"`) */
+    country?: string;
+    /** Number type: `"local"` | `"tollfree"` */
+    type?: 'local' | 'tollfree';
+    /** Vanity pattern (e.g. `"*PIZZA*"`) */
+    contains?: string;
+    /** Max results to return */
+    limit?: number;
+}
+```
+
+### PhoneNumberUpdateParams
+
+```typescript
+interface PhoneNumberUpdateParams {
+    name?: string;
+    voiceWebHookUrl?: string;
+    messagingWebHookUrl?: string;
+    voiceApp?: string;
+    recordCalls?: boolean;
+    /** Outbound caller ID CNAM label (max 15 chars) */
+    cnam?: string;
+}
+```
+
+### PortingOrder
+
+```typescript
+interface PortingOrder {
+    id: string;
+    /** Customer-supplied reference */
+    customerReference?: string;
+    /** `"draft"` | `"submitted"` | `"pending"` | `"active"` | `"cancelled"` | `"failed"` */
+    status: 'draft' | 'submitted' | 'pending' | 'active' | 'cancelled' | 'failed';
+    portOrderType?: string;
+    /** Desired activation date/time (ISO 8601) */
+    activationSettings?: {
+        activationTime?: string;
+        timezone?: string;
+    };
+    /** End-user contact info for carrier verification */
+    endUser?: {
+        name?: string;
+        address?: string;
+        city?: string;
+        state?: string;
+        zip?: string;
+        country?: string;
+        phone?: string;
+    };
+    phoneNumbers?: string[];
+    tags?: string[];
+    createdAt: string;
+    updatedAt: string;
+    namespace: string;
+}
+```
+
+### PortingOrderPortabilityResult
+
+```typescript
+interface PortingOrderPortabilityResult {
+    /** E.164 phone number */
+    phoneNumber: string;
+    /** Whether the number is portable */
+    isPortable: boolean;
+    /** Current carrier */
+    carrier?: string;
+    /** Portability status for this number */
+    portabilityStatus: 'pending' | 'portable' | 'not_portable';
+    /** Reason if not portable */
+    reason?: string;
+}
+```
+
+---
+
 ## Pagination Helpers
 
 Most list endpoints support cursor-based pagination via `nextId` / `previousId`. A typical paginated fetch looks like:
