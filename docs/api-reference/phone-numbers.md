@@ -1156,6 +1156,263 @@ curl -X POST "https://{namespace}.api.unbound.cx/phone-number/porting/order/orde
 </TabItem>
 </Tabs>
 
+### Remove a Phone Number from an Order
+
+Remove a single number from a porting order before it has been submitted. Useful for correcting mistakes or splitting orders.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+await api.phoneNumbers.removePhoneNumberFromOrder(
+    'order-id',
+    '+15551234567',
+);
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const phoneEncoded = encodeURIComponent('+15551234567');
+await fetch(
+    `https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id/numbers/${phoneEncoded}`,
+    {
+        method: "DELETE",
+        headers: { "Authorization": "Bearer {token}" }
+    }
+);
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$phone = urlencode('+15551234567');
+$ch = curl_init("https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id/numbers/$phone");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+curl_exec($ch);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+from urllib.parse import quote
+
+phone = quote('+15551234567')
+requests.delete(
+    f"https://{{namespace}}.api.unbound.cx/phone-number/porting/orders/order-id/numbers/{phone}",
+    headers={"Authorization": "Bearer {token}"},
+)
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X DELETE "https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id/numbers/%2B15551234567" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `portingOrderId` | string | ✅ | ID of the porting order |
+| `phoneNumber` | string | ✅ | Phone number to remove (E.164 format, e.g., `+15551234567`) |
+
+> **Note:** Numbers can only be removed from orders in `draft` or `pending` status. Submitted orders cannot be modified — contact support if changes are needed.
+
+---
+
+### Attach a Porting Document
+
+Attach a document (LOA, phone bill, CSR, etc.) to a porting order. Use `generateLoa` for auto-generated LOAs, or this method to attach a manually uploaded document via a `storageId` from the Storage API.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+// Attach an uploaded LOA document
+const result = await api.phoneNumbers.attachPortingDocument({
+    portingOrderId: 'order-id',
+    storageId: 'storage-id-from-upload',
+    documentType: 'loa',
+    isRequired: true,
+});
+// result.action → 'created' | 'updated'
+
+// Attach a phone bill as supporting document
+await api.phoneNumbers.attachPortingDocument({
+    portingOrderId: 'order-id',
+    storageId: 'storage-id-of-bill',
+    documentType: 'bill',
+    isRequired: false,
+});
+
+// Update an existing attached document
+await api.phoneNumbers.attachPortingDocument({
+    portingOrderId: 'order-id',
+    storageId: 'new-storage-id',
+    documentType: 'loa',
+    documentId: 'existing-doc-id',   // update in-place
+});
+
+// Clear a document (set storageId to null)
+await api.phoneNumbers.attachPortingDocument({
+    portingOrderId: 'order-id',
+    storageId: null,
+    documentType: 'loa',
+    documentId: 'doc-id-to-clear',
+});
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Attach an uploaded LOA document
+const res = await fetch("https://{namespace}.api.unbound.cx/phone-number/porting/documents", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    portingOrderId: "order-id",
+    storageId: "storage-id-from-upload",
+    documentType: "loa",
+    isRequired: true
+  })
+});
+const result = await res.json();
+// result.action → "created" | "updated"
+
+// Update an existing document
+const res2 = await fetch("https://{namespace}.api.unbound.cx/phone-number/porting/documents", {
+  method: "POST",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    portingOrderId: "order-id",
+    storageId: "new-storage-id",
+    documentType: "loa",
+    documentId: "existing-doc-id"
+  })
+});
+const result2 = await res2.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// Attach an uploaded LOA document
+$ch = curl_init("https://{namespace}.api.unbound.cx/phone-number/porting/documents");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "portingOrderId" => "order-id",
+    "storageId"      => "storage-id-from-upload",
+    "documentType"   => "loa",
+    "isRequired"     => true
+]));
+$result = json_decode(curl_exec($ch), true);
+curl_close($ch);
+// $result['action'] → 'created' | 'updated'
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+# Attach an uploaded LOA document
+response = requests.post(
+    "https://{namespace}.api.unbound.cx/phone-number/porting/documents",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "portingOrderId": "order-id",
+        "storageId": "storage-id-from-upload",
+        "documentType": "loa",
+        "isRequired": True
+    }
+)
+result = response.json()
+# result['action'] → 'created' | 'updated'
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Attach an uploaded LOA document
+curl -X POST "https://{namespace}.api.unbound.cx/phone-number/porting/documents" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "portingOrderId": "order-id",
+    "storageId": "storage-id-from-upload",
+    "documentType": "loa",
+    "isRequired": true
+  }'
+
+# Update an existing attached document
+curl -X POST "https://{namespace}.api.unbound.cx/phone-number/porting/documents" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "portingOrderId": "order-id",
+    "storageId": "new-storage-id",
+    "documentType": "loa",
+    "documentId": "existing-doc-id"
+  }'
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `portingOrderId` | string | ✅ | ID of the porting order to attach the document to |
+| `storageId` | string \| null | — | Storage ID from the Storage API upload. Set to `null` to clear the document |
+| `documentType` | string | — | Type of document: `'loa'` (default), `'bill'`, `'csr'`, or carrier-specific types |
+| `isRequired` | boolean | — | Whether this document is required before the order can be submitted. Default: `false` |
+| `documentId` | string | — | Existing document ID to update in-place. If omitted, a new document record is created |
+
+**Response**
+
+```javascript
+{
+    action: "created",      // "created" | "updated"
+    documentId: "doc-id",
+    portingOrderId: "order-id",
+    documentType: "loa",
+    storageId: "storage-id-from-upload",
+    isRequired: true
+}
+```
+
+**Document Types Reference**
+
+| Type | Description |
+|---|---|
+| `loa` | Letter of Authorization — authorizes the number transfer |
+| `bill` | Recent phone bill showing the number and account details |
+| `csr` | Customer Service Record — carrier-issued number ownership proof |
+
+> **Tip:** Use `generateLoa()` to auto-generate and attach a LOA from a template. Use `attachPortingDocument()` when you need to attach a manually signed LOA, a phone bill, or other supporting evidence.
+
+---
+
 ### Generate LOA (Letter of Authorization)
 
 <Tabs groupId="lang">

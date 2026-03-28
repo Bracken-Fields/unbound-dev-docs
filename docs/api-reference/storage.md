@@ -463,7 +463,7 @@ curl -X GET "https://{namespace}.api.unbound.cx/storage/storage-id-123/info" \
 
 ## `storage.updateFile(storageId, options)`
 
-Update file contents or metadata.
+Update file contents, metadata, or both. When `file` is provided, content is replaced via multipart upload. Without `file`, only metadata fields are updated via a JSON `PUT`.
 
 <Tabs groupId="lang">
 <TabItem value="sdk" label="SDK">
@@ -474,12 +474,29 @@ await api.storage.updateFile('storage-id-123', {
     fileName: 'renamed-contract.pdf',
     classification: 'legal',
     isPublic: true,
+    folder: 'contracts/2026',
+    country: 'US',
+    expireAfter: '2027-01-01T00:00:00Z',
+    relatedId: 'case-id-456',
 });
 
-// Replace file content
+// Replace file content and move to a new folder
 await api.storage.updateFile('storage-id-123', {
     file: newFileBuffer,
     fileName: 'updated-contract.pdf',
+    folder: 'contracts/executed',
+    classification: 'legal',
+});
+
+// Move file to a different folder without changing content
+await api.storage.updateFile('storage-id-123', {
+    folder: 'archive/2025',
+    isPublic: false,
+});
+
+// Set a file expiration (GDPR / retention policies)
+await api.storage.updateFile('storage-id-123', {
+    expireAfter: '2026-12-31T23:59:59Z',
 });
 ```
 
@@ -490,12 +507,16 @@ await api.storage.updateFile('storage-id-123', {
 const fs = require("fs");
 const FormData = require("form-data");
 
-// Replace file content
+// Replace file content with full metadata update
 const form = new FormData();
 form.append("file", fs.createReadStream("updated-contract.pdf"));
 form.append("fileName", "updated-contract.pdf");
 form.append("classification", "legal");
-form.append("isPublic", "true");
+form.append("folder", "contracts/executed");
+form.append("isPublic", "false");
+form.append("country", "US");
+form.append("expireAfter", "2027-01-01T00:00:00Z");
+form.append("relatedId", "case-id-456");
 
 const res = await fetch("https://{namespace}.api.unbound.cx/storage/storage-id-123", {
   method: "PUT",
@@ -506,12 +527,28 @@ const res = await fetch("https://{namespace}.api.unbound.cx/storage/storage-id-1
   body: form
 });
 const data = await res.json();
+
+// Metadata-only update (no file, uses JSON body)
+const res2 = await fetch("https://{namespace}.api.unbound.cx/storage/storage-id-123", {
+  method: "PUT",
+  headers: {
+    "Authorization": "Bearer {token}",
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    folder: "archive/2025",
+    isPublic: false,
+    expireAfter: "2026-12-31T23:59:59Z"
+  })
+});
+const data2 = await res2.json();
 ```
 
 </TabItem>
 <TabItem value="php" label="PHP">
 
 ```php
+// Replace file content
 $ch = curl_init("https://{namespace}.api.unbound.cx/storage/storage-id-123");
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
@@ -522,8 +559,25 @@ curl_setopt($ch, CURLOPT_POSTFIELDS, [
     "file"           => new CURLFile("updated-contract.pdf", "application/pdf", "updated-contract.pdf"),
     "fileName"       => "updated-contract.pdf",
     "classification" => "legal",
-    "isPublic"       => "true"
+    "folder"         => "contracts/executed",
+    "isPublic"       => "false",
+    "country"        => "US",
+    "expireAfter"    => "2027-01-01T00:00:00Z",
+    "relatedId"      => "case-id-456"
 ]);
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+// Metadata-only update
+$ch = curl_init("https://{namespace}.api.unbound.cx/storage/storage-id-123");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "folder"      => "archive/2025",
+    "isPublic"    => false,
+    "expireAfter" => "2026-12-31T23:59:59Z"
+]));
 $response = json_decode(curl_exec($ch), true);
 curl_close($ch);
 ```
@@ -534,6 +588,7 @@ curl_close($ch);
 ```python
 import requests
 
+# Replace file content with full metadata update
 with open("updated-contract.pdf", "rb") as f:
     response = requests.put(
         "https://{namespace}.api.unbound.cx/storage/storage-id-123",
@@ -542,26 +597,83 @@ with open("updated-contract.pdf", "rb") as f:
         data={
             "fileName": "updated-contract.pdf",
             "classification": "legal",
-            "isPublic": "true"
+            "folder": "contracts/executed",
+            "isPublic": "false",
+            "country": "US",
+            "expireAfter": "2027-01-01T00:00:00Z",
+            "relatedId": "case-id-456"
         }
     )
 data = response.json()
+
+# Metadata-only update
+response2 = requests.put(
+    "https://{namespace}.api.unbound.cx/storage/storage-id-123",
+    headers={"Authorization": "Bearer {token}"},
+    json={
+        "folder": "archive/2025",
+        "isPublic": False,
+        "expireAfter": "2026-12-31T23:59:59Z"
+    }
+)
+data2 = response2.json()
 ```
 
 </TabItem>
 <TabItem value="curl" label="cURL">
 
 ```bash
+# Replace file content with full metadata update
 curl -X PUT "https://{namespace}.api.unbound.cx/storage/storage-id-123" \
   -H "Authorization: Bearer {token}" \
   -F "file=@updated-contract.pdf" \
   -F "fileName=updated-contract.pdf" \
   -F "classification=legal" \
-  -F "isPublic=true"
+  -F "folder=contracts/executed" \
+  -F "isPublic=false" \
+  -F "country=US" \
+  -F "expireAfter=2027-01-01T00:00:00Z" \
+  -F "relatedId=case-id-456"
+
+# Metadata-only update (JSON body)
+curl -X PUT "https://{namespace}.api.unbound.cx/storage/storage-id-123" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"folder": "archive/2025", "isPublic": false, "expireAfter": "2026-12-31T23:59:59Z"}'
 ```
 
 </TabItem>
 </Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `storageId` | string | ✅ | Storage ID of the file to update |
+| `file` | Buffer / File | — | New file content. When provided, triggers a multipart upload replacing the stored bytes |
+| `fileName` | string | — | New display name for the file (does not need to match extension) |
+| `classification` | string | — | Storage classification (e.g., `'legal'`, `'medical'`, `'financial'`). Determines storage tier and compliance controls |
+| `folder` | string | — | Virtual folder path (e.g., `'contracts/2026'`). Use `/` as separator — no leading slash |
+| `isPublic` | boolean | — | `true` to make the file publicly accessible via its URL without authentication |
+| `country` | string | — | 2-letter ISO country code for data residency (e.g., `'US'`, `'EU'`). Used to control where file data is stored |
+| `expireAfter` | string | — | ISO 8601 timestamp after which the file should be automatically deleted (e.g., `'2027-01-01T00:00:00Z'`) |
+| `relatedId` | string | — | ID of a related record (contact, engagement, etc.) to associate with this file |
+
+> **Behavior note:** If `file` is provided, the update uses multipart form encoding — all other fields must also be sent as form fields (not JSON). If `file` is omitted, the request uses a JSON body and only metadata fields are updated.
+
+**Response**
+
+```javascript
+{
+    storageId: "storage-id-123",
+    fileName: "updated-contract.pdf",
+    classification: "legal",
+    folder: "contracts/executed",
+    isPublic: false,
+    url: "https://storage.unbound.cx/...",
+    updatedAt: "2026-03-28T12:00:00Z"
+}
+```
 
 ---
 

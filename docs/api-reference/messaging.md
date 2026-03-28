@@ -1958,6 +1958,240 @@ curl -X DELETE "https://{namespace}.api.unbound.cx/message/email/domain/domain-i
 
 ---
 
+## `messaging.email.domains.update(params)`
+
+Update the configuration of a verified sending domain. Use this to change regional routing, toggle DKIM signing, or supply a custom DKIM key.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+// Change primary/secondary sending region
+await api.messaging.email.domains.update({
+    domainId: 'domain-id',
+    primaryRegion: 'eu-west-1',
+    secondaryRegion: 'eu-central-1',
+});
+
+// Enable DKIM signing (uses Unbound-managed keys)
+await api.messaging.email.domains.update({
+    domainId: 'domain-id',
+    dkimEnabled: true,
+});
+
+// Provide a custom DKIM private key
+await api.messaging.email.domains.update({
+    domainId: 'domain-id',
+    dkimEnabled: true,
+    customDkim: {
+        privateKey: '-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----',
+        selector: 'mail2026',
+    },
+});
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Change primary/secondary sending region
+const res = await fetch("https://{namespace}.api.unbound.cx/messaging/email/validate/domain", {
+  method: "PUT",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    domainId: "domain-id",
+    primaryRegion: "eu-west-1",
+    secondaryRegion: "eu-central-1"
+  })
+});
+const data = await res.json();
+
+// Enable DKIM signing
+const res2 = await fetch("https://{namespace}.api.unbound.cx/messaging/email/validate/domain", {
+  method: "PUT",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    domainId: "domain-id",
+    dkimEnabled: true
+  })
+});
+const data2 = await res2.json();
+
+// Custom DKIM key
+const res3 = await fetch("https://{namespace}.api.unbound.cx/messaging/email/validate/domain", {
+  method: "PUT",
+  headers: { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+  body: JSON.stringify({
+    domainId: "domain-id",
+    dkimEnabled: true,
+    customDkim: {
+      privateKey: "-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----",
+      selector: "mail2026"
+    }
+  })
+});
+const data3 = await res3.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// Change sending region
+$ch = curl_init("https://{namespace}.api.unbound.cx/messaging/email/validate/domain");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "domainId"        => "domain-id",
+    "primaryRegion"   => "eu-west-1",
+    "secondaryRegion" => "eu-central-1"
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+// Enable DKIM signing
+$ch = curl_init("https://{namespace}.api.unbound.cx/messaging/email/validate/domain");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "domainId"    => "domain-id",
+    "dkimEnabled" => true
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+// Custom DKIM key
+$ch = curl_init("https://{namespace}.api.unbound.cx/messaging/email/validate/domain");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}", "Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "domainId"    => "domain-id",
+    "dkimEnabled" => true,
+    "customDkim"  => [
+        "privateKey" => "-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----",
+        "selector"   => "mail2026"
+    ]
+]));
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+headers = {"Authorization": "Bearer {token}"}
+
+# Change sending region
+response = requests.put(
+    "https://{namespace}.api.unbound.cx/messaging/email/validate/domain",
+    headers=headers,
+    json={
+        "domainId": "domain-id",
+        "primaryRegion": "eu-west-1",
+        "secondaryRegion": "eu-central-1"
+    }
+)
+data = response.json()
+
+# Enable DKIM signing
+response2 = requests.put(
+    "https://{namespace}.api.unbound.cx/messaging/email/validate/domain",
+    headers=headers,
+    json={"domainId": "domain-id", "dkimEnabled": True}
+)
+data2 = response2.json()
+
+# Custom DKIM key
+response3 = requests.put(
+    "https://{namespace}.api.unbound.cx/messaging/email/validate/domain",
+    headers=headers,
+    json={
+        "domainId": "domain-id",
+        "dkimEnabled": True,
+        "customDkim": {
+            "privateKey": "-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----",
+            "selector": "mail2026"
+        }
+    }
+)
+data3 = response3.json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Change sending region
+curl -X PUT "https://{namespace}.api.unbound.cx/messaging/email/validate/domain" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"domainId": "domain-id", "primaryRegion": "eu-west-1", "secondaryRegion": "eu-central-1"}'
+
+# Enable DKIM signing
+curl -X PUT "https://{namespace}.api.unbound.cx/messaging/email/validate/domain" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"domainId": "domain-id", "dkimEnabled": true}'
+
+# Custom DKIM key
+curl -X PUT "https://{namespace}.api.unbound.cx/messaging/email/validate/domain" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "domainId": "domain-id",
+    "dkimEnabled": true,
+    "customDkim": {
+      "privateKey": "-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----",
+      "selector": "mail2026"
+    }
+  }'
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domainId` | string | ✅ | Domain ID to update |
+| `primaryRegion` | string | — | Primary AWS region for sending (e.g., `'us-east-1'`, `'eu-west-1'`) |
+| `secondaryRegion` | string | — | Fallback AWS region if primary is unavailable |
+| `dkimEnabled` | boolean | — | `true` to enable DKIM signing for outbound emails from this domain |
+| `customDkim` | object | — | Provide your own DKIM key pair instead of Unbound-managed keys (see below) |
+
+**`customDkim` object**
+
+```javascript
+{
+    privateKey: "-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----",
+    selector: "mail2026"   // DKIM selector (becomes mail2026._domainkey.yourcompany.com)
+}
+```
+
+> **Important:** After enabling DKIM or changing regions, DNS records may need to be updated. Call `domains.validateDns()` to verify propagation and `domains.checkStatus()` to confirm the domain remains verified.
+
+**Response**
+
+```javascript
+{
+    domainId: "domain-id",
+    domain: "yourcompany.com",
+    primaryRegion: "eu-west-1",
+    secondaryRegion: "eu-central-1",
+    dkimEnabled: true,
+    status: "verified"
+}
+```
+
+---
+
 ## Verified Addresses
 
 Verify individual sending email addresses.
