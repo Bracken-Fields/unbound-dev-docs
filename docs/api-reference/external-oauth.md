@@ -145,10 +145,31 @@ curl -X POST https://{namespace}.api.unbound.cx/external-oauth \
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `name` | string | ✅ | Display name for this integration |
-| `provider` | string | ✅ | OAuth provider identifier |
+| `provider` | string | ✅ | OAuth provider identifier (e.g. `'salesforce'`, `'hubspot'`, `'google'`) |
 | `scopes` | string[] | ✅ | OAuth scopes to request |
-| `credentials` | object | — | Client ID/secret and other auth credentials |
-| `configuration` | object | — | Provider-specific configuration |
+| `credentials` | object | — | Client ID/secret and other auth credentials (stored encrypted) |
+| `configuration` | object | — | Provider-specific configuration (e.g. instance URL, tenant ID) |
+
+**Response**
+
+```javascript
+// {
+//   id: 'oauth-abc123',
+//   name: 'Salesforce CRM',
+//   provider: 'salesforce',
+//   scopes: ['read', 'write', 'offline_access'],
+//   configuration: {
+//     instanceUrl: 'https://yourorg.salesforce.com',
+//   },
+//   // credentials are NOT returned after creation (write-only)
+//   createdAt: '2024-06-01T10:00:00.000Z',
+//   updatedAt: '2024-06-01T10:00:00.000Z',
+// }
+```
+
+:::caution
+`credentials` (client secret, tokens) are **write-only** — they are stored encrypted and never returned in responses. Store them securely before submitting.
+:::
 
 ---
 
@@ -243,6 +264,15 @@ curl -X PUT https://{namespace}.api.unbound.cx/external-oauth/oauth-id-123 \
 </TabItem>
 </Tabs>
 
+| Parameter | Type | Description |
+|---|---|---|
+| `name` | string | New display name |
+| `scopes` | string[] | Replacement scope list (replaces existing, not merged) |
+| `credentials` | object | Updated credentials — pass only changed fields |
+| `configuration` | object | Updated provider configuration |
+
+**Response** — updated integration object (same shape as `create`, credentials omitted).
+
 ---
 
 ## `externalOAuth.get(id)`
@@ -303,6 +333,22 @@ curl https://{namespace}.api.unbound.cx/external-oauth/oauth-id-123 \
 
 </TabItem>
 </Tabs>
+
+**Response**
+
+```javascript
+// {
+//   id: 'oauth-abc123',
+//   name: 'Salesforce CRM',
+//   provider: 'salesforce',
+//   scopes: ['read', 'write', 'offline_access'],
+//   configuration: {
+//     instanceUrl: 'https://yourorg.salesforce.com',
+//   },
+//   createdAt: '2024-06-01T10:00:00.000Z',
+//   updatedAt: '2024-06-01T10:00:00.000Z',
+// }
+```
 
 ---
 
@@ -368,6 +414,10 @@ curl https://{namespace}.api.unbound.cx/external-oauth/by-name/Salesforce%20CRM 
 </TabItem>
 </Tabs>
 
+Useful when you know the human-readable name but not the UUID — for example in workflow logic or bootstrap scripts.
+
+**Response** — same object shape as `get(id)`. Throws `404` if no integration has that exact name.
+
 ---
 
 ## `externalOAuth.getByScopeAndProvider(scope, provider)`
@@ -431,6 +481,15 @@ curl https://{namespace}.api.unbound.cx/external-oauth/by-scope/write/provider/s
 </TabItem>
 </Tabs>
 
+Look up the integration that has a given scope for a given provider. Useful when a workflow or automation needs to resolve which credential to use at runtime without hardcoding an ID.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `scope` | string | ✅ | A single scope string (e.g. `'write'`, `'api'`) |
+| `provider` | string | ✅ | Provider identifier (e.g. `'salesforce'`, `'hubspot'`) |
+
+**Response** — same object shape as `get(id)`. Returns the first match if multiple integrations exist for the same scope+provider combination.
+
 ---
 
 ## `externalOAuth.list()`
@@ -492,6 +551,33 @@ curl https://{namespace}.api.unbound.cx/external-oauth \
 </TabItem>
 </Tabs>
 
+**Response**
+
+```javascript
+// [
+//   {
+//     id: 'oauth-abc123',
+//     name: 'Salesforce CRM',
+//     provider: 'salesforce',
+//     scopes: ['read', 'write', 'offline_access'],
+//     configuration: { instanceUrl: 'https://yourorg.salesforce.com' },
+//     createdAt: '2024-06-01T10:00:00.000Z',
+//     updatedAt: '2024-06-01T10:00:00.000Z',
+//   },
+//   {
+//     id: 'oauth-def456',
+//     name: 'HubSpot Marketing',
+//     provider: 'hubspot',
+//     scopes: ['contacts', 'crm.objects.contacts.read'],
+//     configuration: {},
+//     createdAt: '2024-05-15T08:30:00.000Z',
+//     updatedAt: '2024-05-20T12:00:00.000Z',
+//   },
+// ]
+```
+
+Returns all registered integrations for the account. Credentials are never included.
+
 ---
 
 ## `externalOAuth.delete(id)`
@@ -552,3 +638,197 @@ curl -X DELETE https://{namespace}.api.unbound.cx/external-oauth/oauth-id-123 \
 
 </TabItem>
 </Tabs>
+
+:::caution
+Deleting an OAuth integration that is actively referenced by a workflow or automation will cause those steps to fail. Audit usages with `list()` and update workflows before deleting.
+:::
+
+**Response** — `{ success: true }` on success. Throws `404` if the integration does not exist.
+
+---
+
+## Common Patterns
+
+### Bootstrap: Register All CRM Integrations on Setup
+
+```javascript
+async function bootstrapOAuthIntegrations() {
+    const existing = await api.externalOAuth.list();
+    const existingNames = new Set(existing.map(o => o.name));
+
+    const integrations = [
+        {
+            name: 'Salesforce CRM',
+            provider: 'salesforce',
+            scopes: ['read', 'write', 'offline_access', 'api'],
+            credentials: {
+                clientId: process.env.SF_CLIENT_ID,
+                clientSecret: process.env.SF_CLIENT_SECRET,
+            },
+            configuration: {
+                instanceUrl: process.env.SF_INSTANCE_URL,
+            },
+        },
+        {
+            name: 'HubSpot Marketing',
+            provider: 'hubspot',
+            scopes: ['contacts', 'crm.objects.contacts.read', 'crm.objects.deals.read'],
+            credentials: {
+                clientId: process.env.HS_CLIENT_ID,
+                clientSecret: process.env.HS_CLIENT_SECRET,
+            },
+        },
+    ];
+
+    for (const integration of integrations) {
+        if (!existingNames.has(integration.name)) {
+            const result = await api.externalOAuth.create(integration);
+            console.log(`Created: ${result.name} (${result.id})`);
+        } else {
+            console.log(`Skipped (exists): ${integration.name}`);
+        }
+    }
+}
+```
+
+---
+
+### Rotate a Client Secret
+
+```javascript
+async function rotateClientSecret(integrationName, newSecret) {
+    // Look up by name — no need to hardcode the ID
+    const oauth = await api.externalOAuth.getByName(integrationName);
+
+    await api.externalOAuth.update(oauth.id, {
+        credentials: {
+            clientSecret: newSecret,
+        },
+    });
+
+    console.log(`Secret rotated for: ${oauth.name}`);
+}
+
+// Usage
+await rotateClientSecret('Salesforce CRM', process.env.SF_NEW_CLIENT_SECRET);
+```
+
+---
+
+### Resolve Integration at Runtime in a Workflow
+
+```javascript
+// Called from within a workflow action that needs to call Salesforce
+async function getSalesforceCredentialId() {
+    // Instead of hardcoding an ID, look up by scope+provider
+    const oauth = await api.externalOAuth.getByScopeAndProvider('write', 'salesforce');
+    return oauth.id;
+}
+
+// Then reference the ID in your workflow step config
+const credentialId = await getSalesforceCredentialId();
+const workflow = await api.workflows.create({
+    name: 'Sync Contact to Salesforce',
+    steps: [
+        {
+            type: 'httpRequest',
+            config: {
+                url: 'https://yourorg.salesforce.com/services/data/v58.0/sobjects/Contact',
+                method: 'POST',
+                oauthId: credentialId,
+            },
+        },
+    ],
+});
+```
+
+---
+
+### Audit: List All Active OAuth Integrations
+
+```javascript
+async function auditOAuthIntegrations() {
+    const integrations = await api.externalOAuth.list();
+
+    console.table(
+        integrations.map(o => ({
+            id: o.id,
+            name: o.name,
+            provider: o.provider,
+            scopes: o.scopes.join(', '),
+            created: new Date(o.createdAt).toLocaleDateString(),
+            lastUpdated: new Date(o.updatedAt).toLocaleDateString(),
+        }))
+    );
+
+    return integrations;
+}
+```
+
+---
+
+### Decommission: Safe Delete with Dependency Check
+
+```javascript
+async function safeDeleteIntegration(integrationId) {
+    // First check the integration exists
+    let integration;
+    try {
+        integration = await api.externalOAuth.get(integrationId);
+    } catch (err) {
+        console.log('Integration not found — nothing to delete');
+        return;
+    }
+
+    // List all workflows and check for references before deleting
+    // (adapt to your platform's workflow listing API)
+    const workflows = await api.workflows.list();
+    const dependents = workflows.filter(w =>
+        JSON.stringify(w).includes(integrationId)
+    );
+
+    if (dependents.length > 0) {
+        console.warn(
+            `Cannot delete "${integration.name}" — referenced by ${dependents.length} workflow(s):`,
+            dependents.map(w => w.name).join(', ')
+        );
+        return;
+    }
+
+    await api.externalOAuth.delete(integrationId);
+    console.log(`Deleted: ${integration.name}`);
+}
+```
+
+---
+
+### Multi-Tenant: Scope Integrations Per Namespace
+
+```javascript
+// If you manage multiple namespaces/tenants, bootstrap each with its own credentials
+async function provisionTenantIntegrations(tenantConfig) {
+    const { namespace, salesforceClientId, salesforceClientSecret, salesforceUrl } = tenantConfig;
+
+    // Create SDK scoped to this tenant
+    const tenantApi = new SDK({ namespace, token: tenantConfig.adminToken });
+
+    const existing = await tenantApi.externalOAuth.list();
+    const hasSalesforce = existing.some(o => o.provider === 'salesforce');
+
+    if (!hasSalesforce) {
+        await tenantApi.externalOAuth.create({
+            name: 'Salesforce CRM',
+            provider: 'salesforce',
+            scopes: ['read', 'write', 'offline_access', 'api'],
+            credentials: {
+                clientId: salesforceClientId,
+                clientSecret: salesforceClientSecret,
+            },
+            configuration: {
+                instanceUrl: salesforceUrl,
+            },
+        });
+        console.log(`[${namespace}] Salesforce integration provisioned`);
+    }
+}
+```
