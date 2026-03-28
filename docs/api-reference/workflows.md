@@ -1387,3 +1387,332 @@ POST /object/workflowVersions
 
 This deep-copies the entire version — all nodes, ports, connections, and settings — with new IDs. The original published version is untouched. After editing, publish and activate the new version.
 
+---
+
+## Common Patterns
+
+### 1. Create → Build → Publish → Activate (Full Lifecycle)
+
+The canonical sequence for launching a new workflow from scratch:
+
+```javascript
+import SDK from '@unboundcx/sdk';
+
+const api = new SDK({ namespace: 'your-namespace', token: 'your-jwt' });
+
+async function buildAndLaunchWorkflow() {
+    // Step 1: Create the workflow definition
+    const workflow = await api.objects.create('workflows', {
+        name: 'SMS Appointment Reminder',
+        type: 'engagement',
+        description: 'Sends reminder 24h before appointment',
+    });
+    console.log('Workflow ID:', workflow.id);
+
+    // Step 2: Create a version (auto-creates a start node — do NOT add one manually)
+    const version = await api.objects.create('workflowVersions', {
+        workflowId: workflow.id,
+        name: 'v1.0',
+        description: 'Initial release',
+    });
+    console.log('Version ID:', version.id);
+
+    // Step 3: Add nodes
+    const sendSmsNode = await api.workflows.items.create({
+        workflowVersionId: version.id,
+        category: 'communication',
+        type: 'sendSms',
+        label: 'Send Reminder',
+        settings: {
+            from: '+18005551234',
+            messageTemplate: 'appointment-reminder-24h',
+        },
+        position: { x: 200, y: 260 },
+    });
+
+    const endNode = await api.workflows.items.create({
+        workflowVersionId: version.id,
+        category: 'flow',
+        type: 'end',
+        label: 'Done',
+        position: { x: 200, y: 420 },
+    });
+
+    // Step 4: Wire connections using port IDs
+    // (Fetch existing ports to find the start node's output port)
+    const ports = await api.objects.query('workflowItemPorts', {
+        where: { workflowVersionId: version.id },
+    });
+    const startOutputPort = ports.results.find(
+        p => p.type === 'output' && p.workflowItemId === version.startWorkflowItemId
+    );
+    const smsInputPort = ports.results.find(
+        p => p.type === 'input' && p.workflowItemId === sendSmsNode.id
+    );
+    const smsOutputPort = ports.results.find(
+        p => p.type === 'output' && p.workflowItemId === sendSmsNode.id
+    );
+    const endInputPort = ports.results.find(
+        p => p.type === 'input' && p.workflowItemId === endNode.id
+    );
+
+    // start → sendSms
+    await api.objects.create('workflowItemConnections', {
+        workflowItemPortId: startOutputPort.id,
+        inWorkflowItemPortId: smsInputPort.id,
+    });
+
+    // sendSms → end
+    await api.objects.create('workflowItemConnections', {
+        workflowItemPortId: smsOutputPort.id,
+        inWorkflowItemPortId: endInputPort.id,
+    });
+
+    // Step 5: Publish (locks the version permanently)
+    await api.objects.update('workflowVersions', {
+        where: { id: version.id },
+        update: { isPublished: true },
+    });
+    console.log('Version published');
+
+    // Step 6: Activate (routes live traffic here)
+    await api.objects.update('workflowVersions', {
+        where: { id: version.id },
+        update: { isCurrent: true },
+    });
+    console.log('Workflow is live!');
+
+    return { workflowId: workflow.id, versionId: version.id };
+}
+```
+
+---
+
+### 2. Safe Hotfix: Fork → Edit → Promote
+
+Never edit a live published version. Fork it, patch the issue, promote the fix:
+
+```javascript
+async function hotfixWorkflow(api, workflowId, currentVersionId, patchFn) {
+    // 1. Fork the current live version
+    const newVersion = await api.objects.create('workflowVersions', {
+        workflowId,
+        name: `hotfix-${Date.now()}`,
+        copyFrom: currentVersionId,   // deep-copies all nodes, ports, connections
+    });
+    console.log('Forked to version:', newVersion.id);
+
+    // 2. Apply the patch (caller supplies a function that edits nodes/settings)
+    await patchFn(newVersion.id);
+
+    // 3. Publish the hotfix version
+    await api.objects.update('workflowVersions', {
+        where: { id: newVersion.id },
+        update: { isPublished: true },
+    });
+
+    // 4. Activate — takes over live traffic from the old version
+    await api.objects.update('workflowVersions', {
+        where: { id: newVersion.id },
+        update: { isCurrent: true },
+    });
+
+    console.log(`Hotfix deployed: ${currentVersionId} → ${newVersion.id}`);
+    return newVersion.id;
+}
+
+// Usage: update a node's message template
+await hotfixWorkflow(api, 'workflow-id', 'old-version-id', async (versionId) => {
+    // Find the SMS node in the forked version
+    const items = await api.workflows.items.list(versionId);
+    const smsNode = items.find(i => i.type === 'sendSms');
+
+    await api.workflows.items.update({
+        id: smsNode.id,
+        settings: { messageTemplate: 'appointment-reminder-updated' },
+    });
+});
+```
+
+---
+
+### 3. Trigger a Workflow Session On Demand
+
+Kick off a workflow execution programmatically (e.g., from a webhook, a scheduled job, or an inbound event):
+
+```javascript
+async function triggerReminderWorkflow(api, workflowVersionId, contact) {
+    // Start the session with contact context
+    const session = await api.workflows.sessions.create(workflowVersionId, {
+        contactId: contact.id,
+        channel: 'sms',
+        input: {
+            phoneNumber: contact.phone,
+            appointmentTime: contact.appointmentAt,
+            providerName: contact.assignedProvider,
+        },
+    });
+    console.log('Session started:', session.id, '| status:', session.status);
+    return session.id;
+}
+
+// Run for a batch of contacts
+async function sendBatchReminders(api, versionId, contacts) {
+    const results = [];
+
+    for (const contact of contacts) {
+        try {
+            const sessionId = await triggerReminderWorkflow(api, versionId, contact);
+            results.push({ contactId: contact.id, sessionId, ok: true });
+        } catch (err) {
+            console.error(`Failed for contact ${contact.id}:`, err.message);
+            results.push({ contactId: contact.id, ok: false, error: err.message });
+        }
+    }
+
+    const succeeded = results.filter(r => r.ok).length;
+    console.log(`Sent ${succeeded}/${contacts.length} reminders`);
+    return results;
+}
+```
+
+---
+
+### 4. Poll Until Session Completes
+
+Wait for a workflow session to finish and inspect the outcome:
+
+```javascript
+async function waitForSession(api, sessionId, { pollMs = 2000, timeoutMs = 120_000 } = {}) {
+    const TERMINAL = new Set(['completed', 'failed', 'cancelled']);
+    const deadline = Date.now() + timeoutMs;
+
+    while (Date.now() < deadline) {
+        const session = await api.workflows.sessions.get(sessionId);
+
+        if (TERMINAL.has(session.status)) {
+            console.log(`Session ${sessionId} finished: ${session.status}`);
+
+            if (session.status === 'failed') {
+                throw new Error(`Session failed: ${session.errorMessage || 'unknown error'}`);
+            }
+            return session;
+        }
+
+        console.log(`Session status: ${session.status} — waiting ${pollMs}ms`);
+        await new Promise(r => setTimeout(r, pollMs));
+    }
+
+    // Timed out — force-complete and surface the error
+    await api.workflows.sessions.complete(sessionId);
+    throw new Error(`Session ${sessionId} timed out after ${timeoutMs}ms`);
+}
+
+// Example: trigger and await
+const sessionId = await api.workflows.sessions.create(versionId, {
+    contactId: 'contact-id',
+    channel: 'voice',
+    input: { phoneNumber: '+13175551234' },
+}).then(s => s.id);
+
+const result = await waitForSession(api, sessionId, { pollMs: 3000, timeoutMs: 60_000 });
+console.log('Output variables:', result.variables);
+```
+
+---
+
+### 5. Update Session Variables Mid-Execution
+
+Inject real-time data into a running workflow session (e.g., from an IVR digit-collection step or a CRM lookup):
+
+```javascript
+async function injectSessionData(api, sessionId, data) {
+    // Merge new variables into the running session
+    await api.workflows.sessions.update(sessionId, {
+        variables: {
+            ...data,
+            updatedAt: new Date().toISOString(),
+        },
+    });
+    console.log('Injected variables into session:', sessionId);
+}
+
+// Practical example: IVR captures account number, triggers a CRM lookup,
+// then updates the session so downstream nodes have the resolved customer data
+async function handleIvrInput(api, sessionId, dtmfDigits) {
+    // Look up the customer from the entered account number
+    const customers = await api.objects.query('contacts', {
+        where: { accountNumber: dtmfDigits },
+        limit: 1,
+    });
+
+    if (customers.total === 0) {
+        await injectSessionData(api, sessionId, {
+            customerFound: false,
+            accountNumber: dtmfDigits,
+        });
+        return;
+    }
+
+    const customer = customers.results[0];
+    await injectSessionData(api, sessionId, {
+        customerFound: true,
+        customerId: customer.id,
+        customerName: customer.name,
+        customerTier: customer.tier,
+        accountNumber: dtmfDigits,
+    });
+}
+```
+
+---
+
+### 6. Audit All Versions of a Workflow
+
+List every version of a workflow with its publish and activation status — useful for rollback planning or compliance audits:
+
+```javascript
+async function auditWorkflowVersions(api, workflowId) {
+    const versions = await api.objects.query('workflowVersions', {
+        where: { workflowId },
+        orderBy: [{ field: 'createdAt', direction: 'desc' }],
+        limit: 100,
+    });
+
+    console.log(`\nWorkflow ${workflowId} — ${versions.total} version(s)\n`);
+    console.log('Version ID'.padEnd(38), 'Name'.padEnd(20), 'Published', 'Live');
+    console.log('-'.repeat(80));
+
+    for (const v of versions.results) {
+        const published = v.isPublished ? '✓' : '—';
+        const live      = v.isCurrent  ? '★ LIVE' : '';
+        console.log(
+            v.id.padEnd(38),
+            (v.name || 'unnamed').padEnd(20),
+            published.padEnd(12),
+            live
+        );
+    }
+
+    const liveVersion = versions.results.find(v => v.isCurrent);
+    return { versions: versions.results, liveVersion };
+}
+
+// Rollback to a previous published version
+async function rollbackWorkflow(api, targetVersionId) {
+    // Verify target is published (cannot activate an unpublished version)
+    const version = await api.objects.byId({ object: 'workflowVersions', id: targetVersionId });
+
+    if (!version.isPublished) {
+        throw new Error(`Version ${targetVersionId} is not published — publish it first`);
+    }
+
+    await api.objects.update('workflowVersions', {
+        where: { id: targetVersionId },
+        update: { isCurrent: true },
+    });
+
+    console.log(`Rolled back to version: ${targetVersionId}`);
+}
+```
+
