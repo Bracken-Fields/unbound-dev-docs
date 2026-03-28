@@ -1263,3 +1263,277 @@ curl -X DELETE "https://{namespace}.api.unbound.cx/record-type/user-default?obje
 </TabItem>
 
 </Tabs>
+
+---
+
+## Response Shapes
+
+### Record Type Object
+
+```json
+{
+    "id": "rt-abc123",
+    "name": "Sales - Private",
+    "description": "Sensitive sales data visible only to the sales team",
+    "permissions": {
+        "create": ["user-001", "user-002"],
+        "read": null,
+        "update": ["user-001"],
+        "delete": ["user-001"]
+    },
+    "createdAt": "2024-03-15T10:00:00.000Z",
+    "updatedAt": "2024-03-20T14:30:00.000Z"
+}
+```
+
+A `null` permission array means **universal access** — any authenticated user can perform that action. An empty array `[]` means **no access** to anyone.
+
+---
+
+### `recordTypes.list()` — response
+
+```json
+[
+    {
+        "id": "rt-abc123",
+        "name": "Sales - Private",
+        "description": "Sensitive sales data",
+        "permissions": {
+            "create": ["user-001"],
+            "read": null,
+            "update": ["user-001"],
+            "delete": ["user-001"]
+        }
+    },
+    {
+        "id": "rt-def456",
+        "name": "Support - General",
+        "description": "General support tickets",
+        "permissions": {
+            "create": null,
+            "read": null,
+            "update": null,
+            "delete": ["admin-001"]
+        }
+    }
+]
+```
+
+---
+
+### `recordTypes.user.getDefaults()` — response
+
+```json
+{
+    "contacts": "rt-abc123",
+    "tickets": "rt-def456",
+    "orders": null
+}
+```
+
+A `null` value means no default record type is set for that object — the system default applies.
+
+---
+
+## Common Patterns
+
+### Pattern 1 — Provision a team-scoped record type
+
+Create a record type for a specific team and assign it as the default for all team members. This gates which records team agents create and see.
+
+```javascript
+async function provisionTeamRecordType(teamName, teamUserIds, adminUserId) {
+    // 1. Create the record type with team-scoped permissions
+    const recordType = await api.recordTypes.create({
+        name: `${teamName} - Team`,
+        description: `Records created and managed by the ${teamName} team`,
+        create: teamUserIds,
+        read: null,             // All agents can read
+        update: teamUserIds,
+        delete: [adminUserId],  // Only admin can delete
+    });
+
+    // 2. Set it as the default for each team member on the contacts object
+    for (const userId of teamUserIds) {
+        await api.recordTypes.user.create({
+            recordTypeId: recordType.id,
+            object: 'contacts',
+            userId,
+        });
+    }
+
+    console.log(
+        `Record type '${recordType.name}' (${recordType.id}) ` +
+        `created and assigned to ${teamUserIds.length} users`
+    );
+
+    return recordType;
+}
+
+await provisionTeamRecordType(
+    'West Coast Sales',
+    ['user-west-001', 'user-west-002', 'user-west-003'],
+    'admin-001',
+);
+```
+
+---
+
+### Pattern 2 — Add users to a record type without overwriting
+
+Use the `add/remove` update pattern to safely add new team members to an existing record type without touching existing permissions.
+
+```javascript
+async function addUsersToRecordType(recordTypeId, newUserIds) {
+    await api.recordTypes.update(recordTypeId, {
+        add: {
+            create: newUserIds,
+            update: newUserIds,
+            // Note: not adding to `delete` — preserve that restriction
+        },
+    });
+
+    // Also set this record type as their default
+    for (const userId of newUserIds) {
+        await api.recordTypes.user.create({
+            recordTypeId,
+            object: 'contacts',
+            userId,
+        });
+    }
+}
+
+async function removeUsersFromRecordType(recordTypeId, removedUserIds) {
+    await api.recordTypes.update(recordTypeId, {
+        remove: {
+            create: removedUserIds,
+            update: removedUserIds,
+        },
+    });
+
+    // Clear their default so they fall back to the system default
+    for (const userId of removedUserIds) {
+        await api.recordTypes.user.delete({
+            object: 'contacts',
+            userId,
+        });
+    }
+}
+
+// Onboard a new rep
+await addUsersToRecordType('rt-abc123', ['user-new-001']);
+
+// Offboard a departed rep
+await removeUsersFromRecordType('rt-abc123', ['user-old-007']);
+```
+
+---
+
+### Pattern 3 — Audit which record type each agent is using
+
+List all record types and cross-reference with each agent's active default to produce a permission audit report.
+
+```javascript
+async function auditRecordTypeAssignments(agentUserIds) {
+    // 1. Load all record types
+    const recordTypes = await api.recordTypes.list();
+    const rtMap = Object.fromEntries(recordTypes.map(rt => [rt.id, rt]));
+
+    // 2. Load defaults for every agent
+    const assignments = await Promise.all(
+        agentUserIds.map(async (userId) => {
+            const defaults = await api.recordTypes.user.getDefaults(userId);
+            return { userId, defaults };
+        })
+    );
+
+    // 3. Build report
+    return assignments.map(({ userId, defaults }) => ({
+        userId,
+        contacts: defaults.contacts
+            ? rtMap[defaults.contacts]?.name ?? defaults.contacts
+            : '(system default)',
+        tickets: defaults.tickets
+            ? rtMap[defaults.tickets]?.name ?? defaults.tickets
+            : '(system default)',
+    }));
+}
+
+const report = await auditRecordTypeAssignments([
+    'user-001', 'user-002', 'user-003',
+]);
+console.table(report);
+// ┌──────────┬─────────────────────┬─────────────────┐
+// │ userId   │ contacts            │ tickets         │
+// ├──────────┼─────────────────────┼─────────────────┤
+// │ user-001 │ West Coast Sales    │ (system default)│
+// │ user-002 │ West Coast Sales    │ Support - L2    │
+// │ user-003 │ (system default)    │ (system default)│
+// └──────────┴─────────────────────┴─────────────────┘
+```
+
+---
+
+### Pattern 4 — Dynamic record type selection at create time
+
+At record creation, select the appropriate record type based on the current user's team and the record's properties.
+
+```javascript
+async function createContactWithRecordType(contactData, creatingUserId) {
+    // 1. Get the user's configured default record type for contacts
+    const defaults = await api.recordTypes.user.getDefaults(creatingUserId);
+    const recordTypeId = defaults.contacts;
+
+    // 2. Create the contact, stamping it with the record type
+    const contact = await api.objects.create({
+        object: 'contacts',
+        body: {
+            ...contactData,
+            recordTypeId: recordTypeId ?? undefined,
+        },
+    });
+
+    return contact;
+}
+
+const newContact = await createContactWithRecordType(
+    {
+        firstName: 'Jane',
+        lastName: 'Smith',
+        email: 'jane@example.com',
+        phone: '+13235550100',
+    },
+    currentUser.id,
+);
+```
+
+---
+
+### Pattern 5 — Grant temporary elevated access
+
+Give a user access to a restricted record type for a limited duration, then revoke it automatically.
+
+```javascript
+async function grantTemporaryAccess(recordTypeId, userId, durationMs) {
+    // Add the user to update permission
+    await api.recordTypes.update(recordTypeId, {
+        add: { update: [userId] },
+    });
+
+    console.log(
+        `Temporary access granted to ${userId} on record type ${recordTypeId}. ` +
+        `Expires in ${durationMs / 60000} minutes.`
+    );
+
+    // Schedule automatic revocation
+    setTimeout(async () => {
+        await api.recordTypes.update(recordTypeId, {
+            remove: { update: [userId] },
+        });
+        console.log(`Temporary access revoked for ${userId}`);
+    }, durationMs);
+}
+
+// Grant a supervisor access to a locked record type for 30 minutes
+await grantTemporaryAccess('rt-restricted-001', 'user-supervisor-007', 30 * 60 * 1000);
+```

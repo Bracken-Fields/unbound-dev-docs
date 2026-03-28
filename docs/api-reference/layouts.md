@@ -538,3 +538,248 @@ curl -X POST https://{namespace}.api.unbound.cx/layouts/dynamic-select-search \
 
 </TabItem>
 </Tabs>
+
+---
+
+## Response Shapes
+
+### Layout Object
+
+```json
+{
+    "id": "layout-id-123",
+    "name": "Contact Detail",
+    "objectName": "contacts",
+    "sections": [
+        {
+            "label": "Basic Info",
+            "columns": 2,
+            "fields": ["firstName", "lastName", "email", "phone"]
+        },
+        {
+            "label": "Company",
+            "columns": 1,
+            "fields": ["company", "title", "department"]
+        }
+    ],
+    "createdAt": "2024-03-15T10:00:00.000Z",
+    "updatedAt": "2024-03-15T10:00:00.000Z"
+}
+```
+
+### `layouts.get()` — list response
+
+```json
+[
+    {
+        "id": "layout-id-123",
+        "name": "Contact Detail",
+        "objectName": "contacts",
+        "sections": [ "..." ]
+    },
+    {
+        "id": "layout-id-456",
+        "name": "Contact List",
+        "objectName": "contacts",
+        "sections": [ "..." ]
+    }
+]
+```
+
+### `layouts.dynamicSelectSearch()` — response
+
+```json
+{
+    "results": [
+        { "id": "company-001", "label": "Acme Corp", "value": "Acme Corp" },
+        { "id": "company-002", "label": "Acme Systems", "value": "Acme Systems" }
+    ],
+    "total": 2
+}
+```
+
+---
+
+## Common Patterns
+
+### Pattern 1 — Bootstrap layouts for a new custom object
+
+When you programmatically create a new object type via `objects.createObject()`, create matching layouts in the same step so the UI is immediately usable.
+
+```javascript
+async function bootstrapObject(objectName, fields) {
+    // 1. Create the object schema
+    await api.objects.createObject({ name: objectName });
+
+    // 2. Create columns for each field
+    await api.objects.createColumn({
+        objectName,
+        columns: fields.map(f => ({ name: f.name, type: f.type })),
+    });
+
+    // 3. Create a detail layout
+    const detailLayout = await api.layouts.create({
+        name: `${objectName} Detail`,
+        objectName,
+        sections: [
+            {
+                label: 'Details',
+                columns: 2,
+                fields: fields.map(f => f.name),
+            },
+        ],
+    });
+
+    // 4. Create a compact list layout (key fields only)
+    const listLayout = await api.layouts.create({
+        name: `${objectName} List`,
+        objectName,
+        sections: [
+            {
+                label: 'Summary',
+                columns: 1,
+                fields: fields.slice(0, 3).map(f => f.name),
+            },
+        ],
+    });
+
+    return { detailLayout, listLayout };
+}
+
+await bootstrapObject('orders', [
+    { name: 'orderId', type: 'string' },
+    { name: 'customerId', type: 'string' },
+    { name: 'amount', type: 'number' },
+    { name: 'status', type: 'string' },
+]);
+```
+
+---
+
+### Pattern 2 — Clone a layout
+
+Copy an existing layout, rename it, and save as a new variant.
+
+```javascript
+async function cloneLayout(sourceId, newName) {
+    // 1. Fetch the existing layout
+    const [source] = await api.layouts.get(null, sourceId);
+
+    // 2. Strip the id and timestamps, apply new name
+    const { id, createdAt, updatedAt, ...rest } = source;
+    const cloned = await api.layouts.create({
+        ...rest,
+        name: newName,
+    });
+
+    console.log(`Cloned '${source.name}' → '${cloned.name}' (${cloned.id})`);
+    return cloned;
+}
+
+await cloneLayout('layout-id-123', 'Contact Detail — EMEA');
+```
+
+---
+
+### Pattern 3 — Role-based layout selection
+
+Different roles (agent vs. supervisor) may need different field arrangements. Retrieve the right layout at runtime based on the current user's role.
+
+```javascript
+async function getLayoutForRole(objectName, role) {
+    const all = await api.layouts.get(objectName);
+
+    // Convention: layout names include the role suffix
+    const match = all.find(l =>
+        l.name.toLowerCase().includes(role.toLowerCase())
+    );
+
+    // Fall back to the first available layout
+    return match ?? all[0] ?? null;
+}
+
+// In your UI rendering code
+const userRole = currentUser.role; // 'agent' | 'supervisor' | 'admin'
+const layout = await getLayoutForRole('contacts', userRole);
+
+if (layout) {
+    renderContactForm(contactData, layout.sections);
+}
+```
+
+---
+
+### Pattern 4 — Typeahead dynamic select
+
+Drive an autocomplete input from `dynamicSelectSearch` as the user types.
+
+```javascript
+// Debounced typeahead handler
+let debounceTimer;
+
+function onSearchInput(inputValue) {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(async () => {
+        if (inputValue.length < 2) return;
+
+        const { results } = await api.layouts.dynamicSelectSearch({
+            objectName: 'companies',
+            field: 'name',
+            search: inputValue,
+            limit: 10,
+        });
+
+        // Render the dropdown
+        renderDropdown(results.map(r => ({
+            label: r.label,
+            value: r.id,
+        })));
+    }, 250);
+}
+
+// Attach to your input element
+document.getElementById('company-input')
+    .addEventListener('input', e => onSearchInput(e.target.value));
+```
+
+---
+
+### Pattern 5 — Sync layouts across environments
+
+Export all layouts from staging, then import them to production.
+
+```javascript
+async function exportLayouts(objectName) {
+    const layouts = await api.layouts.get(objectName);
+    return layouts.map(({ id, createdAt, updatedAt, ...rest }) => rest);
+}
+
+async function importLayouts(layoutDefinitions) {
+    const results = [];
+    for (const def of layoutDefinitions) {
+        // Check if a layout with this name already exists
+        const existing = await api.layouts.get(def.objectName);
+        const match = existing.find(l => l.name === def.name);
+
+        if (match) {
+            // Update in-place
+            const updated = await api.layouts.update(match.id, def);
+            results.push({ action: 'updated', id: match.id, name: def.name });
+        } else {
+            // Create fresh
+            const created = await api.layouts.create(def);
+            results.push({ action: 'created', id: created.id, name: def.name });
+        }
+    }
+    return results;
+}
+
+// Export from staging
+const stagingLayouts = await exportLayouts('contacts');
+const json = JSON.stringify(stagingLayouts, null, 4);
+// Write json to a file, commit to git, transfer to prod...
+
+// Import to production (in prod environment)
+const importResults = await importLayouts(JSON.parse(json));
+console.table(importResults);
+```
