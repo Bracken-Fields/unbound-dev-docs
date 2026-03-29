@@ -9,21 +9,29 @@ import TabItem from '@theme/TabItem';
 
 # Getting Started
 
-The Unbound JavaScript SDK gives you a single, unified interface to the full Unbound platform — messaging, voice, video, AI, workflows, and data — from Node.js or the browser.
+The Unbound JavaScript SDK is a single, unified interface to the full Unbound platform — messaging, voice, video, AI, workflows, task routing, and data — from Node.js or the browser.
 
-## Install
+This page gets you from zero to your first API call in under five minutes.
+
+---
+
+## 1. Install
 
 ```bash
 npm install @unboundcx/sdk
 ```
 
-For browser or Socket.io-based realtime transport, also install:
+For real-time subscriptions (WebSocket event streams), also install the Socket.io client:
 
 ```bash
 npm install socket.io-client
 ```
 
-## Initialize
+**Minimum requirements:** Node.js 16+, or any modern browser with `fetch` support.
+
+---
+
+## 2. Initialize the SDK
 
 <Tabs>
 <TabItem value="object" label="Object Config (Recommended)">
@@ -32,9 +40,29 @@ npm install socket.io-client
 import SDK from '@unboundcx/sdk';
 
 const api = new SDK({
-    namespace: 'your-namespace',
-    token: 'your-jwt-token',
+    namespace: 'your-namespace',   // your Unbound account namespace
+    token: 'your-jwt-token',       // optional — skip login step if you have a token
 });
+```
+
+</TabItem>
+<TabItem value="env" label="From Environment Variables">
+
+```javascript
+import SDK from '@unboundcx/sdk';
+
+// Store credentials in environment variables — never hardcode them
+const api = new SDK({
+    namespace: process.env.UNBOUND_NAMESPACE,
+    token: process.env.UNBOUND_TOKEN,     // optional: skip login if pre-issued
+});
+```
+
+Then in your `.env` file:
+
+```bash
+UNBOUND_NAMESPACE=your-namespace
+UNBOUND_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 </TabItem>
@@ -50,69 +78,396 @@ const api = createSDK({
 ```
 
 </TabItem>
-<TabItem value="legacy" label="Legacy Positional">
+<TabItem value="legacy" label="Legacy Positional (Deprecated)">
 
 ```javascript
 import SDK from '@unboundcx/sdk';
 
-// Backwards compatible — namespace, callId, token, fwRequestId
+// Backwards compatible — positional args: namespace, callId, token, fwRequestId
 const api = new SDK('your-namespace', null, 'your-jwt-token');
 ```
+
+:::caution
+The positional constructor is deprecated. New projects should use the object config form above.
+:::
 
 </TabItem>
 </Tabs>
 
-The SDK automatically connects to `your-namespace.api.unbound.cx`.
+The SDK automatically routes API calls to `https://your-namespace.api.unbound.cx`.
 
-## Your First API Call
+---
 
-### Login and send an SMS
+## 3. Authenticate
+
+If you don't have a pre-issued JWT, log in with username and password:
 
 ```javascript
 import SDK from '@unboundcx/sdk';
 
 const api = new SDK({ namespace: 'your-namespace' });
 
-// Authenticate
-const session = await api.login.login('username', 'password');
+// Returns { userId, namespace, url, valid: true }
+const session = await api.login.login('your-username', 'your-password');
+console.log('Logged in as:', session.userId);
+```
 
-// Send SMS
+After login, the SDK stores the session token internally and attaches it to all subsequent requests automatically.
+
+:::tip Server-side authentication
+For server-to-server API access, issue a long-lived API token from the Unbound dashboard and pass it directly as `token` in the constructor. This avoids interactive login entirely.
+:::
+
+---
+
+## 4. Your First API Calls
+
+### Send an SMS
+
+```javascript
 const sms = await api.messaging.sms.send({
-    from: '+1234567890',
-    to: '+0987654321',
+    from: '+15551000100',       // one of your provisioned numbers
+    to: '+15559876543',
     message: 'Hello from Unbound!',
 });
 
-console.log('Sent:', sms.id);
+console.log('Message ID:', sms.id);
+console.log('Status:', sms.status);    // 'queued' → 'delivered'
 ```
 
-### Make a call
+### Make an Outbound Call
 
 ```javascript
-const call = await api.voice.createCall({
-    to: '+1234567890',
-    from: '+0987654321',
+const call = await api.voice.call({
+    to: '+15559876543',
+    from: '+15551000100',
+    app: {
+        type: 'tts',
+        message: 'Hello, your appointment is confirmed for tomorrow at 3pm.',
+        voice: 'en-US-Neural2-C',
+    },
     record: true,
 });
 
 console.log('Call ID:', call.callControlId);
 ```
 
-### Run AI chat
+### Run AI Chat
 
 ```javascript
 const response = await api.ai.generative.chat({
-    messages: [{ role: 'user', content: 'Summarize this support ticket...' }],
-    model: 'gpt-4',
+    messages: [
+        {
+            role: 'system',
+            content: 'You are a helpful support agent for Acme Corp.',
+        },
+        {
+            role: 'user',
+            content: 'How do I reset my password?',
+        },
+    ],
+    model: 'gpt-4o',
     temperature: 0.7,
-    method: 'openai',
 });
 
 console.log(response.choices[0].message.content);
 ```
 
+### Query Your Data
+
+```javascript
+// Fetch contacts with simple object filters
+const contacts = await api.objects.query({
+    object: 'contacts',
+    select: ['id', 'name', 'email', 'phone', 'status'],
+    where: { status: 'active' },
+    limit: 50,
+});
+
+console.log(`Found ${contacts.count} active contacts`);
+for (const contact of contacts.data) {
+    console.log(`  ${contact.name} — ${contact.email}`);
+}
+```
+
+### Create a Video Room
+
+```javascript
+const room = await api.video.createRoom({
+    name: 'Weekly Sync',
+    maxParticipants: 10,
+    isRecording: true,
+    password: 'meetingpassword',
+    waitingRoom: true,
+});
+
+console.log('Room ID:', room.id);
+console.log('Join URL:', `https://meet.${room.namespace}.unbound.cx/${room.id}`);
+```
+
+---
+
+## 5. Handle Errors
+
+Every SDK method throws a structured error when something goes wrong. Always wrap API calls in try/catch:
+
+```javascript
+import SDK from '@unboundcx/sdk';
+
+const api = new SDK({
+    namespace: process.env.UNBOUND_NAMESPACE,
+    token: process.env.UNBOUND_TOKEN,
+});
+
+async function sendSms(to, message) {
+    try {
+        const result = await api.messaging.sms.send({
+            from: '+15551000100',
+            to,
+            message,
+        });
+        return result;
+    } catch (err) {
+        // err.status   → HTTP status code (400, 401, 403, 404, 429, 500, ...)
+        // err.message  → Human-readable description
+        // err.endpoint → Which API endpoint failed
+        // err.body     → Full API error response
+
+        if (err.status === 401) {
+            console.error('Authentication failed — check your token');
+        } else if (err.status === 429) {
+            const retryAfter = err.retryAfter || 30;
+            console.warn(`Rate limited. Retry in ${retryAfter}s`);
+            await new Promise(r => setTimeout(r, retryAfter * 1000));
+            return sendSms(to, message);   // retry once
+        } else if (err.status >= 500) {
+            console.error('Unbound API error:', err.message);
+        } else {
+            console.error(`Request failed (${err.status}):`, err.message);
+        }
+        throw err;
+    }
+}
+```
+
+See the [Error Reference](/reference/errors) for a complete list of error codes and their meanings.
+
+---
+
+## 6. TypeScript Support
+
+The SDK ships with TypeScript types. Import them directly:
+
+```typescript
+import SDK from '@unboundcx/sdk';
+import type { SmsSendOptions, SmsMessage } from '@unboundcx/sdk';
+
+const api = new SDK({
+    namespace: process.env.UNBOUND_NAMESPACE!,
+    token: process.env.UNBOUND_TOKEN!,
+});
+
+async function sendAlert(options: SmsSendOptions): Promise<SmsMessage> {
+    return api.messaging.sms.send(options);
+}
+
+// Your IDE will autocomplete all fields and flag type mismatches
+await sendAlert({
+    from: '+15551000100',
+    to: '+15559876543',
+    message: 'Your order has shipped.',
+});
+```
+
+See [TypeScript Types](/reference/types) for a full interface reference.
+
+---
+
+## 7. Real-Time Events (WebSocket)
+
+Subscribe to live events — incoming calls, task assignments, message delivery, transcriptions — using the subscriptions service:
+
+```javascript
+// Subscribe to task router events for this agent
+await api.subscriptions.subscribe(['taskRouter', 'voice']);
+
+// Listen for new task assignments
+api.subscriptions.on('task.assigned', (event) => {
+    console.log('New task:', event.taskId, 'from queue:', event.queueId);
+    // Ring the agent UI, show incoming call screen, etc.
+});
+
+// Listen for real-time call transcription
+api.subscriptions.on('transcription.partial', (event) => {
+    console.log('[TRANSCRIPT]', event.text);
+});
+
+// Clean up on shutdown
+process.on('SIGTERM', () => {
+    api.subscriptions.unsubscribe();
+});
+```
+
+See the [Subscriptions reference](/api-reference/subscriptions) and the [Real-Time Subscriptions guide](/guides/real-time-subscriptions) for complete event catalog and reconnection patterns.
+
+---
+
+## 8. Common Patterns
+
+### Singleton SDK Instance
+
+Create one SDK instance per process and import it wherever needed — don't re-instantiate per request:
+
+```javascript
+// lib/api.js — create once
+import SDK from '@unboundcx/sdk';
+
+let _api = null;
+
+export function getApi() {
+    if (!_api) {
+        _api = new SDK({
+            namespace: process.env.UNBOUND_NAMESPACE,
+            token: process.env.UNBOUND_TOKEN,
+        });
+    }
+    return _api;
+}
+```
+
+```javascript
+// routes/sms.js — import and use
+import { getApi } from '../lib/api.js';
+
+export async function POST(req) {
+    const api = getApi();
+    const sms = await api.messaging.sms.send({ ... });
+    return new Response(JSON.stringify(sms));
+}
+```
+
+---
+
+### Multi-Tenant (One SDK Per Namespace)
+
+If your application manages multiple Unbound accounts, create one SDK instance per namespace:
+
+```javascript
+import SDK from '@unboundcx/sdk';
+
+const sdkCache = new Map();
+
+export function getApiForTenant(namespace, token) {
+    if (!sdkCache.has(namespace)) {
+        sdkCache.set(namespace, new SDK({ namespace, token }));
+    }
+    return sdkCache.get(namespace);
+}
+
+// Usage
+const api = getApiForTenant('tenant-acme', acmeToken);
+await api.messaging.sms.send({ from: '+15551000100', to: '+15559876543', message: 'Hello!' });
+```
+
+---
+
+### Retry with Exponential Backoff
+
+For production workloads, wrap calls with retry logic for transient errors:
+
+```javascript
+async function withRetry(fn, { maxAttempts = 3, baseDelayMs = 500 } = {}) {
+    let attempt = 0;
+    while (true) {
+        try {
+            return await fn();
+        } catch (err) {
+            attempt++;
+            const isRetryable = err.status === 429 || err.status >= 500;
+            if (!isRetryable || attempt >= maxAttempts) throw err;
+
+            const delay = baseDelayMs * Math.pow(2, attempt - 1);
+            console.warn(`Attempt ${attempt} failed (${err.status}). Retrying in ${delay}ms...`);
+            await new Promise(r => setTimeout(r, delay));
+        }
+    }
+}
+
+// Usage
+const sms = await withRetry(() =>
+    api.messaging.sms.send({ from: '+15551000100', to: '+15559876543', message: 'Hello!' })
+);
+```
+
+---
+
+### Login Once, Reuse Session
+
+For long-running processes that start without a pre-issued token:
+
+```javascript
+import SDK from '@unboundcx/sdk';
+
+export async function createAuthenticatedApi() {
+    const api = new SDK({ namespace: process.env.UNBOUND_NAMESPACE });
+
+    // Login and store session — subsequent calls use the cached token
+    await api.login.login(
+        process.env.UNBOUND_USERNAME,
+        process.env.UNBOUND_PASSWORD,
+    );
+
+    // Optionally validate the session is still good before making calls
+    try {
+        await api.login.validate();
+    } catch {
+        // Token expired — re-login
+        await api.login.login(
+            process.env.UNBOUND_USERNAME,
+            process.env.UNBOUND_PASSWORD,
+        );
+    }
+
+    return api;
+}
+```
+
+---
+
+## 9. Environment Variables Reference
+
+| Variable | Description | Required |
+|---|---|---|
+| `UNBOUND_NAMESPACE` | Your account namespace (e.g., `acme`) | If not hardcoded |
+| `UNBOUND_TOKEN` | Pre-issued JWT token | If skipping login |
+| `UNBOUND_USERNAME` | Username for interactive login | If using login flow |
+| `UNBOUND_PASSWORD` | Password for interactive login | If using login flow |
+
+:::tip
+Never commit credentials to source control. Use `.env` files locally and environment variable injection in production (Heroku config vars, AWS Secrets Manager, GitHub Actions secrets, etc.).
+:::
+
+---
+
 ## What's Next
 
-- [SDK Configuration](/sdk/configuration) — namespaces, tokens, transport options
-- [API Reference](/api-reference/overview) — all services and methods
-- [Guides](/guides/send-sms) — step-by-step walkthroughs
+You have the basics. Here's where to go from here:
+
+| What you want to do | Where to go |
+|---|---|
+| Deep SDK configuration (transport, timeouts, debug) | [SDK Configuration](/sdk/configuration) |
+| All authentication patterns (refresh, multi-tenant) | [Authentication](/sdk/authentication) |
+| Comprehensive error handling | [Error Handling](/sdk/error-handling) |
+| Send SMS, MMS, email, templates | [Messaging Reference](/api-reference/messaging) |
+| Voice calls, IVR, recording, conferencing | [Voice Reference](/api-reference/voice) |
+| Video rooms, participants, chat | [Video Reference](/api-reference/video) |
+| AI chat, TTS, STT, data extraction | [AI Reference](/api-reference/ai) |
+| CRM data, custom objects, schemas | [Objects Reference](/api-reference/objects) |
+| Task routing, queues, agent presence | [Task Router Reference](/api-reference/task-router) |
+| SQL-style queries across all data | [UOQL Reference](/api-reference/uoql) |
+| Automation workflows | [Workflows Reference](/api-reference/workflows) |
+| Real-time WebSocket events | [Subscriptions Reference](/api-reference/subscriptions) |
+| CLI for terminal-based workflows | [CLI Quickstart](/guides/cli-quickstart) |
+| TypeScript interface definitions | [TypeScript Types](/reference/types) |
+| API error codes | [Error Reference](/reference/errors) |
+| Rate limits and quotas | [Rate Limits](/reference/limits) |
