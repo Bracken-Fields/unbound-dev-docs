@@ -140,6 +140,7 @@ const sidebars: SidebarsConfig = {
         'guides/task-router-quickstart',
         'guides/real-time-subscriptions',
         'guides/integrate-auth',
+        'guides/agent-assist',
       ],
     },
   ],
