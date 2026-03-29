@@ -55,6 +55,7 @@ The Unbound SDK exposes the following services via `api.<service>`:
 | [Record Types](/api-reference/record-types) | `api.recordTypes` | Data access permission schemas |
 | [Layouts](/api-reference/layouts) | `api.layouts` | UI layout definitions for CRM objects |
 | [Google Calendar](/api-reference/google-calendar) | `api.googleCalendar` | Calendar sync, webhooks, and event fetching |
+| [Enrollment](/api-reference/enroll) | `api.enroll` | White-label account provisioning, namespace checks, KYC, and agreement signing |
 | Authentication | `api.login` | Login, logout, validate, change password |
 
 ---

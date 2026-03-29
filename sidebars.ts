@@ -86,6 +86,7 @@ const sidebars: SidebarsConfig = {
             'api-reference/record-types',
             'api-reference/layouts',
             'api-reference/google-calendar',
+            'api-reference/enroll',
           ],
         },
       ],
