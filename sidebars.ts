@@ -138,6 +138,7 @@ const sidebars: SidebarsConfig = {
         'guides/query-with-uoql',
         'guides/webhooks',
         'guides/task-router-quickstart',
+        'guides/real-time-subscriptions',
         'guides/integrate-auth',
       ],
     },
