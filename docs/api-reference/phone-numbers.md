@@ -1156,6 +1156,613 @@ curl -X POST "https://{namespace}.api.unbound.cx/phone-number/porting/order/orde
 </TabItem>
 </Tabs>
 
+### Update a Porting Order
+
+Update the metadata on an existing porting order — such as customer reference, end-user information, activation settings, or port type. All fields are optional; only the fields you provide are changed.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+// Update customer reference and end-user contact
+const updated = await api.phoneNumbers.updatePortingOrder('order-id', {
+    customerReference: 'ACME-PORT-2025-001',
+    endUser: {
+        companyName: 'Acme Corp',
+        firstName: 'Jane',
+        lastName: 'Smith',
+        phone: '+15551234567',
+        email: 'jane.smith@acme.com',
+    },
+});
+
+// Change activation timing (scheduled vs. immediate)
+const updated = await api.phoneNumbers.updatePortingOrder('order-id', {
+    activationSettings: {
+        activationType: 'Scheduled',
+        activationDate: '2025-09-15T14:00:00.000Z',
+    },
+});
+
+// Change port order type
+const updated = await api.phoneNumbers.updatePortingOrder('order-id', {
+    portOrderType: 'FullPortOut',
+    tags: ['priority', 'q3-migration'],
+});
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Update customer reference and end-user contact
+const res = await fetch("https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id", {
+    method: "PUT",
+    headers: {
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+        customerReference: "ACME-PORT-2025-001",
+        endUser: {
+            companyName: "Acme Corp",
+            firstName: "Jane",
+            lastName: "Smith",
+            phone: "+15551234567",
+            email: "jane.smith@acme.com",
+        },
+    }),
+});
+const updated = await res.json();
+
+// Change activation timing
+const res = await fetch("https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id", {
+    method: "PUT",
+    headers: {
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+        activationSettings: {
+            activationType: "Scheduled",
+            activationDate: "2025-09-15T14:00:00.000Z",
+        },
+    }),
+});
+const updated = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// Update customer reference and end-user contact
+$ch = curl_init("https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    "Authorization: Bearer {token}",
+    "Content-Type: application/json",
+]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "customerReference" => "ACME-PORT-2025-001",
+    "endUser" => [
+        "companyName" => "Acme Corp",
+        "firstName" => "Jane",
+        "lastName" => "Smith",
+        "phone" => "+15551234567",
+        "email" => "jane.smith@acme.com",
+    ],
+]));
+$updated = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+// Change activation settings
+$ch = curl_init("https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    "Authorization: Bearer {token}",
+    "Content-Type: application/json",
+]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "activationSettings" => [
+        "activationType" => "Scheduled",
+        "activationDate" => "2025-09-15T14:00:00.000Z",
+    ],
+]));
+$updated = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+headers = {
+    "Authorization": "Bearer {token}",
+    "Content-Type": "application/json",
+}
+base = "https://{namespace}.api.unbound.cx/phone-number/porting/orders"
+
+# Update customer reference and end-user contact
+updated = requests.put(
+    f"{base}/order-id",
+    headers=headers,
+    json={
+        "customerReference": "ACME-PORT-2025-001",
+        "endUser": {
+            "companyName": "Acme Corp",
+            "firstName": "Jane",
+            "lastName": "Smith",
+            "phone": "+15551234567",
+            "email": "jane.smith@acme.com",
+        },
+    },
+).json()
+
+# Change activation timing
+updated = requests.put(
+    f"{base}/order-id",
+    headers=headers,
+    json={
+        "activationSettings": {
+            "activationType": "Scheduled",
+            "activationDate": "2025-09-15T14:00:00.000Z",
+        },
+    },
+).json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Update customer reference and end-user contact
+curl -X PUT "https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerReference": "ACME-PORT-2025-001",
+    "endUser": {
+      "companyName": "Acme Corp",
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "phone": "+15551234567",
+      "email": "jane.smith@acme.com"
+    }
+  }'
+
+# Change activation timing
+curl -X PUT "https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"activationSettings": {"activationType": "Scheduled", "activationDate": "2025-09-15T14:00:00.000Z"}}'
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | ✅ | Porting order ID |
+| `customerReference` | string | — | Your internal reference/ticket number for this port |
+| `endUser` | object | — | End-user contact info (see below) |
+| `activationSettings` | object | — | Activation timing preferences (see below) |
+| `portOrderType` | string | — | Port type — e.g., `'FullPortOut'`, `'PartialPortOut'` |
+| `tags` | string[] | — | Arbitrary string tags for filtering/tracking |
+
+**`endUser` object**
+
+```javascript
+{
+    companyName: 'Acme Corp',         // string — business name
+    firstName:   'Jane',              // string — contact first name
+    lastName:    'Smith',             // string — contact last name
+    phone:       '+15551234567',      // string — contact phone (E.164)
+    email:       'jane@acme.com',     // string — contact email
+}
+```
+
+**`activationSettings` object**
+
+```javascript
+{
+    activationType: 'Scheduled',               // 'Scheduled' | 'Immediate'
+    activationDate: '2025-09-15T14:00:00.000Z' // ISO 8601 UTC — only for 'Scheduled'
+}
+```
+
+**Response** — Returns the updated porting order object.
+
+> **Note:** Orders can only be updated while in `draft` or `pending` status. Once submitted, call support to make changes.
+
+---
+
+### Get FOC Windows — `phoneNumbers.getFocWindows(id)`
+
+Fetch the available Firm Order Commitment (FOC) windows — i.e., the dates the carrier can activate the port. This call also syncs the order to the carrier if it hasn't been registered yet, so it may take a moment on first call.
+
+Use the returned dates to present an activation date picker to your customer.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+const result = await api.phoneNumbers.getFocWindows('order-id');
+
+console.log(result.orderReady);       // true — all required fields are complete
+console.log(result.availableDates);
+// [
+//   { date: '2025-09-02T00:00:00.000Z', type: 'Standard', available: true },
+//   { date: '2025-09-04T00:00:00.000Z', type: 'Express',  available: true },
+// ]
+
+// Pick an activation date and update the order
+if (result.orderReady && result.availableDates.length > 0) {
+    const earliest = result.availableDates[0];
+    await api.phoneNumbers.updatePortingOrder('order-id', {
+        activationSettings: {
+            activationType: 'Scheduled',
+            activationDate: earliest.date,
+        },
+    });
+}
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch(
+    "https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id/foc-windows",
+    { headers: { "Authorization": "Bearer {token}" } }
+);
+const result = await res.json();
+
+console.log(result.orderReady);      // true
+console.log(result.availableDates);  // array of { date, type, available }
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id/foc-windows");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$result = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+if ($result['orderReady'] && count($result['availableDates']) > 0) {
+    $earliest = $result['availableDates'][0]['date'];
+    // proceed with updatePortingOrder ...
+}
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+result = requests.get(
+    "https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id/foc-windows",
+    headers={"Authorization": "Bearer {token}"},
+).json()
+
+if result["orderReady"] and result["availableDates"]:
+    earliest = result["availableDates"][0]["date"]
+    # proceed with update_porting_order(activation_date=earliest)
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X GET \
+  "https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id/foc-windows" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | ✅ | Porting order ID |
+
+**Response**
+
+```javascript
+{
+    id:                 "port_abc123",
+    status:             "draft",
+    orderReady:         true,           // all required fields complete; ready to submit
+    phoneNumbersCount:  3,
+    availableDates: [
+        {
+            date:       "2025-09-02T00:00:00.000Z",
+            type:       "Standard",     // 'Standard' | 'Express'
+            available:  true,
+        },
+        {
+            date:       "2025-09-04T00:00:00.000Z",
+            type:       "Express",
+            available:  true,
+        },
+    ],
+}
+```
+
+> **Note:** `orderReady: false` means the order is missing required fields (LOA, end-user details, etc.). Check for validation errors before presenting the date picker.
+
+---
+
+### Sync a Porting Order — `phoneNumbers.syncPortingOrder(id)`
+
+Fetches the latest status, updates, and carrier comments for an order and writes them back to the local database. Use this to refresh an order's state after carrier activity — for example, after a FOC date change or a carrier note is added.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+const syncResult = await api.phoneNumbers.syncPortingOrder('order-id');
+
+console.log(syncResult.orderUpdated);   // true — carrier had new data
+console.log(syncResult.commentsAdded);  // 2 — new carrier comments ingested
+console.log(syncResult.errors);         // [] — no sync errors
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const res = await fetch(
+    "https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id/sync",
+    {
+        method: "POST",
+        headers: { "Authorization": "Bearer {token}" },
+    }
+);
+const syncResult = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+$ch = curl_init("https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id/sync");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$syncResult = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+echo $syncResult['orderUpdated'] ? "Order was updated" : "No changes";
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+sync_result = requests.post(
+    "https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id/sync",
+    headers={"Authorization": "Bearer {token}"},
+).json()
+
+print("Updated:", sync_result["orderUpdated"])
+print("New comments:", sync_result["commentsAdded"])
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST \
+  "https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id/sync" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | ✅ | Porting order ID |
+
+**Response**
+
+```javascript
+{
+    id:              "port_abc123",
+    carrierOrderId:  "carrier_xyz789",
+    orderUpdated:    true,   // true if carrier had changes to apply
+    commentsAdded:   2,      // number of new carrier comments ingested
+    errors:          [],     // array of sync error strings (empty = success)
+}
+```
+
+> **Tip:** Call `syncPortingOrder` before displaying order status to customers to ensure you're showing the latest carrier data.
+
+---
+
+### Get Porting Events — `phoneNumbers.getPortingEvents(id, options?)`
+
+Retrieve the event history for a porting order — status transitions, carrier updates, activations, exceptions, and document changes. Useful for audit trails and debugging porting issues.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+// Get all events for an order
+const events = await api.phoneNumbers.getPortingEvents('order-id');
+console.log(events.data.length);   // total event count
+events.data.forEach(e => {
+    console.log(`[${e.createdAt}] ${e.type} — ${e.description}`);
+});
+
+// Paginate through large event histories
+const page1 = await api.phoneNumbers.getPortingEvents('order-id', {
+    page: 1,
+    limit: 25,
+});
+const page2 = await api.phoneNumbers.getPortingEvents('order-id', {
+    page: 2,
+    limit: 25,
+});
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Get all events
+const res = await fetch(
+    "https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id/events",
+    { headers: { "Authorization": "Bearer {token}" } }
+);
+const events = await res.json();
+
+// Get page 2
+const res = await fetch(
+    "https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id/events?page=2&limit=25",
+    { headers: { "Authorization": "Bearer {token}" } }
+);
+const page2 = await res.json();
+```
+
+</TabItem>
+<TabItem value="php" label="PHP">
+
+```php
+// Get all events
+$ch = curl_init("https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id/events");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$events = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+foreach ($events['data'] as $event) {
+    echo "[{$event['createdAt']}] {$event['type']}: {$event['description']}\n";
+}
+
+// Get page 2 with limit
+$ch = curl_init("https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id/events?page=2&limit=25");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer {token}"]);
+$page2 = json_decode(curl_exec($ch), true);
+curl_close($ch);
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+headers = {"Authorization": "Bearer {token}"}
+base = "https://{namespace}.api.unbound.cx/phone-number/porting/orders"
+
+# Get all events
+events = requests.get(
+    f"{base}/order-id/events",
+    headers=headers,
+).json()
+
+for event in events["data"]:
+    print(f"[{event['createdAt']}] {event['type']}: {event['description']}")
+
+# Paginate
+page2 = requests.get(
+    f"{base}/order-id/events",
+    headers=headers,
+    params={"page": 2, "limit": 25},
+).json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Get all events
+curl -X GET \
+  "https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id/events" \
+  -H "Authorization: Bearer {token}"
+
+# Get page 2 with limit
+curl -X GET \
+  "https://{namespace}.api.unbound.cx/phone-number/porting/orders/order-id/events?page=2&limit=25" \
+  -H "Authorization: Bearer {token}"
+```
+
+</TabItem>
+</Tabs>
+
+**Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | ✅ | Porting order ID |
+| `page` | number | — | Page number for pagination (1-based) |
+| `limit` | number | — | Results per page (default: all) |
+
+**Response**
+
+```javascript
+{
+    data: [
+        {
+            id:          "evt_001",
+            type:        "status_change",       // event type (see table below)
+            description: "Order submitted to carrier",
+            previousStatus: "draft",
+            newStatus:      "pending",
+            createdAt:   "2025-08-28T12:30:00.000Z",
+            metadata:    {},                    // additional event-specific data
+        },
+        {
+            id:          "evt_002",
+            type:        "foc_date_received",
+            description: "Carrier confirmed FOC date: 2025-09-02",
+            createdAt:   "2025-08-29T09:15:00.000Z",
+            metadata:    { focDate: "2025-09-02T14:00:00.000Z" },
+        },
+    ],
+    total:   12,     // total number of events for this order
+    page:    1,
+    limit:   100,
+}
+```
+
+**Event type values**
+
+| `type` | Description |
+|---|---|
+| `status_change` | Order status transitioned (e.g., `draft` → `pending`) |
+| `foc_date_received` | Carrier confirmed an activation (FOC) date |
+| `foc_date_changed` | Carrier modified the previously confirmed FOC date |
+| `exception_raised` | Carrier flagged an issue requiring action |
+| `exception_resolved` | A prior exception was cleared |
+| `document_attached` | LOA or supporting document was attached |
+| `comment_added` | Carrier or internal team added a comment |
+| `number_added` | Phone number added to the order |
+| `number_removed` | Phone number removed from the order |
+| `activated` | Phone numbers went live on the new carrier |
+| `cancelled` | Order was cancelled |
+
+---
+
 ### Remove a Phone Number from an Order
 
 Remove a single number from a porting order before it has been submitted. Useful for correcting mistakes or splitting orders.
