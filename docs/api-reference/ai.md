@@ -886,7 +886,8 @@ websocat "wss://{namespace}.api.unbound.cx/ai/stt/stream" \
 | `playbookId` | string | — | Associate with AI playbook |
 | `taskId` | string | — | Link to task router task |
 | `workerId` | string | — | Link to a specific worker |
-| `sipCallId` | string | — | SIP call identifier |
+| `sipCallId` | string | — | SIP call identifier (ties stream to a call record) |
+| `cdrId` | string | — | CDR record ID (alternative call reference) |
 | `bridgeId` | string | — | Bridge identifier for multi-leg calls |
 | `name` | string | — | Human-readable session name |
 | `metadata` | object | — | Arbitrary key-value metadata |
@@ -895,10 +896,240 @@ websocat "wss://{namespace}.api.unbound.cx/ai/stt/stream" \
 
 | Event | Payload | Description |
 |---|---|---|
-| `transcript` | `{ text, isFinal, confidence, words }` | Transcription result |
-| `sentiment` | `{ score, trend, emotions, intensity }` | Sentiment update |
+| `ready` | — | gRPC connection established; stream is ready to accept audio |
+| `transcript` | `TranscriptResult` | Transcription result (interim or final) |
+| `final-transcript` | `TranscriptResult` | Dedicated event — only fires when `isFinal: true` |
 | `error` | `Error` | Stream or connection error |
-| `close` | — | Stream has fully closed |
+| `close` | — | Stream has fully closed and all listeners removed |
+
+**`transcript` / `final-transcript` payload shape:**
+
+```typescript
+interface TranscriptResult {
+    text: string;          // Transcribed text (partial or final)
+    isFinal: boolean;      // True when utterance is complete and committed
+    confidence: number;    // 0.0–1.0 confidence score
+    languageCode: string;  // BCP-47 code (e.g., "en-US")
+    words: Array<{
+        word: string;
+        startTime: number;  // Seconds from stream start
+        endTime: number;
+        confidence: number;
+    }>;
+    startTime: number;     // Start of utterance (seconds)
+    endTime: number;       // End of utterance (seconds)
+    timestamp: Date;       // Wall-clock time of this result
+    // Stream identification (set per chunk via streamMetadata)
+    sipCallId: string;     // SIP call identifier (empty string if not set)
+    side: string;          // 'send' | 'recv' (empty string if not set)
+    role: string;          // Speaker role (empty string if not set)
+}
+```
+
+**Listening to the `ready` event:**
+
+```javascript
+const stream = await sdk.ai.stt.stream({ engine: 'google' });
+
+// Option A: wait for ready before writing audio
+stream.once('ready', () => {
+    console.log('Stream connected. Session ID:', stream.sessionId);
+    audioSource.pipe(stream);
+});
+
+// Option B: write immediately — chunks are buffered until ready fires
+stream.write(firstChunk);  // safe to call before 'ready'
+```
+
+**Using `final-transcript` to avoid filtering:**
+
+```javascript
+// Instead of checking isFinal in the transcript handler...
+stream.on('transcript', (result) => {
+    if (result.isFinal) { /* ... */ }
+});
+
+// ...use the dedicated event for final results only:
+stream.on('final-transcript', (result) => {
+    // result.isFinal is always true here
+    transcript.push(result.text);
+    console.log('[COMMITTED]', result.text, '| conf:', result.confidence.toFixed(2));
+});
+
+stream.on('transcript', (result) => {
+    if (!result.isFinal) {
+        process.stdout.write(`\r[interim] ${result.text}      `);
+    }
+});
+```
+
+---
+
+**`stream.write(audioChunk, streamMetadata?)` — Writing audio with metadata:**
+
+The second argument lets you attach per-chunk stream identification. On the first chunk, this metadata is included in the gRPC session config. On subsequent chunks, `sipCallId`, `side`, `role`, `bridgeId`, and VAD fields are forwarded with each gRPC write.
+
+```typescript
+interface StreamMetadata {
+    sipCallId?: string;       // SIP call identifier (ties transcript to a call record)
+    side?: string;            // 'send' (agent leg) | 'recv' (customer leg)
+    role?: string;            // Speaker role: 'agent', 'customer', 'system', etc.
+    isLastChunk?: boolean;    // Mark this chunk as the final audio for this stream (triggers end)
+    bridgeId?: string;        // Bridge identifier for multi-leg calls
+    // Voice Activity Detection (VAD) fields — sent when your client does its own VAD
+    vad_event?: string;       // 'speech_start' | 'speech_end'
+    vad_timestamp?: number;   // Milliseconds from stream start
+    vad_energy?: number;      // Signal energy level (optional)
+    vad_duration?: number;    // Duration of the VAD event in milliseconds (optional)
+}
+```
+
+```javascript
+// Basic write (no metadata)
+stream.write(audioChunk);
+
+// Write with call identification (best practice for telephony integrations)
+stream.write(audioChunk, {
+    sipCallId: 'sip_call_abc123',
+    side: 'recv',       // 'recv' = inbound customer audio
+    role: 'customer',
+    bridgeId: 'bridge_xyz',
+});
+
+// Mark the final chunk (triggers stream end on the server side)
+stream.write(lastChunk, {
+    sipCallId: 'sip_call_abc123',
+    side: 'recv',
+    role: 'customer',
+    isLastChunk: true,
+});
+
+// Client-driven VAD event (pass alongside audio when your app detects speech activity)
+stream.write(audioChunk, {
+    vad_event: 'speech_start',
+    vad_timestamp: 4500,   // ms from stream start
+    vad_energy: 0.82,
+});
+```
+
+**`stream.write()` return value:** Returns `true` if the write succeeded, `false` if the stream is already closed. If the stream is not yet ready (gRPC not connected), the write is automatically deferred until `ready` fires.
+
+---
+
+**Stream properties and methods:**
+
+| Property / Method | Type | Description |
+|---|---|---|
+| `stream.ready` | `boolean` | `true` when the gRPC connection is established and the stream is open |
+| `stream.sessionId` | `string` | The server-assigned STT session ID (available after `ready`) |
+| `stream.end()` | `void` | Gracefully finalize the stream — writes a zero-byte final chunk marker, then calls `grpcCall.end()` |
+| `stream.close()` | `void` | Immediately close and destroy the stream, emit `'close'`, and remove all listeners |
+
+**`end()` vs `close()` — when to use which:**
+
+```javascript
+// end() — use when audio is done; let the server finish processing and send final results
+audioStream.on('finish', () => {
+    stream.end();   // waits for final transcript(s) before 'close' fires
+});
+
+// close() — use for error recovery or forceful shutdown
+stream.on('error', (err) => {
+    console.error('STT error, aborting:', err.message);
+    stream.close();  // immediately tears down; any buffered results are dropped
+});
+
+// Pattern: timeout guard — force-close if stream hangs
+const timer = setTimeout(() => {
+    if (!stream.isClosed) {
+        console.warn('STT stream timeout — forcing close');
+        stream.close();
+    }
+}, 30_000);
+
+stream.once('close', () => clearTimeout(timer));
+```
+
+---
+
+**Dual-channel telephony transcription (agent + customer legs):**
+
+For live call transcription where you have separate audio streams for each leg:
+
+```javascript
+async function transcribeBothLegs(callId, bridgeId) {
+    // Create two streams: one per leg
+    const [agentStream, customerStream] = await Promise.all([
+        sdk.ai.stt.stream({
+            engine: 'google',
+            model: 'phone_call',
+            languageCode: 'en-US',
+            encoding: 'LINEAR16',
+            sampleRateHertz: 8000,
+            generateSentiment: true,
+            sipCallId: callId,
+            bridgeId,
+        }),
+        sdk.ai.stt.stream({
+            engine: 'google',
+            model: 'phone_call',
+            languageCode: 'en-US',
+            encoding: 'LINEAR16',
+            sampleRateHertz: 8000,
+            generateSentiment: true,
+            sipCallId: callId,
+            bridgeId,
+        }),
+    ]);
+
+    const combinedTranscript = [];
+
+    // Collect final results from both legs into a unified timeline
+    agentStream.on('final-transcript', (result) => {
+        combinedTranscript.push({ ...result, side: 'send', role: 'agent' });
+    });
+
+    customerStream.on('final-transcript', (result) => {
+        combinedTranscript.push({ ...result, side: 'recv', role: 'customer' });
+    });
+
+    // Write audio to each stream with per-chunk metadata
+    return {
+        writeAgent: (chunk) =>
+            agentStream.write(chunk, {
+                sipCallId: callId,
+                side: 'send',
+                role: 'agent',
+                bridgeId,
+            }),
+        writeCustomer: (chunk) =>
+            customerStream.write(chunk, {
+                sipCallId: callId,
+                side: 'recv',
+                role: 'customer',
+                bridgeId,
+            }),
+        end: () => {
+            agentStream.end();
+            customerStream.end();
+        },
+        getTranscript: () =>
+            // Sort by startTime so the output is chronological
+            [...combinedTranscript].sort((a, b) => a.startTime - b.startTime),
+    };
+}
+
+// Usage
+const call = await transcribeBothLegs('sip_abc123', 'bridge_xyz');
+
+agentAudioPipeline.on('data', call.writeAgent);
+customerAudioPipeline.on('data', call.writeCustomer);
+
+agentAudioPipeline.on('end', call.end);
+customerAudioPipeline.on('end', call.end);
+```
+
+---
 
 **Supported languages:**
 
