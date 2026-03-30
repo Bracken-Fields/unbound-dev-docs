@@ -134,6 +134,7 @@ const sidebars: SidebarsConfig = {
         'guides/cli-quickstart',
         'guides/send-sms',
         'guides/make-call',
+        'guides/handle-inbound-calls',
         'guides/stt-streaming',
         'guides/build-workflow',
         'guides/query-with-uoql',
