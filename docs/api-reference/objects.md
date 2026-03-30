@@ -3501,3 +3501,1233 @@ echo "CRM schema ready"
 
 </TabItem>
 </Tabs>
+
+
+### Batch Chunked Inserts
+
+When importing large datasets, chunk writes to stay within API limits and track progress:
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+/**
+ * Insert records in chunks of `chunkSize` and return a summary.
+ * @param {Object} api        - Unbound SDK instance
+ * @param {string} objectName - Target object type (e.g. "contacts")
+ * @param {Object[]} records  - Array of record data objects
+ * @param {number} chunkSize  - Records per batch (recommended: 50-100)
+ */
+async function batchInsert(api, objectName, records, chunkSize = 50) {
+    let inserted = 0;
+    let errors = [];
+
+    for (let i = 0; i < records.length; i += chunkSize) {
+        const chunk = records.slice(i, i + chunkSize);
+
+        // Use Promise.allSettled so one failure doesn't abort the batch
+        const results = await Promise.allSettled(
+            chunk.map(record =>
+                api.objects.create({ object: objectName, ...record })
+            )
+        );
+
+        for (const result of results) {
+            if (result.status === 'fulfilled') {
+                inserted++;
+            } else {
+                errors.push(result.reason?.message ?? 'unknown error');
+            }
+        }
+
+        console.log(`Progress: ${Math.min(i + chunkSize, records.length)}/${records.length}`);
+
+        // Throttle between chunks to avoid 429s
+        if (i + chunkSize < records.length) {
+            await new Promise(r => setTimeout(r, 250));
+        }
+    }
+
+    return { inserted, failed: errors.length, errors };
+}
+
+// Usage: import 500 contacts from a CSV
+const contacts = csvRows.map(row => ({
+    name:    row.full_name,
+    email:   row.email,
+    phone:   row.phone,
+    company: row.company,
+    status:  'new',
+}));
+
+const summary = await batchInsert(api, 'contacts', contacts, 50);
+console.log(`Inserted: ${summary.inserted} | Failed: ${summary.failed}`);
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+async function batchInsert(namespace, token, objectName, records, chunkSize = 50) {
+    let inserted = 0;
+    let errors = [];
+
+    for (let i = 0; i < records.length; i += chunkSize) {
+        const chunk = records.slice(i, i + chunkSize);
+
+        const results = await Promise.allSettled(
+            chunk.map(record =>
+                fetch(`https://${namespace}.api.unbound.cx/object/${objectName}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(record),
+                }).then(r => r.json())
+            )
+        );
+
+        for (const result of results) {
+            if (result.status === 'fulfilled') inserted++;
+            else errors.push(result.reason?.message ?? 'unknown');
+        }
+
+        if (i + chunkSize < records.length) {
+            await new Promise(r => setTimeout(r, 250));
+        }
+    }
+
+    return { inserted, failed: errors.length, errors };
+}
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import asyncio
+import aiohttp
+
+async def batch_insert(namespace, token, object_name, records, chunk_size=50):
+    inserted = 0
+    errors = []
+    url = f"https://{namespace}.api.unbound.cx/object/{object_name}"
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
+    async with aiohttp.ClientSession() as session:
+        for i in range(0, len(records), chunk_size):
+            chunk = records[i:i + chunk_size]
+            tasks = [session.post(url, headers=headers, json=r) for r in chunk]
+            responses = await asyncio.gather(*tasks, return_exceptions=True)
+
+            for resp in responses:
+                if isinstance(resp, Exception):
+                    errors.append(str(resp))
+                else:
+                    inserted += 1
+                    resp.close()
+
+            if i + chunk_size < len(records):
+                await asyncio.sleep(0.25)
+
+    return {"inserted": inserted, "failed": len(errors), "errors": errors}
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Bash loop — insert contacts from a JSON array file
+# Format: one JSON object per line in contacts.jsonl
+while IFS= read -r record; do
+    curl -s -X POST "https://{namespace}.api.unbound.cx/object/contacts" \
+        -H "Authorization: Bearer {token}" \
+        -H "Content-Type: application/json" \
+        -d "$record" > /dev/null
+    sleep 0.05   # ~20 req/s — stay under rate limits
+done < contacts.jsonl
+echo "Import complete"
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Soft-Delete Pattern
+
+Avoid permanent data loss — mark records as deleted with a flag and filter them out of normal queries:
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+// Step 1: Add a deletedAt column to your object type (run once)
+await api.objects.createColumn({
+    objectName: 'contacts',
+    columnName: 'deletedAt',
+    columnType: 'datetime',
+    isRequired:  false,
+});
+
+// Soft-delete a record
+async function softDelete(api, object, id) {
+    await api.objects.updateById({
+        object,
+        id,
+        update: { deletedAt: new Date().toISOString() },
+    });
+    console.log(`${object} ${id} soft-deleted`);
+}
+
+// Query only active (non-deleted) records
+async function queryActive(api, object, extraWhere = '') {
+    const whereClause = extraWhere
+        ? `deletedAt IS NULL AND (${extraWhere})`
+        : 'deletedAt IS NULL';
+
+    return api.objects.uoql({
+        query: `SELECT * FROM ${object} WHERE ${whereClause} ORDER BY createdAt DESC LIMIT 100`,
+    });
+}
+
+// Restore a soft-deleted record
+async function restore(api, object, id) {
+    await api.objects.updateById({
+        object,
+        id,
+        update: { deletedAt: null },
+    });
+}
+
+// Permanently purge records deleted more than 90 days ago
+async function purgeOldDeleted(api, object) {
+    const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+    await api.objects.delete({
+        object,
+        where: { deletedAt: { lt: cutoff } },
+    });
+    console.log(`Purged ${object} records deleted before ${cutoff}`);
+}
+
+// Usage
+await softDelete(api, 'contacts', 'contact-id-123');
+const active = await queryActive(api, 'contacts', 'status = "lead"');
+await purgeOldDeleted(api, 'contacts');
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Soft-delete
+await fetch(`https://{namespace}.api.unbound.cx/object/contacts/{id}`, {
+    method: 'PUT',
+    headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ update: { deletedAt: new Date().toISOString() } }),
+});
+
+// Query active records only
+const res = await fetch('https://{namespace}.api.unbound.cx/object/query/v2', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        query: 'SELECT * FROM contacts WHERE deletedAt IS NULL ORDER BY createdAt DESC LIMIT 100',
+    }),
+});
+const active = await res.json();
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+from datetime import datetime
+
+BASE = "https://{namespace}.api.unbound.cx"
+HEADERS = {"Authorization": "Bearer {token}", "Content-Type": "application/json"}
+
+def soft_delete(contact_id):
+    requests.put(
+        f"{BASE}/object/contacts/{contact_id}",
+        headers=HEADERS,
+        json={"update": {"deletedAt": datetime.utcnow().isoformat() + "Z"}},
+    )
+
+def query_active():
+    return requests.post(
+        f"{BASE}/object/query/v2",
+        headers=HEADERS,
+        json={"query": "SELECT * FROM contacts WHERE deletedAt IS NULL ORDER BY createdAt DESC LIMIT 100"},
+    ).json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Soft-delete a contact
+curl -X PUT "https://{namespace}.api.unbound.cx/object/contacts/{id}" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"update": {"deletedAt": "2026-03-30T12:00:00Z"}}'
+
+# Query active records only
+curl -X POST "https://{namespace}.api.unbound.cx/object/query/v2" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "SELECT * FROM contacts WHERE deletedAt IS NULL ORDER BY createdAt DESC LIMIT 100"}'
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Audit Trail: Track All Record Changes
+
+Capture every field change in a separate `auditLog` object for compliance or debugging:
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+// Step 1: Create the auditLog object type (run once during setup)
+async function setupAuditLog(api) {
+    await api.objects.createObject({ name: 'auditLog' });
+    const columns = [
+        { columnName: 'targetObject', columnType: 'varchar', length: 100, isRequired: true },
+        { columnName: 'targetId',     columnType: 'varchar', length: 100, isRequired: true },
+        { columnName: 'action',       columnType: 'varchar', length: 50,  isRequired: true },
+        { columnName: 'changedFields',columnType: 'json',    isRequired: false },
+        { columnName: 'previousValues',columnType: 'json',   isRequired: false },
+        { columnName: 'newValues',    columnType: 'json',    isRequired: false },
+        { columnName: 'performedBy',  columnType: 'varchar', length: 100, isRequired: false },
+        { columnName: 'performedAt',  columnType: 'datetime',isRequired: true },
+        { columnName: 'ipAddress',    columnType: 'varchar', length: 45,  isRequired: false },
+    ];
+    for (const col of columns) {
+        await api.objects.createColumn({ objectName: 'auditLog', ...col });
+    }
+    console.log('auditLog schema ready');
+}
+
+// Step 2: Wrap updateById to automatically log changes
+async function auditedUpdate(api, object, id, update, performedBy) {
+    // Fetch current state before updating
+    const current = await api.objects.byId({ object, id });
+
+    // Apply the update
+    await api.objects.updateById({ object, id, update });
+
+    // Determine which fields changed
+    const changedFields = Object.keys(update);
+    const previousValues = Object.fromEntries(
+        changedFields.map(k => [k, current[k]])
+    );
+
+    // Write audit log entry
+    await api.objects.create({
+        object:         'auditLog',
+        targetObject:   object,
+        targetId:       id,
+        action:         'update',
+        changedFields,
+        previousValues,
+        newValues:      update,
+        performedBy,
+        performedAt:    new Date().toISOString(),
+    });
+}
+
+// Usage
+await auditedUpdate(
+    api,
+    'contacts',
+    'contact-id-123',
+    { status: 'customer', tier: 'pro' },
+    'user-id-456'
+);
+
+// Query the audit trail for a specific record
+const history = await api.objects.uoql({
+    query: `
+        SELECT targetObject, action, changedFields, previousValues, newValues,
+               performedBy, performedAt
+        FROM auditLog
+        WHERE targetId = 'contact-id-123'
+        ORDER BY performedAt DESC
+        LIMIT 50
+    `,
+});
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+async function auditedUpdate(namespace, token, object, id, update, performedBy) {
+    const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+    };
+
+    // Fetch current state
+    const currentRes = await fetch(
+        `https://${namespace}.api.unbound.cx/object/${object}/${id}`,
+        { headers }
+    );
+    const current = await currentRes.json();
+
+    // Apply update
+    await fetch(`https://${namespace}.api.unbound.cx/object/${object}/${id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ update }),
+    });
+
+    // Write audit entry
+    const changedFields = Object.keys(update);
+    await fetch(`https://${namespace}.api.unbound.cx/object/auditLog`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            targetObject:   object,
+            targetId:       id,
+            action:         'update',
+            changedFields,
+            previousValues: Object.fromEntries(changedFields.map(k => [k, current[k]])),
+            newValues:      update,
+            performedBy,
+            performedAt:    new Date().toISOString(),
+        }),
+    });
+}
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+from datetime import datetime
+
+def audited_update(namespace, token, object_name, record_id, update, performed_by):
+    base = f"https://{namespace}.api.unbound.cx"
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
+    # Fetch current state
+    current = requests.get(f"{base}/object/{object_name}/{record_id}", headers=headers).json()
+
+    # Apply update
+    requests.put(f"{base}/object/{object_name}/{record_id}", headers=headers, json={"update": update})
+
+    # Write audit entry
+    changed_fields = list(update.keys())
+    requests.post(f"{base}/object/auditLog", headers=headers, json={
+        "targetObject":   object_name,
+        "targetId":       record_id,
+        "action":         "update",
+        "changedFields":  changed_fields,
+        "previousValues": {k: current.get(k) for k in changed_fields},
+        "newValues":      update,
+        "performedBy":    performed_by,
+        "performedAt":    datetime.utcnow().isoformat() + "Z",
+    })
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# 1. Fetch current record
+CURRENT=$(curl -s "https://{namespace}.api.unbound.cx/object/contacts/{id}" \
+  -H "Authorization: Bearer {token}")
+
+# 2. Apply the update
+curl -X PUT "https://{namespace}.api.unbound.cx/object/contacts/{id}" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"update": {"status": "customer", "tier": "pro"}}'
+
+# 3. Write audit log entry
+curl -X POST "https://{namespace}.api.unbound.cx/object/auditLog" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "targetObject":    "contacts",
+    "targetId":        "{id}",
+    "action":          "update",
+    "changedFields":   ["status", "tier"],
+    "previousValues":  {"status": "lead", "tier": "free"},
+    "newValues":       {"status": "customer", "tier": "pro"},
+    "performedBy":     "user-id-456",
+    "performedAt":     "2026-03-30T12:00:00Z"
+  }'
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Safe Schema Migration: Add a Non-Breaking Column
+
+Safely add a new column to a live object type without breaking existing queries or applications:
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+/**
+ * Idempotent column addition — checks if the column already exists before creating.
+ * Safe to run in CI/CD pipelines and on every deploy.
+ */
+async function addColumnIfMissing(api, objectName, columnDef) {
+    // Fetch the current schema
+    const schema = await api.objects.describe(objectName);
+    const exists = schema.columns?.some(col => col.name === columnDef.columnName);
+
+    if (exists) {
+        console.log(`Column "${columnDef.columnName}" already exists on "${objectName}" — skipping.`);
+        return false;
+    }
+
+    await api.objects.createColumn({ objectName, ...columnDef });
+    console.log(`Column "${columnDef.columnName}" added to "${objectName}".`);
+    return true;
+}
+
+// Run as part of your app startup / migration script
+async function migrateSchema(api) {
+    const migrations = [
+        {
+            objectName:   'contacts',
+            columnName:   'leadSource',
+            columnType:   'varchar',
+            length:        100,
+            isRequired:   false,
+            defaultValue: 'unknown',
+        },
+        {
+            objectName:   'contacts',
+            columnName:   'lastActivityAt',
+            columnType:   'datetime',
+            isRequired:   false,
+        },
+        {
+            objectName:   'contacts',
+            columnName:   'tags',
+            columnType:   'json',
+            isRequired:   false,
+        },
+    ];
+
+    let added = 0;
+    for (const migration of migrations) {
+        const didAdd = await addColumnIfMissing(api, migration.objectName, migration);
+        if (didAdd) added++;
+    }
+
+    console.log(`Migration complete: ${added}/${migrations.length} columns added.`);
+}
+
+await migrateSchema(api);
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+async function addColumnIfMissing(namespace, token, objectName, columnDef) {
+    const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+    };
+
+    // Check current schema
+    const schemaRes = await fetch(
+        `https://${namespace}.api.unbound.cx/object/types/${objectName}`,
+        { headers }
+    );
+    const schema = await schemaRes.json();
+
+    if (schema.columns?.some(c => c.name === columnDef.columnName)) {
+        console.log(`Column "${columnDef.columnName}" already exists — skipping.`);
+        return false;
+    }
+
+    await fetch(`https://${namespace}.api.unbound.cx/object/${objectName}/columns`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(columnDef),
+    });
+
+    console.log(`Added column "${columnDef.columnName}" to "${objectName}".`);
+    return true;
+}
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+def add_column_if_missing(namespace, token, object_name, column_def):
+    base = f"https://{namespace}.api.unbound.cx"
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
+    schema = requests.get(f"{base}/object/types/{object_name}", headers=headers).json()
+    existing = {c["name"] for c in schema.get("columns", [])}
+
+    if column_def["columnName"] in existing:
+        print(f"Column '{column_def['columnName']}' already exists — skipping.")
+        return False
+
+    requests.post(
+        f"{base}/object/{object_name}/columns",
+        headers=headers,
+        json=column_def,
+    )
+    print(f"Added column '{column_def['columnName']}' to '{object_name}'.")
+    return True
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Check if column exists first
+SCHEMA=$(curl -s "https://{namespace}.api.unbound.cx/object/types/contacts" \
+  -H "Authorization: Bearer {token}")
+
+# Check if "leadSource" exists (use jq for reliable parsing)
+if echo "$SCHEMA" | jq -e '.columns[] | select(.name == "leadSource")' > /dev/null 2>&1; then
+    echo "Column already exists — skipping"
+else
+    curl -X POST "https://{namespace}.api.unbound.cx/object/contacts/columns" \
+        -H "Authorization: Bearer {token}" \
+        -H "Content-Type: application/json" \
+        -d '{
+            "columnName":   "leadSource",
+            "columnType":   "varchar",
+            "length":       100,
+            "isRequired":   false,
+            "defaultValue": "unknown"
+        }'
+    echo "Column added"
+fi
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Generated Column Recipes
+
+`objects.createGeneratedColumn` creates virtual columns computed from other fields at query time — no redundant storage or manual sync required.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+// Recipe 1: Full name from first + last name
+await api.objects.createGeneratedColumn({
+    objectName:  'contacts',
+    columnName:  'fullName',
+    value:       "CONCAT(firstName, ' ', lastName)",
+    columnType:  'varchar',
+    length:      '255',
+});
+
+// Recipe 2: Display label combining name and company
+await api.objects.createGeneratedColumn({
+    objectName:  'contacts',
+    columnName:  'displayLabel',
+    value:       "CONCAT(firstName, ' ', lastName, ' (', company, ')')",
+    columnType:  'varchar',
+    length:      '300',
+});
+
+// Recipe 3: Masked phone number for display (keep last 4 digits)
+await api.objects.createGeneratedColumn({
+    objectName:  'contacts',
+    columnName:  'maskedPhone',
+    value:       "CONCAT('***-***-', RIGHT(phone, 4))",
+    columnType:  'varchar',
+    length:      '15',
+});
+
+// Recipe 4: Age in years from birthDate
+await api.objects.createGeneratedColumn({
+    objectName:  'contacts',
+    columnName:  'ageYears',
+    value:       'TIMESTAMPDIFF(YEAR, birthDate, NOW())',
+    columnType:  'int',
+    length:      '3',
+});
+
+// Recipe 5: Days since last contact
+await api.objects.createGeneratedColumn({
+    objectName:  'contacts',
+    columnName:  'daysSinceContact',
+    value:       'DATEDIFF(NOW(), lastContactedAt)',
+    columnType:  'int',
+    length:      '5',
+});
+
+// Use generated columns in UOQL queries just like real columns
+const staleLeads = await api.objects.uoql({
+    query: `
+        SELECT id, fullName, email, daysSinceContact
+        FROM contacts
+        WHERE status = 'lead'
+          AND daysSinceContact > 30
+        ORDER BY daysSinceContact DESC
+        LIMIT 50
+    `,
+});
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Create a fullName generated column
+await fetch('https://{namespace}.api.unbound.cx/object/generated-columns', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        objectName:  'contacts',
+        columnName:  'fullName',
+        value:       "CONCAT(firstName, ' ', lastName)",
+        columnType:  'varchar',
+        length:      '255',
+    }),
+});
+
+// Use it in a query
+const res = await fetch('https://{namespace}.api.unbound.cx/object/query/v2', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        query: "SELECT id, fullName, email FROM contacts WHERE daysSinceContact > 30 ORDER BY daysSinceContact DESC LIMIT 50",
+    }),
+});
+const staleLeads = await res.json();
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+BASE = "https://{namespace}.api.unbound.cx"
+HEADERS = {"Authorization": "Bearer {token}", "Content-Type": "application/json"}
+
+# Create fullName generated column
+requests.post(f"{BASE}/object/generated-columns", headers=HEADERS, json={
+    "objectName":  "contacts",
+    "columnName":  "fullName",
+    "value":       "CONCAT(firstName, ' ', lastName)",
+    "columnType":  "varchar",
+    "length":      "255",
+})
+
+# Query using the generated column
+stale_leads = requests.post(f"{BASE}/object/query/v2", headers=HEADERS, json={
+    "query": "SELECT id, fullName, email FROM contacts WHERE daysSinceContact > 30 ORDER BY daysSinceContact DESC LIMIT 50"
+}).json()
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Create fullName generated column
+curl -X POST "https://{namespace}.api.unbound.cx/object/generated-columns" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "objectName":  "contacts",
+    "columnName":  "fullName",
+    "value":       "CONCAT(firstName, '"'"' '"'"', lastName)",
+    "columnType":  "varchar",
+    "length":      "255"
+  }'
+
+# Query using the generated column
+curl -X POST "https://{namespace}.api.unbound.cx/object/query/v2" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "SELECT id, fullName, email FROM contacts WHERE daysSinceContact > 30 ORDER BY daysSinceContact DESC LIMIT 50"}'
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Multi-Filter Bulk Update
+
+Apply a conditional update across many records at once — useful for migrations, status transitions, or mass re-assignments:
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+// Promote all "qualified" leads created in Q1 2026 to "opportunity"
+await api.objects.update({
+    object: 'contacts',
+    where: {
+        status:    'qualified',
+        createdAt: { gte: '2026-01-01', lt: '2026-04-01' },
+    },
+    update: {
+        status:       'opportunity',
+        promotedAt:   new Date().toISOString(),
+        promotedBy:   'batch-migration-script',
+    },
+});
+
+// Re-assign all open tasks from a departing agent to a replacement
+await api.objects.update({
+    object: 'supportTickets',
+    where: {
+        assignedTo: 'departing-user-id',
+        status:     { in: ['open', 'pending'] },
+    },
+    update: {
+        assignedTo:    'replacement-user-id',
+        reassignedAt:  new Date().toISOString(),
+        reassignNote:  'Auto-reassigned due to agent departure',
+    },
+});
+
+// Archive all completed tickets older than 1 year
+const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+await api.objects.update({
+    object: 'supportTickets',
+    where: {
+        status:      'completed',
+        completedAt: { lt: oneYearAgo },
+        archived:    false,
+    },
+    update: {
+        archived:   true,
+        archivedAt: new Date().toISOString(),
+    },
+});
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Promote qualified leads to opportunity
+await fetch('https://{namespace}.api.unbound.cx/object/contacts', {
+    method: 'PUT',
+    headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        where: {
+            status:    'qualified',
+            createdAt: { gte: '2026-01-01', lt: '2026-04-01' },
+        },
+        update: {
+            status:     'opportunity',
+            promotedAt: new Date().toISOString(),
+        },
+    }),
+});
+
+// Re-assign open tickets
+await fetch('https://{namespace}.api.unbound.cx/object/supportTickets', {
+    method: 'PUT',
+    headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        where: {
+            assignedTo: 'departing-user-id',
+            status:     { in: ['open', 'pending'] },
+        },
+        update: {
+            assignedTo:   'replacement-user-id',
+            reassignedAt: new Date().toISOString(),
+        },
+    }),
+});
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+from datetime import datetime, timedelta
+
+BASE = "https://{namespace}.api.unbound.cx"
+HEADERS = {"Authorization": "Bearer {token}", "Content-Type": "application/json"}
+
+# Promote qualified leads
+requests.put(f"{BASE}/object/contacts", headers=HEADERS, json={
+    "where": {
+        "status":    "qualified",
+        "createdAt": {"gte": "2026-01-01", "lt": "2026-04-01"},
+    },
+    "update": {
+        "status":     "opportunity",
+        "promotedAt": datetime.utcnow().isoformat() + "Z",
+    },
+})
+
+# Re-assign open tickets
+requests.put(f"{BASE}/object/supportTickets", headers=HEADERS, json={
+    "where": {
+        "assignedTo": "departing-user-id",
+        "status":     {"in": ["open", "pending"]},
+    },
+    "update": {
+        "assignedTo":   "replacement-user-id",
+        "reassignedAt": datetime.utcnow().isoformat() + "Z",
+    },
+})
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+# Promote qualified leads
+curl -X PUT "https://{namespace}.api.unbound.cx/object/contacts" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "where": {
+        "status":    "qualified",
+        "createdAt": {"gte": "2026-01-01", "lt": "2026-04-01"}
+    },
+    "update": {
+        "status":     "opportunity",
+        "promotedAt": "2026-03-30T12:00:00Z"
+    }
+  }'
+
+# Re-assign open tickets
+curl -X PUT "https://{namespace}.api.unbound.cx/object/supportTickets" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "where": {
+        "assignedTo": "departing-user-id",
+        "status":     {"in": ["open", "pending"]}
+    },
+    "update": {
+        "assignedTo":   "replacement-user-id",
+        "reassignedAt": "2026-03-30T12:00:00Z"
+    }
+  }'
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Cross-Object Relation Traversal
+
+Use multiple queries to join related objects when building detail views — the recommended pattern for fetching a contact with their associated tickets, notes, and calls:
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+/**
+ * Fetch a contact with all related records populated.
+ * Returns a single enriched contact object.
+ */
+async function getContactWithRelations(api, contactId) {
+    // Fetch the contact record itself (with expand details)
+    const contact = await api.objects.byId({
+        object:        'contacts',
+        id:            contactId,
+        expandDetails: true,
+    });
+
+    // Parallel-fetch related records across object types
+    const [tickets, notes, calls] = await Promise.all([
+        api.objects.query({
+            object: 'supportTickets',
+            where:  { contactId },
+            limit:  20,
+            orderBy: 'createdAt',
+            orderDirection: 'desc',
+        }),
+        api.objects.query({
+            object: 'notes',
+            where:  { relatedId: contactId },
+            limit:  20,
+            orderBy: 'createdAt',
+            orderDirection: 'desc',
+        }),
+        api.objects.uoql({
+            query: `
+                SELECT id, direction, duration, recordingId, createdAt, disposition
+                FROM calls
+                WHERE contactId = '${contactId}'
+                ORDER BY createdAt DESC
+                LIMIT 20
+            `,
+        }),
+    ]);
+
+    return {
+        ...contact,
+        tickets:  tickets.data ?? tickets,
+        notes:    notes.data   ?? notes,
+        calls:    calls.data   ?? calls,
+    };
+}
+
+// Usage
+const contactDetail = await getContactWithRelations(api, 'contact-id-123');
+console.log(`Contact: ${contactDetail.firstName} ${contactDetail.lastName}`);
+console.log(`Open tickets: ${contactDetail.tickets.filter(t => t.status === 'open').length}`);
+console.log(`Total calls: ${contactDetail.calls.length}`);
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+async function getContactWithRelations(namespace, token, contactId) {
+    const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+    };
+    const base = `https://${namespace}.api.unbound.cx`;
+
+    const [contact, tickets, calls] = await Promise.all([
+        fetch(`${base}/object/contacts/${contactId}?expandDetails=true`, { headers }).then(r => r.json()),
+        fetch(`${base}/object/supportTickets?contactId=${contactId}&limit=20&orderBy=createdAt&orderDirection=desc`, { headers }).then(r => r.json()),
+        fetch(`${base}/object/query/v2`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                query: `SELECT id, direction, duration, createdAt FROM calls WHERE contactId = '${contactId}' ORDER BY createdAt DESC LIMIT 20`,
+            }),
+        }).then(r => r.json()),
+    ]);
+
+    return { ...contact, tickets: tickets.data ?? tickets, calls: calls.data ?? calls };
+}
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+from concurrent.futures import ThreadPoolExecutor
+
+def get_contact_with_relations(namespace, token, contact_id):
+    base = f"https://{namespace}.api.unbound.cx"
+    headers = {"Authorization": f"Bearer {token}"}
+
+    def fetch_contact():
+        return requests.get(
+            f"{base}/object/contacts/{contact_id}?expandDetails=true", headers=headers
+        ).json()
+
+    def fetch_tickets():
+        return requests.get(
+            f"{base}/object/supportTickets",
+            headers=headers,
+            params={"contactId": contact_id, "limit": 20, "orderBy": "createdAt", "orderDirection": "desc"},
+        ).json()
+
+    def fetch_calls():
+        return requests.post(
+            f"{base}/object/query/v2",
+            headers={**headers, "Content-Type": "application/json"},
+            json={"query": f"SELECT id, direction, duration, createdAt FROM calls WHERE contactId = '{contact_id}' ORDER BY createdAt DESC LIMIT 20"},
+        ).json()
+
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        contact_f  = executor.submit(fetch_contact)
+        tickets_f  = executor.submit(fetch_tickets)
+        calls_f    = executor.submit(fetch_calls)
+
+    contact = contact_f.result()
+    contact["tickets"] = tickets_f.result().get("data", tickets_f.result())
+    contact["calls"]   = calls_f.result().get("data",   calls_f.result())
+    return contact
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+CONTACT_ID="contact-id-123"
+
+# Fetch contact
+curl "https://{namespace}.api.unbound.cx/object/contacts/${CONTACT_ID}?expandDetails=true" \
+  -H "Authorization: Bearer {token}"
+
+# Fetch related tickets
+curl "https://{namespace}.api.unbound.cx/object/supportTickets?contactId=${CONTACT_ID}&limit=20&orderBy=createdAt&orderDirection=desc" \
+  -H "Authorization: Bearer {token}"
+
+# Fetch related calls via UOQL
+curl -X POST "https://{namespace}.api.unbound.cx/object/query/v2" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d "{\"query\": \"SELECT id, direction, duration, createdAt FROM calls WHERE contactId = '${CONTACT_ID}' ORDER BY createdAt DESC LIMIT 20\"}"
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Multi-Criteria Delete with Dry Run
+
+Preview which records will be deleted before committing — critical for bulk operations:
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+/**
+ * Dry-run aware bulk delete.
+ * Pass dryRun: true to preview how many records would be deleted.
+ * Pass dryRun: false (default) to execute.
+ */
+async function bulkDelete(api, object, where, { dryRun = true } = {}) {
+    // Always preview first
+    const preview = await api.objects.uoql({
+        query: `SELECT COUNT(*) AS count FROM ${object} WHERE ${buildWhereClause(where)}`,
+    });
+    const count = preview?.data?.[0]?.count ?? 0;
+
+    console.log(`${dryRun ? '[DRY RUN]' : '[LIVE]'} Would delete ${count} records from "${object}"`);
+
+    if (dryRun) {
+        return { dryRun: true, wouldDelete: count };
+    }
+
+    await api.objects.delete({ object, where });
+    return { dryRun: false, deleted: count };
+}
+
+// Helper: turn a where object into a UOQL WHERE clause
+function buildWhereClause(where) {
+    return Object.entries(where)
+        .map(([k, v]) => typeof v === 'string' ? `${k} = '${v}'` : `${k} = ${v}`)
+        .join(' AND ');
+}
+
+// Usage
+const criteria = {
+    status:       'abandoned',
+    lastActiveAt: { lt: '2025-01-01' },
+};
+
+// Preview first
+const preview = await bulkDelete(api, 'leads', criteria, { dryRun: true });
+console.log(`Will delete ${preview.wouldDelete} records`);
+
+// User confirms → execute
+if (preview.wouldDelete > 0 && userConfirmed) {
+    const result = await bulkDelete(api, 'leads', criteria, { dryRun: false });
+    console.log(`Deleted ${result.deleted} records`);
+}
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+async function countMatchingRecords(namespace, token, object, where) {
+    const res = await fetch(`https://${namespace}.api.unbound.cx/object/query/v2`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            query: `SELECT COUNT(*) AS count FROM ${object} WHERE status = '${where.status}'`,
+        }),
+    });
+    const data = await res.json();
+    return data?.data?.[0]?.count ?? 0;
+}
+
+async function bulkDelete(namespace, token, object, where) {
+    // Count first
+    const count = await countMatchingRecords(namespace, token, object, where);
+    console.log(`Would delete ${count} records`);
+
+    // Confirm then delete
+    const res = await fetch(`https://${namespace}.api.unbound.cx/object/${object}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ where }),
+    });
+    return res.json();
+}
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+import requests
+
+def bulk_delete_with_preview(namespace, token, object_name, where, dry_run=True):
+    base = f"https://{namespace}.api.unbound.cx"
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
+    # Build a simple WHERE clause for count
+    where_clause = " AND ".join(
+        f"{k} = '{v}'" if isinstance(v, str) else f"{k} = {v}"
+        for k, v in where.items()
+    )
+    count_resp = requests.post(f"{base}/object/query/v2", headers=headers, json={
+        "query": f"SELECT COUNT(*) AS count FROM {object_name} WHERE {where_clause}"
+    }).json()
+    count = count_resp.get("data", [{}])[0].get("count", 0)
+
+    print(f"{'[DRY RUN]' if dry_run else '[LIVE]'} Would delete {count} records from '{object_name}'")
+
+    if dry_run:
+        return {"dry_run": True, "would_delete": count}
+
+    requests.delete(f"{base}/object/{object_name}", headers=headers, json={"where": where})
+    return {"dry_run": False, "deleted": count}
+```
+
+</TabItem>
+<TabItem value="curl" label="cURL">
+
+```bash
+OBJECT="leads"
+STATUS="abandoned"
+
+# Step 1: Preview count
+echo "=== DRY RUN ==="
+curl -X POST "https://{namespace}.api.unbound.cx/object/query/v2" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d "{\"query\": \"SELECT COUNT(*) AS count FROM ${OBJECT} WHERE status = '${STATUS}'\"}"
+
+# Step 2: After confirmation, execute delete
+echo "=== DELETING ==="
+curl -X DELETE "https://{namespace}.api.unbound.cx/object/${OBJECT}" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d "{\"where\": {\"status\": \"${STATUS}\"}}"
+```
+
+</TabItem>
+</Tabs>
