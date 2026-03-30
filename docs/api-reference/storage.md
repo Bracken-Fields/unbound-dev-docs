@@ -1697,7 +1697,7 @@ Only custom configurations (`isSystem: false`) can be deleted. Attempting to del
 
 ## Common Patterns
 
-### GDPR-Compliant EU Storage
+### Pattern 1 — GDPR-Compliant EU Storage
 
 Ensure documents and recordings for EU customers never leave EU infrastructure:
 
@@ -1724,35 +1724,43 @@ const uploadResult = await api.storage.upload({
     folder: 'contracts',
 });
 
-console.log('Stored at:', uploadResult.storageId);
+console.log('Stored at:', uploadResult.uploaded[0].id);
 ```
 
-### Audit Storage Configurations Before Upload
+### Pattern 2 — Audit Storage Configurations Before Upload
+
+Check what configurations are active and auto-provision any missing ones:
 
 ```javascript
-// Check what configurations are active before uploading
-const { configurations } = await api.storage.listStorageConfigurations({
-    classification: 'recordings',
-});
+async function ensureStorageConfig(api, classification, country) {
+    const { configurations } = await api.storage.listStorageConfigurations({
+        classification,
+    });
 
-const euConfig = configurations.find(
-    c => c.country === 'EU' && c.classification === 'recordings'
-);
+    const existing = configurations.find(
+        c => c.country === country && c.classification === classification
+    );
 
-if (!euConfig) {
-    console.warn('No EU recording config found — creating one');
-    await api.storage.createStorageConfiguration({
-        classification: 'recordings',
-        country: 'EU',
-        s3Regions: ['eu-west-1'],
+    if (existing) {
+        console.log(`Config found: ${existing.id}`);
+        return existing;
+    }
+
+    console.warn(`No ${country} ${classification} config found — creating one`);
+    const created = await api.storage.createStorageConfiguration({
+        classification,
+        country,
+        s3Regions: country === 'EU' ? ['eu-west-1'] : ['us-east-1'],
         minimumProviders: 1,
         minimumRegionsS3: 1,
         minimumRegionsGCC: 0,
         minimumRegionsAzure: 0,
     });
+    return created;
 }
 
-// Now safe to upload EU recordings
+// Usage — ensure config before uploading EU recordings
+await ensureStorageConfig(api, 'recordings', 'EU');
 const recording = await api.storage.upload({
     file: audioBuffer,
     fileName: 'call-recording.mp3',
@@ -1761,18 +1769,322 @@ const recording = await api.storage.upload({
 });
 ```
 
-### Rotating Signed Access Keys
+### Pattern 3 — Rotating Signed Access Keys
 
 Use `generateAccessKey` to create short-lived download URLs for temporary access:
 
 ```javascript
-// Generate a 1-hour download link
-const { accessKey } = await api.storage.generateAccessKey(storageId, 3600);
-const downloadUrl = `https://{namespace}.api.unbound.cx/storage/file/${storageId}?key=${accessKey}`;
+async function getTemporaryDownloadUrl(api, storageId, expiresInSeconds = 3600) {
+    const { accessKey } = await api.storage.generateAccessKey(
+        storageId,
+        expiresInSeconds
+    );
 
-// Default is 30 minutes (1800 seconds)
-const { accessKey: shortKey } = await api.storage.generateAccessKey(storageId);
+    const downloadUrl =
+        `https://{namespace}.api.unbound.cx/storage/file/${storageId}` +
+        `?key=${accessKey}`;
 
-// Share the download URL with a user — expires automatically
-res.json({ url: downloadUrl, expiresIn: 3600 });
+    return { url: downloadUrl, expiresIn: expiresInSeconds };
+}
+
+// Share a 1-hour download link
+const { url } = await getTemporaryDownloadUrl(api, storageId, 3600);
+res.json({ url });
+
+// Share a 5-minute preview link
+const { url: previewUrl } = await getTemporaryDownloadUrl(api, storageId, 300);
 ```
+
+### Pattern 4 — Post-Call Recording Archiver
+
+After a call ends, upload the recording, link it to the contact record, and set a 90-day TTL:
+
+```javascript
+async function archiveCallRecording(api, {
+    audioBuffer,
+    callId,
+    contactId,
+    agentId,
+    durationSeconds,
+    direction,   // 'inbound' | 'outbound'
+}) {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const fileName = `${direction}-${callId}-${timestamp}.mp3`;
+
+    const result = await api.storage.upload({
+        file: audioBuffer,
+        fileName,
+        classification: 'recordings',
+        folder: `calls/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}`,
+        isPublic: false,
+        country: 'US',
+        expireAfter: '90d',        // auto-delete after 90 days
+        relatedId: contactId,
+        createAccessKey: true,
+        accessKeyExpiresIn: 3600,  // 1-hour shareable link
+    });
+
+    const file = result.uploaded[0];
+    if (!file) throw new Error('Upload failed');
+
+    // Update the CDR record with storage reference
+    await api.objects.update({
+        object: 'callDetailRecords',
+        where: { id: callId },
+        update: {
+            recordingStorageId: file.id,
+            recordingDuration: durationSeconds,
+            recordingUrl: file.url,
+        },
+    });
+
+    console.log(`Recording archived: ${file.id} (${(file.fileSize / 1024).toFixed(1)} KB)`);
+    return { storageId: file.id, downloadUrl: file.url };
+}
+```
+
+### Pattern 5 — Batch Document Upload with Progress Tracking
+
+Upload multiple files at once with per-file progress reporting (browser environment):
+
+```javascript
+async function uploadDocumentBatch(api, files, contactId) {
+    const results = [];
+    const errors = [];
+
+    // Process in groups of 5 to avoid overwhelming the server
+    const batchSize = 5;
+    for (let i = 0; i < files.length; i += batchSize) {
+        const batch = files.slice(i, i + batchSize);
+
+        const fileEntries = batch.map(f => ({
+            file: f.buffer,
+            fileName: f.name,
+        }));
+
+        const result = await api.storage.uploadFiles(fileEntries, {
+            classification: 'documents',
+            folder: `contacts/${contactId}/documents`,
+            isPublic: false,
+            relatedId: contactId,
+            onProgress: (loaded, total) => {
+                const pct = Math.round((loaded / total) * 100);
+                console.log(`Batch ${Math.floor(i / batchSize) + 1}: ${pct}%`);
+            },
+        });
+
+        results.push(...result.uploaded);
+        errors.push(...result.errors);
+    }
+
+    console.log(`Uploaded: ${results.length}, Errors: ${errors.length}`);
+
+    if (errors.length > 0) {
+        console.warn('Failed uploads:', errors.map(e => e.fileName));
+    }
+
+    return { results, errors };
+}
+```
+
+### Pattern 6 — Secure Document Delivery via Pre-Signed URL
+
+Generate a short-lived download link for a document and email it to a recipient:
+
+```javascript
+async function sendDocumentLink(api, storageId, recipientEmail, expiresInMinutes = 60) {
+    // 1. Generate a time-limited access key
+    const { accessKey } = await api.storage.generateAccessKey(
+        storageId,
+        expiresInMinutes * 60
+    );
+
+    // 2. Build the signed URL
+    const signedUrl =
+        `https://{namespace}.api.unbound.cx/storage/file/${storageId}` +
+        `?key=${accessKey}&download=true`;
+
+    // 3. Get file metadata for the email body
+    const info = await api.storage.getFileInfo(storageId);
+
+    // 4. Send email via Unbound messaging
+    await api.messaging.email.send({
+        to: recipientEmail,
+        subject: `Your document: ${info.fileName}`,
+        html: `
+            <p>Your document is ready for download:</p>
+            <p><a href="${signedUrl}">${info.fileName}</a>
+               (${(info.fileSize / 1024).toFixed(1)} KB)</p>
+            <p>This link expires in ${expiresInMinutes} minutes.</p>
+        `,
+    });
+
+    console.log(`Document link sent to ${recipientEmail}, expires in ${expiresInMinutes}m`);
+    return { signedUrl, expiresIn: expiresInMinutes * 60 };
+}
+```
+
+### Pattern 7 — Multi-Classification Upload Router
+
+Detect file type and route to the correct classification and folder automatically:
+
+```javascript
+function classifyFile(fileName, mimeType) {
+    if (mimeType.startsWith('audio/') || mimeType.startsWith('video/')) {
+        return { classification: 'recordings', folder: 'media' };
+    }
+    if (['application/pdf', 'application/msword',
+         'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(mimeType)) {
+        return { classification: 'documents', folder: 'docs' };
+    }
+    if (mimeType.startsWith('image/')) {
+        return { classification: 'images', folder: 'images' };
+    }
+    return { classification: 'generic', folder: 'misc' };
+}
+
+async function smartUpload(api, fileBuffer, fileName, mimeType, relatedId) {
+    const { classification, folder } = classifyFile(fileName, mimeType);
+    const year = new Date().getFullYear();
+
+    const result = await api.storage.upload({
+        file: fileBuffer,
+        fileName,
+        classification,
+        folder: `${folder}/${year}`,
+        isPublic: false,
+        relatedId,
+    });
+
+    const file = result.uploaded[0];
+    if (!file) {
+        throw new Error(`Upload failed: ${result.errors[0]?.message || 'unknown error'}`);
+    }
+
+    console.log(`Uploaded as ${classification}: ${file.id}`);
+    return file;
+}
+```
+
+### Pattern 8 — Paginate and Audit All Stored Files
+
+List all files for a folder, audit their metadata, and flag anomalies:
+
+```javascript
+async function auditStorageFolder(api, folder, classification = 'documents') {
+    const allFiles = [];
+    let offset = 0;
+    const limit = 50;
+
+    // Paginate through all files
+    while (true) {
+        const page = await api.storage.listFiles({
+            folder,
+            classification,
+            limit,
+            offset,
+        });
+
+        if (!page.files || page.files.length === 0) break;
+        allFiles.push(...page.files);
+
+        if (page.files.length < limit) break;
+        offset += limit;
+    }
+
+    console.log(`Total files: ${allFiles.length}`);
+
+    // Audit: flag files missing relatedId (orphaned files)
+    const orphaned = allFiles.filter(f => !f.relatedId);
+    console.log(`Orphaned (no relatedId): ${orphaned.length}`);
+
+    // Audit: flag very large files (> 50 MB)
+    const largeFiles = allFiles.filter(f => f.fileSize > 50 * 1024 * 1024);
+    console.log(`Large files (> 50 MB): ${largeFiles.length}`);
+
+    // Audit: flag files expiring in the next 7 days
+    const soon = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    const expiringFiles = allFiles.filter(f => f.expiresAt && new Date(f.expiresAt) < soon);
+    console.log(`Expiring within 7 days: ${expiringFiles.length}`);
+
+    return {
+        total: allFiles.length,
+        orphaned: orphaned.map(f => f.id),
+        large: largeFiles.map(f => ({ id: f.id, sizeMB: (f.fileSize / 1024 / 1024).toFixed(1) })),
+        expiring: expiringFiles.map(f => ({ id: f.id, expiresAt: f.expiresAt })),
+    };
+}
+```
+
+### Pattern 9 — Replace File Content on Update
+
+Re-upload a document to replace its content while preserving the storage ID and linked records:
+
+```javascript
+async function replaceDocument(api, storageId, newBuffer, newFileName) {
+    // Fetch current metadata to preserve context
+    const current = await api.storage.getFileInfo(storageId);
+
+    // Replace file content — storageId stays the same, linked records unchanged
+    const updated = await api.storage.updateFile(storageId, {
+        file: newBuffer,
+        fileName: newFileName || current.fileName,
+        classification: current.classification,
+        folder: current.folder,
+    });
+
+    console.log(`Replaced: ${storageId}`);
+    console.log(`Old size: ${(current.fileSize / 1024).toFixed(1)} KB`);
+    console.log(`New size: ${(updated.fileSize / 1024).toFixed(1)} KB`);
+
+    return updated;
+}
+```
+
+### Pattern 10 — Profile Image Upload with Resize Hint
+
+Upload a user profile image, store the storage ID on their contact record, and serve via a permanent URL:
+
+```javascript
+async function updateProfileImage(api, contactId, imageBuffer, originalFileName) {
+    // Delete old profile image if one exists
+    const contact = await api.objects.getById({
+        object: 'contacts',
+        id: contactId,
+    });
+
+    if (contact.profileImageStorageId) {
+        try {
+            await api.storage.deleteFile(contact.profileImageStorageId);
+        } catch (err) {
+            console.warn('Could not delete old profile image:', err.message);
+        }
+    }
+
+    // Upload new profile image
+    const ext = originalFileName.split('.').pop().toLowerCase();
+    const result = await api.storage.upload({
+        file: imageBuffer,
+        fileName: `profile-${contactId}.${ext}`,
+        classification: 'images',
+        folder: 'profiles',
+        isPublic: true,    // profile images are public
+        relatedId: contactId,
+    });
+
+    const file = result.uploaded[0];
+    if (!file) throw new Error('Profile image upload failed');
+
+    // Update contact record with new image reference
+    await api.objects.update({
+        object: 'contacts',
+        where: { id: contactId },
+        update: {
+            profileImageStorageId: file.id,
+            profileImageUrl: file.url,
+        },
+    });
+
+    console.log(`Profile image updated for contact ${contactId}: ${file.url}`);
+    return { storageId: file.id, url: file.url };
+}
