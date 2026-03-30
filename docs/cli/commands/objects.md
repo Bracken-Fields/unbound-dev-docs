@@ -140,3 +140,164 @@ unbound uoql "SELECT * FROM tasks WHERE assignee IS NOT NULL LIMIT 5" --expand
 ```bash
 unbound uoql "SELECT name, phone FROM contacts WHERE phone IS NOT NULL" --json | jq '.[] | .phone'
 ```
+
+---
+
+## Scripting Patterns
+
+### Pattern 1 — Explore all object types on a namespace
+
+Get a quick overview of what objects exist and how many records each contains:
+
+```bash
+#!/bin/bash
+
+echo "=== Object Inventory ==="
+
+unbound objects list --json | jq -r '.[].name' | while read -r obj; do
+    COUNT=$(unbound uoql "SELECT COUNT(*) as c FROM $obj" --json 2>/dev/null | jq -r '.[0].c // "?"')
+    printf "  %-30s %s records\n" "$obj" "$COUNT"
+done
+```
+
+### Pattern 2 — Describe all object schemas and export to file
+
+Document your full data model for onboarding or compliance:
+
+```bash
+#!/bin/bash
+
+OUTPUT="schema-$(date +%Y%m%d).json"
+SCHEMAS=()
+
+unbound objects list --json | jq -r '.[].name' | while read -r obj; do
+    echo "Describing $obj..."
+    schema=$(unbound objects describe "$obj" --json)
+    echo "$schema" | jq --arg name "$obj" '{object: $name, fields: .}' >> "$OUTPUT.tmp"
+done
+
+# Combine into single JSON array
+jq -s '.' "$OUTPUT.tmp" > "$OUTPUT"
+rm "$OUTPUT.tmp"
+
+echo "Schema exported: $OUTPUT"
+```
+
+### Pattern 3 — Full table export with pagination
+
+Export every record from a large object type to a JSON file:
+
+```bash
+#!/bin/bash
+
+OBJECT="contacts"
+OUTPUT="${OBJECT}-full-export-$(date +%Y%m%d).json"
+LIMIT=500
+OFFSET=0
+TOTAL=0
+
+echo "[]" > "$OUTPUT"
+
+while true; do
+    BATCH=$(unbound uoql \
+        "SELECT * FROM $OBJECT ORDER BY createdAt ASC LIMIT $LIMIT OFFSET $OFFSET" \
+        --json)
+
+    COUNT=$(echo "$BATCH" | jq 'length')
+    [ "$COUNT" -eq 0 ] && break
+
+    # Merge batch into output file
+    jq -s '.[0] + .[1]' "$OUTPUT" <(echo "$BATCH") > "$OUTPUT.tmp" && mv "$OUTPUT.tmp" "$OUTPUT"
+
+    TOTAL=$((TOTAL + COUNT))
+    echo "  Exported $TOTAL records..."
+    OFFSET=$((OFFSET + LIMIT))
+    [ "$COUNT" -lt "$LIMIT" ] && break
+done
+
+echo "Export complete: $OUTPUT ($TOTAL records)"
+```
+
+### Pattern 4 — Cross-object report: open tasks per contact
+
+Build a relational report joining contacts and tasks:
+
+```bash
+#!/bin/bash
+
+echo "=== Open Tasks Per Contact (Top 20) ==="
+
+unbound uoql "
+    SELECT c.name, c.email, COUNT(t.id) as openTasks
+    FROM contacts c
+    JOIN tasks t ON t.contactId = c.id
+    WHERE t.status = 'open'
+    GROUP BY c.id, c.name, c.email
+    ORDER BY openTasks DESC
+    LIMIT 20
+" --json | jq -r '.[] | "\(.openTasks)\t\(.name)\t\(.email // "—")"' | \
+    column -t -s $'\t'
+```
+
+### Pattern 5 — Stale data cleanup report
+
+Find records that haven't been updated in 90 days and flag them:
+
+```bash
+#!/bin/bash
+
+DAYS=90
+CUTOFF=$(date -v-${DAYS}d +%Y-%m-%d 2>/dev/null || date -d "${DAYS} days ago" +%Y-%m-%d)
+
+for OBJ in contacts leads opportunities; do
+    COUNT=$(unbound uoql \
+        "SELECT COUNT(*) as c FROM $OBJ WHERE updatedAt < '$CUTOFF'" \
+        --json 2>/dev/null | jq -r '.[0].c // 0')
+
+    if [ "$COUNT" -gt 0 ]; then
+        echo "⚠ $OBJ: $COUNT records not updated in ${DAYS}+ days"
+
+        unbound uoql \
+            "SELECT id, name, updatedAt FROM $OBJ WHERE updatedAt < '$CUTOFF' LIMIT 5" \
+            --json | jq -r '.[] | "    \(.id)  \(.name // "unnamed")  (last: \(.updatedAt))"'
+    else
+        echo "✓ $OBJ: all records updated within ${DAYS} days"
+    fi
+done
+```
+
+### Pattern 6 — Validate required fields across records
+
+Audit records missing required fields and output a CSV for remediation:
+
+```bash
+#!/bin/bash
+
+OBJECT="contacts"
+REQUIRED_FIELDS=("name" "email" "phone")
+OUTPUT="missing-fields-$(date +%Y%m%d).csv"
+
+echo "id,name,missingFields" > "$OUTPUT"
+
+unbound uoql \
+    "SELECT id, name, email, phone FROM $OBJECT LIMIT 5000" \
+    --json | jq -c '.[]' | \
+while IFS= read -r record; do
+    id=$(echo "$record" | jq -r '.id')
+    name=$(echo "$record" | jq -r '.name // ""')
+    missing=()
+
+    for field in "${REQUIRED_FIELDS[@]}"; do
+        val=$(echo "$record" | jq -r --arg f "$field" '.[$f] // ""')
+        [ -z "$val" ] && missing+=("$field")
+    done
+
+    if [ "${#missing[@]}" -gt 0 ]; then
+        missing_str=$(IFS=';'; echo "${missing[*]}")
+        echo "\"$id\",\"$name\",\"$missing_str\"" >> "$OUTPUT"
+    fi
+done
+
+ROWS=$(($(wc -l < "$OUTPUT") - 1))
+echo "Audit complete: $ROWS records with missing fields → $OUTPUT"
+```
