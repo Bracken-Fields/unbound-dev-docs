@@ -572,6 +572,421 @@ socket.on('engagementMetrics:updated', (event) => {
 
 ---
 
+### `video` Channel
+
+Subscribe to real-time events in video meeting rooms: participant join/leave, media state changes, recording updates, and chat activity.
+
+**Available filters**
+
+| Filter | Type | Description |
+|---|---|---|
+| `roomId` | string | Narrow to a single room's events |
+| `participantId` | string | Only events for a specific participant |
+
+**Event payloads**
+
+```javascript
+// video:participant:joined — participant entered the room
+socket.on('video:participant:joined', (event) => {
+    // {
+    //     roomId: "room-xyz789",
+    //     participantId: "p-abc123",
+    //     name: "Alice Smith",
+    //     email: "alice@example.com",
+    //     role: "host" | "participant",
+    //     joinedAt: "2026-03-27T14:02:30Z"
+    // }
+    addParticipantToGrid(event);
+});
+
+// video:participant:left — participant disconnected
+socket.on('video:participant:left', (event) => {
+    // {
+    //     roomId: "room-xyz789",
+    //     participantId: "p-abc123",
+    //     leftAt: "2026-03-27T14:45:00Z",
+    //     duration: 2550      // seconds in room
+    // }
+    removeParticipantFromGrid(event.participantId);
+});
+
+// video:participant:updated — role, mute state, etc.
+socket.on('video:participant:updated', (event) => {
+    // {
+    //     roomId: "room-xyz789",
+    //     participantId: "p-abc123",
+    //     changes: {
+    //         role: "host",                // if role changed
+    //         isCameraMuted: true,         // if camera state changed
+    //         isMicrophoneMuted: false,    // if mic state changed
+    //     },
+    //     updatedAt: "2026-03-27T14:10:00Z"
+    // }
+    updateParticipantUI(event.participantId, event.changes);
+});
+
+// video:room:recording:started
+socket.on('video:room:recording:started', (event) => {
+    // {
+    //     roomId: "room-xyz789",
+    //     startedAt: "2026-03-27T14:03:00Z",
+    //     startedBy: "p-abc123"
+    // }
+    showRecordingIndicator();
+});
+
+// video:room:recording:stopped
+socket.on('video:room:recording:stopped', (event) => {
+    // {
+    //     roomId: "room-xyz789",
+    //     stoppedAt: "2026-03-27T14:45:00Z",
+    //     duration: 2520      // seconds of recording
+    // }
+    hideRecordingIndicator();
+});
+
+// video:room:closed — host ended the meeting for all
+socket.on('video:room:closed', (event) => {
+    // {
+    //     roomId: "room-xyz789",
+    //     closedAt: "2026-03-27T14:45:00Z",
+    //     closedBy: "p-abc123"
+    // }
+    redirectToMeetingEndPage();
+});
+
+// video:chat:message:created — new in-meeting chat message
+socket.on('video:chat:message:created', (event) => {
+    // {
+    //     roomId: "room-xyz789",
+    //     messageId: "msg-abc123",
+    //     participantId: "p-abc123",
+    //     participantName: "Alice Smith",
+    //     content: [...],    // TipTap JSON
+    //     createdAt: "2026-03-27T14:20:00Z"
+    // }
+    appendChatMessage(event);
+});
+
+// video:chat:message:deleted
+socket.on('video:chat:message:deleted', (event) => {
+    // {
+    //     roomId: "room-xyz789",
+    //     messageId: "msg-abc123",
+    //     deletedAt: "2026-03-27T14:21:00Z"
+    // }
+    removeChatMessage(event.messageId);
+});
+```
+
+---
+
+## TypeScript Interfaces
+
+Use these interfaces when building typed applications with the subscriptions API.
+
+```typescript
+// Connection result from getConnection()
+interface SocketConnection {
+    sessionId: string;
+    endpoint: string;
+}
+
+// Subscription result from socket.create()
+interface SocketSubscription {
+    id: string;
+    sessionId: string;
+    channel: SubscriptionChannel;
+    filters?: Record<string, string | string[]>;
+    createdAt: string;
+}
+
+type SubscriptionChannel =
+    | 'engagements'
+    | 'voice'
+    | 'messages'
+    | 'video'
+    | 'taskRouter'
+    | 'ai.transcripts'
+    | 'engagementMetrics';
+
+// ─── Engagement events ────────────────────────────────────────────────────────
+interface EngagementContact {
+    id: string;
+    name: string;
+    phone?: string;
+    email?: string;
+}
+
+interface EngagementCreatedEvent {
+    id: string;
+    status: 'new';
+    channel: 'voice' | 'sms' | 'email' | 'chat';
+    queueId: string;
+    assignedUserId: string | null;
+    createdAt: string;
+    contact: EngagementContact;
+}
+
+interface EngagementUpdatedEvent {
+    id: string;
+    status: 'new' | 'working' | 'closed';
+    assignedUserId: string | null;
+    updatedAt: string;
+}
+
+interface EngagementClosedEvent {
+    id: string;
+    closedAt: string;
+    disposition?: string;
+}
+
+// ─── Voice events ─────────────────────────────────────────────────────────────
+interface CallRingingEvent {
+    cdrId: string;
+    from: string;
+    to: string;
+    direction: 'inbound' | 'outbound';
+    timestamp: string;
+}
+
+interface CallAnsweredEvent {
+    cdrId: string;
+    answeredAt: string;
+    userId: string;
+}
+
+interface CallHoldEvent {
+    cdrId: string;
+    onHold: boolean;
+    timestamp: string;
+}
+
+interface CallEndedEvent {
+    cdrId: string;
+    duration: number;            // seconds
+    endedAt: string;
+    disposition: string;
+}
+
+interface CallTransferredEvent {
+    cdrId: string;
+    fromUserId: string;
+    toUserId?: string;
+    toQueue?: string;
+}
+
+// ─── Message events ───────────────────────────────────────────────────────────
+interface MessageReceivedEvent {
+    id: string;
+    channel: 'sms' | 'email';
+    direction: 'inbound';
+    from: string;
+    to: string;
+    body: string;
+    mediaUrl?: string;
+    receivedAt: string;
+}
+
+interface MessageSentEvent {
+    id: string;
+    channel: 'sms' | 'email';
+    to: string;
+    status: 'delivered' | 'sent';
+    sentAt: string;
+}
+
+interface MessageFailedEvent {
+    id: string;
+    channel: 'sms' | 'email';
+    to: string;
+    error: string;
+    failedAt: string;
+}
+
+// ─── Task Router events ───────────────────────────────────────────────────────
+type TaskStatus = 'pending' | 'assigned' | 'connected' | 'hold' | 'wrapUp' | 'completed' | 'rejected';
+type WorkerStatus = 'available' | 'busy' | 'offline';
+
+interface TaskAssignedEvent {
+    taskId: string;
+    workerId: string;
+    userId: string;
+    queueId: string;
+    taskType: string;
+    priority: number;
+    subject: string;
+    assignedAt: string;
+}
+
+interface TaskStatusChangedEvent {
+    taskId: string;
+    status: TaskStatus;
+    previousStatus: TaskStatus;
+    workerId: string;
+    queueId?: string;
+    timestamp: string;
+}
+
+interface WorkerStatusChangedEvent {
+    workerId: string;
+    userId: string;
+    status: WorkerStatus;
+    timestamp: string;
+}
+
+// ─── AI Transcript events ─────────────────────────────────────────────────────
+interface TranscriptPartialEvent {
+    cdrId: string;
+    speaker: 'agent' | 'caller';
+    text: string;
+    timestamp: string;
+}
+
+interface TranscriptFinalEvent {
+    cdrId: string;
+    speaker: 'agent' | 'caller';
+    text: string;
+    confidence: number;
+    startTime: number;    // seconds from call start
+    endTime: number;
+    timestamp: string;
+}
+
+// ─── Engagement Metrics events ────────────────────────────────────────────────
+interface MetricsSnapshot {
+    tasksWaiting: number;
+    tasksConnected: number;
+    avgWaitTime: number;
+    agentsAvailable: number;
+}
+
+interface EngagementMetricsUpdatedEvent {
+    queueId: string;
+    period: '1min' | '5min' | '15min';
+    metrics: MetricsSnapshot;
+    updatedAt: string;
+}
+
+// ─── Video events ─────────────────────────────────────────────────────────────
+type VideoParticipantRole = 'host' | 'participant';
+
+interface VideoParticipantJoinedEvent {
+    roomId: string;
+    participantId: string;
+    name: string;
+    email?: string;
+    role: VideoParticipantRole;
+    joinedAt: string;
+}
+
+interface VideoParticipantLeftEvent {
+    roomId: string;
+    participantId: string;
+    leftAt: string;
+    duration: number;    // seconds
+}
+
+interface VideoParticipantUpdatedEvent {
+    roomId: string;
+    participantId: string;
+    changes: {
+        role?: VideoParticipantRole;
+        isCameraMuted?: boolean;
+        isMicrophoneMuted?: boolean;
+    };
+    updatedAt: string;
+}
+
+interface VideoRoomClosedEvent {
+    roomId: string;
+    closedAt: string;
+    closedBy: string;    // participantId of host who closed
+}
+
+interface VideoChatMessageCreatedEvent {
+    roomId: string;
+    messageId: string;
+    participantId: string;
+    participantName: string;
+    content: Array<Record<string, unknown>>;    // TipTap JSON
+    createdAt: string;
+}
+```
+
+---
+
+## Error Handling
+
+### Connection Errors
+
+Socket.io surfaces connection failures as `connect_error` events. Common causes:
+
+| Error | Cause | Resolution |
+|---|---|---|
+| `401 Unauthorized` | Expired or missing auth token | Refresh token and reconnect |
+| `403 Forbidden` | Token lacks subscription scope | Check API key permissions |
+| `429 Too Many Requests` | Too many concurrent connections | Reduce concurrent connections; reuse sessions |
+| `transport error` | Network timeout or unstable connection | Socket.io auto-reconnects; also check for firewall blocking WebSocket |
+
+```javascript
+socket.on('connect_error', (err) => {
+    const message = err.message.toLowerCase();
+
+    if (message.includes('401') || message.includes('unauthorized')) {
+        // Token likely expired — refresh and reconnect
+        refreshTokenAndReconnect();
+    } else if (message.includes('429')) {
+        // Rate limited — back off before reconnecting
+        setTimeout(() => socket.connect(), 5000);
+    } else {
+        console.error('Socket connection error:', err.message);
+    }
+});
+```
+
+### Subscription Errors
+
+`socket.create()` can fail if a channel name is invalid or filters reference a non-existent resource. Always wrap subscription calls:
+
+```javascript
+async function safeSubscribe(sessionId, channelConfig) {
+    try {
+        const sub = await api.subscriptions.socket.create(sessionId, channelConfig);
+        return sub;
+    } catch (err) {
+        if (err.status === 400) {
+            console.error('Invalid subscription params:', channelConfig);
+        } else if (err.status === 404) {
+            console.error('Queue/resource not found:', channelConfig.filters);
+        } else {
+            throw err;
+        }
+        return null;
+    }
+}
+```
+
+### Token Expiry and Reconnection
+
+Auth tokens expire while the socket is live. The connection drops with a `401`. The safe pattern is to refresh the token before expiry and reconnect proactively:
+
+```javascript
+function scheduleTokenRefresh(expiresAt) {
+    const refreshBuffer = 60 * 1000;   // refresh 60s before expiry
+    const delay = new Date(expiresAt).getTime() - Date.now() - refreshBuffer;
+
+    setTimeout(async () => {
+        const { token } = await refreshAuthToken();
+        // SDK picks up the new token automatically when you reconnect
+        socket.disconnect();
+        await connect();
+    }, Math.max(delay, 0));
+}
+```
+
+---
+
 ## `subscriptions.socket.delete(id, sessionId)`
 
 Unsubscribe from a specific subscription. The socket connection remains alive; only this channel subscription is removed.
@@ -921,6 +1336,340 @@ async function startSmsRouter(api, queueId) {
         } catch (err) {
             console.error('Failed to create task:', err.message);
         }
+    });
+
+    return socket;
+}
+```
+
+---
+
+---
+
+### Pattern 6 — Embedded Video Room with Live Participant Roster
+
+Build a real-time participant list for an embedded video UI:
+
+```javascript
+import { io } from 'socket.io-client';
+
+async function buildVideoRoomUI(api, roomId) {
+    const { sessionId, endpoint } = await api.subscriptions.socket.getConnection();
+    const socket = io(endpoint, { withCredentials: true });
+
+    // Keep local state of who's in the room
+    const participants = new Map();
+
+    socket.on('connect', async () => {
+        // Subscribe to this specific room's events
+        await api.subscriptions.socket.create(sessionId, {
+            channel: 'video',
+            filters: { roomId },
+        });
+
+        // Seed with current participants
+        const room = await api.video.describe(roomId, { includeParticipants: true });
+        for (const p of room.participants) {
+            participants.set(p.id, p);
+        }
+        renderParticipantRoster(participants);
+    });
+
+    socket.on('video:participant:joined', (event) => {
+        participants.set(event.participantId, {
+            id: event.participantId,
+            name: event.name,
+            email: event.email,
+            role: event.role,
+            isCameraMuted: false,
+            isMicrophoneMuted: false,
+        });
+        renderParticipantRoster(participants);
+        showToast(`${event.name} joined`);
+    });
+
+    socket.on('video:participant:left', (event) => {
+        const p = participants.get(event.participantId);
+        if (p) showToast(`${p.name} left`);
+        participants.delete(event.participantId);
+        renderParticipantRoster(participants);
+    });
+
+    socket.on('video:participant:updated', (event) => {
+        const p = participants.get(event.participantId);
+        if (p) {
+            Object.assign(p, event.changes);
+            participants.set(event.participantId, p);
+            renderParticipantRoster(participants);
+        }
+    });
+
+    socket.on('video:room:recording:started', () => {
+        document.getElementById('recording-dot').style.display = 'block';
+    });
+
+    socket.on('video:room:closed', () => {
+        socket.disconnect();
+        window.location.href = '/meeting-ended';
+    });
+
+    // Real-time chat
+    socket.on('video:chat:message:created', (event) => {
+        const textContent = event.content
+            .flatMap(n => n.content || [])
+            .filter(n => n.type === 'text')
+            .map(n => n.text)
+            .join('');
+        appendChatBubble(event.participantName, textContent, event.createdAt);
+    });
+
+    return { socket, participants };
+}
+```
+
+---
+
+### Pattern 7 — Typed Event Bus (TypeScript)
+
+Wrap the socket in a typed emitter for IDE autocompletion and compile-time safety:
+
+```typescript
+import { io, Socket } from 'socket.io-client';
+import type {
+    TaskAssignedEvent,
+    TaskStatusChangedEvent,
+    WorkerStatusChangedEvent,
+    CallRingingEvent,
+    CallEndedEvent,
+    EngagementCreatedEvent,
+    TranscriptFinalEvent,
+    EngagementMetricsUpdatedEvent,
+    VideoParticipantJoinedEvent,
+} from './unbound-types';
+
+type UnboundEvents = {
+    // Task Router
+    'taskRouter:task:assigned': (e: TaskAssignedEvent) => void;
+    'taskRouter:task:statusChanged': (e: TaskStatusChangedEvent) => void;
+    'taskRouter:worker:statusChanged': (e: WorkerStatusChangedEvent) => void;
+    // Voice
+    'voice:call:ringing': (e: CallRingingEvent) => void;
+    'voice:call:ended': (e: CallEndedEvent) => void;
+    // Engagements
+    'engagement:created': (e: EngagementCreatedEvent) => void;
+    // AI
+    'ai:transcript:final': (e: TranscriptFinalEvent) => void;
+    // Metrics
+    'engagementMetrics:updated': (e: EngagementMetricsUpdatedEvent) => void;
+    // Video
+    'video:participant:joined': (e: VideoParticipantJoinedEvent) => void;
+};
+
+class UnboundSocket {
+    private socket: Socket;
+    private sessionId: string;
+    private api: ReturnType<typeof createSDK>;
+
+    constructor(api: ReturnType<typeof createSDK>, socket: Socket, sessionId: string) {
+        this.api = api;
+        this.socket = socket;
+        this.sessionId = sessionId;
+    }
+
+    on<K extends keyof UnboundEvents>(event: K, handler: UnboundEvents[K]): this {
+        this.socket.on(event as string, handler as (...args: any[]) => void);
+        return this;
+    }
+
+    off<K extends keyof UnboundEvents>(event: K, handler: UnboundEvents[K]): this {
+        this.socket.off(event as string, handler as (...args: any[]) => void);
+        return this;
+    }
+
+    async subscribe(channel: string, filters?: Record<string, string>): Promise<string> {
+        const sub = await this.api.subscriptions.socket.create(
+            this.sessionId,
+            { channel, ...filters && { filters } },
+        );
+        return sub.id;
+    }
+
+    disconnect(): void {
+        this.socket.disconnect();
+    }
+}
+
+// Usage:
+const { sessionId, endpoint } = await api.subscriptions.socket.getConnection();
+const rawSocket = io(endpoint, { withCredentials: true });
+const ws = new UnboundSocket(api, rawSocket, sessionId);
+
+rawSocket.on('connect', async () => {
+    await ws.subscribe('taskRouter');
+    await ws.subscribe('voice');
+});
+
+ws.on('taskRouter:task:assigned', (event) => {
+    // Fully typed — event.taskId, event.queueId, etc.
+    console.log(`New task: ${event.taskId} in queue ${event.queueId}`);
+});
+
+ws.on('voice:call:ended', (event) => {
+    console.log(`Call ${event.cdrId} lasted ${event.duration}s`);
+});
+```
+
+---
+
+### Pattern 8 — Graceful Shutdown (Clean Up Subscriptions)
+
+Always clean up subscriptions on process exit or component unmount to avoid orphaned sessions:
+
+```javascript
+// React hook: subscribe on mount, clean up on unmount
+import { useEffect, useRef } from 'react';
+import { io } from 'socket.io-client';
+
+function useUnboundSocket(api, channels) {
+    const socketRef = useRef(null);
+    const sessionRef = useRef(null);
+    const subsRef = useRef([]);
+
+    useEffect(() => {
+        let mounted = true;
+
+        async function connect() {
+            const { sessionId, endpoint } = await api.subscriptions.socket.getConnection();
+            sessionRef.current = sessionId;
+
+            const socket = io(endpoint, { withCredentials: true });
+            socketRef.current = socket;
+
+            socket.on('connect', async () => {
+                if (!mounted) return;
+
+                for (const channel of channels) {
+                    const sub = await api.subscriptions.socket.create(sessionId, { channel });
+                    subsRef.current.push(sub.id);
+                }
+            });
+        }
+
+        connect().catch(console.error);
+
+        // Cleanup on unmount
+        return () => {
+            mounted = false;
+
+            const cleanup = async () => {
+                const sessionId = sessionRef.current;
+                if (sessionId) {
+                    // Delete all active subscriptions
+                    await Promise.allSettled(
+                        subsRef.current.map(id =>
+                            api.subscriptions.socket.delete(id, sessionId)
+                        )
+                    );
+                }
+                socketRef.current?.disconnect();
+            };
+
+            cleanup().catch(console.error);
+        };
+    }, []);
+
+    return socketRef;
+}
+
+// Usage in a component:
+function AgentDashboard({ api }) {
+    const socketRef = useUnboundSocket(api, ['taskRouter', 'voice', 'engagements']);
+
+    useEffect(() => {
+        const socket = socketRef.current;
+        if (!socket) return;
+
+        socket.on('taskRouter:task:assigned', (event) => {
+            console.log('Task:', event.taskId);
+        });
+    }, [socketRef]);
+}
+```
+
+---
+
+### Pattern 9 — Correlation: Link Voice Call to Transcript and Task
+
+Combine multiple channels to build a full picture of a single customer interaction:
+
+```javascript
+async function correlatedInteractionStream(api, taskId) {
+    const { sessionId, endpoint } = await api.subscriptions.socket.getConnection();
+    const socket = io(endpoint, { withCredentials: true });
+
+    let cdrId = null;
+    const interactionLog = [];
+
+    socket.on('connect', async () => {
+        // Subscribe broadly — filter in-memory by taskId/cdrId
+        await api.subscriptions.socket.create(sessionId, {
+            channel: 'taskRouter',
+        });
+
+        await api.subscriptions.socket.create(sessionId, {
+            channel: 'voice',
+        });
+
+        await api.subscriptions.socket.create(sessionId, {
+            channel: 'ai.transcripts',
+        });
+    });
+
+    // Capture the CDR ID when the task connects to a call
+    socket.on('taskRouter:task:statusChanged', (event) => {
+        if (event.taskId !== taskId) return;
+
+        interactionLog.push({
+            type: 'task_status',
+            status: event.status,
+            timestamp: event.timestamp,
+        });
+
+        if (event.status === 'completed') {
+            finalizeInteraction(interactionLog);
+        }
+    });
+
+    // Link voice events to this task
+    socket.on('voice:call:answered', (event) => {
+        // Store CDR for transcript correlation
+        cdrId = event.cdrId;
+        interactionLog.push({
+            type: 'call_answered',
+            cdrId: event.cdrId,
+            timestamp: event.answeredAt,
+        });
+    });
+
+    socket.on('voice:call:ended', (event) => {
+        if (event.cdrId !== cdrId) return;
+        interactionLog.push({
+            type: 'call_ended',
+            duration: event.duration,
+            timestamp: event.endedAt,
+        });
+    });
+
+    // Attach transcript segments
+    socket.on('ai:transcript:final', (event) => {
+        if (event.cdrId !== cdrId) return;
+        interactionLog.push({
+            type: 'transcript',
+            speaker: event.speaker,
+            text: event.text,
+            confidence: event.confidence,
+            startTime: event.startTime,
+        });
     });
 
     return socket;
