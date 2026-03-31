@@ -833,3 +833,528 @@ async function liveFloorView(queueIds) {
     };
 }
 ```
+
+---
+
+### Real-Time Metrics with WebSocket Subscriptions
+
+Poll is adequate for most dashboards, but Unbound's subscription system lets you push updates instantly when engagement state changes — zero-latency supervisor views.
+
+```javascript
+import SDK from '@unboundcx/sdk';
+
+const api = new SDK({ namespace: 'your-namespace' });
+await api.login.login('supervisor@example.com', 'password');
+
+// Step 1: Open a WebSocket session
+const session = await api.subscriptions.socket.getConnection();
+
+// Step 2: Subscribe to the engagements channel
+await api.subscriptions.socket.create(session.sessionId, {
+    channel: 'engagements',
+    queueIds: ['queue-sales', 'queue-support'],
+});
+
+// Step 3: Listen for events — refetch metrics on each update
+session.ws.on('message', async (raw) => {
+    const event = JSON.parse(raw);
+
+    if (event.channel === 'engagements') {
+        // Engagement state changed — refresh metrics for the affected queue
+        const queueId = event.data?.queueId;
+        const metrics = await api.engagementMetrics.getByQueue({
+            queueIds: queueId ? [queueId] : [],
+        });
+
+        const q = metrics.byQueue.find((r) => r.queueId === queueId);
+        if (q) {
+            console.log(`[${q.queueName}] ${q.new} waiting | ${q.working} active | ${q.wrapUp} wrapUp`);
+        }
+    }
+});
+
+// Step 4: Clean up when done
+process.on('SIGINT', async () => {
+    await api.subscriptions.socket.delete(session.sessionId);
+    process.exit(0);
+});
+```
+
+---
+
+### Combine Real-Time + Historical: UOQL Trending + Live Metrics
+
+Show current queue depth alongside a 7-day trend line. The live snapshot comes from `engagementMetrics`; the trend data comes from UOQL.
+
+```javascript
+async function buildQueueTrendDashboard(queueId) {
+    // Parallel fetch: live + historical
+    const [live, trend] = await Promise.all([
+        api.engagementMetrics.getDashboardMetrics({ queueIds: [queueId] }),
+        api.objects.uoql({
+            query: `
+                SELECT
+                    DATE(createdAt)  AS day,
+                    COUNT(*)         AS total,
+                    AVG(duration)    AS avg_handle_time,
+                    SUM(CASE WHEN status = 'abandoned' THEN 1 ELSE 0 END) AS abandoned
+                FROM engagements
+                WHERE queueId = '${queueId}'
+                  AND createdAt >= NOW() - INTERVAL '7 days'
+                GROUP BY DATE(createdAt)
+                ORDER BY day ASC
+            `,
+            expandDetails: false,
+        }),
+    ]);
+
+    // Live snapshot
+    const queueLive = live.byQueue.find((q) => q.queueId === queueId) ?? {};
+    const perfLive  = live.queuePerformance.find((q) => q.queueId === queueId) ?? {};
+
+    return {
+        live: {
+            waiting:      queueLive.new     ?? 0,
+            active:       queueLive.working ?? 0,
+            wrapUp:       queueLive.wrapUp  ?? 0,
+            serviceLevel: perfLive.serviceLevel ?? null,
+            avgWait:      perfLive.avgWaitTime  ?? null,
+        },
+        trend: trend.results.map((row) => ({
+            day:           row.day,
+            total:         row.total,
+            avgHandleTime: Math.round(row.avg_handle_time),
+            abandonRate:   row.total > 0
+                ? (row.abandoned / row.total * 100).toFixed(1) + '%'
+                : '0.0%',
+        })),
+    };
+}
+
+const dash = await buildQueueTrendDashboard('queue-sales');
+console.log('Live:', dash.live);
+console.log('7-day trend:');
+dash.trend.forEach((d) => console.log(`  ${d.day}: ${d.total} engagements, ${d.abandonRate} abandon`));
+```
+
+---
+
+### Auto-Priority Escalation Based on Queue Depth
+
+Automatically raise task priority when the queue is overloaded — protecting SLAs without manual intervention.
+
+```javascript
+const ESCALATION_THRESHOLDS = {
+    // If this many tasks are waiting AND service level is below target → escalate
+    waiting: 10,
+    serviceLevel: 0.80,
+    priorityBoost: 5,   // how much to add to existing task priority
+};
+
+async function autoEscalateIfOverloaded(queueId, pendingTaskIds) {
+    const perf = await api.engagementMetrics.getQueuePerformance({ queueIds: [queueId] });
+    const q    = perf.queuePerformance.find((r) => r.queueId === queueId);
+
+    if (!q) {
+        console.warn(`Queue ${queueId} not found in performance data`);
+        return;
+    }
+
+    const isOverloaded = q.avgWaitTime > 90
+        || q.serviceLevel < ESCALATION_THRESHOLDS.serviceLevel;
+
+    const isCrowded = (q.totalHandled > 0)
+        && (pendingTaskIds.length >= ESCALATION_THRESHOLDS.waiting);
+
+    if (isOverloaded || isCrowded) {
+        console.log(`Queue ${q.queueName} overloaded — escalating ${pendingTaskIds.length} tasks`);
+
+        // Boost priority on all waiting tasks in parallel (batch of 5 at a time)
+        const BATCH = 5;
+        for (let i = 0; i < pendingTaskIds.length; i += BATCH) {
+            const batch = pendingTaskIds.slice(i, i + BATCH);
+            await Promise.all(
+                batch.map((taskId) =>
+                    api.taskRouter.task.changePriority({
+                        taskId,
+                        action: 'increase',
+                        value: ESCALATION_THRESHOLDS.priorityBoost,
+                    }),
+                ),
+            );
+        }
+
+        return {
+            escalated: true,
+            queueName: q.queueName,
+            avgWaitTime: q.avgWaitTime,
+            serviceLevel: q.serviceLevel,
+            tasksEscalated: pendingTaskIds.length,
+        };
+    }
+
+    return { escalated: false };
+}
+
+// Call from your task management loop
+const result = await autoEscalateIfOverloaded('queue-support', waitingTaskIds);
+if (result.escalated) {
+    console.log(`Escalated ${result.tasksEscalated} tasks. SL: ${(result.serviceLevel * 100).toFixed(1)}%`);
+}
+```
+
+---
+
+### Shift Handoff Report
+
+Generate a summary for an outgoing supervisor — total handled, top agents, and queue health at shift end.
+
+```javascript
+async function generateShiftHandoffReport(queueIds, shiftLabel = 'Shift') {
+    const [dashboard, history] = await Promise.all([
+        api.engagementMetrics.getDashboardMetrics({ queueIds }),
+        api.objects.uoql({
+            query: `
+                SELECT userId, COUNT(*) AS handled, AVG(duration) AS avg_duration
+                FROM engagements
+                WHERE queueId IN (${queueIds.map((q) => `'${q}'`).join(',')})
+                  AND status = 'completed'
+                  AND createdAt >= NOW() - INTERVAL '8 hours'
+                GROUP BY userId
+                ORDER BY handled DESC
+                LIMIT 10
+            `,
+            expandDetails: true,   // resolve userId → user object
+        }),
+    ]);
+
+    const topAgents = history.results.map((r, i) => ({
+        rank: i + 1,
+        name: r.userId?.firstName
+            ? `${r.userId.firstName} ${r.userId.lastName}`
+            : r.userId,
+        handled:        r.handled,
+        avgHandleTime:  `${Math.round(r.avg_duration)}s`,
+    }));
+
+    const queueSummaries = dashboard.queuePerformance.map((q) => ({
+        queue:        q.queueName,
+        serviceLevel: (q.serviceLevel * 100).toFixed(1) + '%',
+        avgWait:      q.avgWaitTime + 's',
+        abandonRate:  (q.abandonRate * 100).toFixed(1) + '%',
+        totalHandled: q.totalHandled,
+    }));
+
+    const report = {
+        label:         shiftLabel,
+        generatedAt:   new Date().toISOString(),
+        overallCounts: dashboard.summary,
+        topAgents,
+        queueSummaries,
+        handoffAlerts: queueSummaries.filter((q) =>
+            parseFloat(q.serviceLevel) < 80 || parseFloat(q.avgWait) > 120,
+        ),
+    };
+
+    console.log(`\n📋 ${shiftLabel} Handoff Report`);
+    console.log(`Generated: ${report.generatedAt}`);
+    console.log(`\nOverall: ${report.overallCounts.working} active, ${report.overallCounts.new} waiting`);
+    console.log('\nTop 5 Agents:');
+    topAgents.slice(0, 5).forEach((a) => {
+        console.log(`  #${a.rank} ${a.name}: ${a.handled} handled, avg ${a.avgHandleTime}`);
+    });
+    if (report.handoffAlerts.length > 0) {
+        console.warn('\n⚠️  Queues needing attention:');
+        report.handoffAlerts.forEach((q) => {
+            console.warn(`  ${q.queue}: SL ${q.serviceLevel}, avg wait ${q.avgWait}`);
+        });
+    }
+
+    return report;
+}
+
+const report = await generateShiftHandoffReport(['queue-sales', 'queue-support'], 'Day Shift');
+```
+
+---
+
+### SLA Compliance Tracker with Daily Rollup
+
+Store daily SLA metrics in an Unbound object for historical tracking and trend analysis.
+
+```javascript
+async function recordDailySlaCompliance(queueIds, date = new Date()) {
+    const dateStr = date.toISOString().split('T')[0];
+
+    // Fetch today's queue performance
+    const perf = await api.engagementMetrics.getQueuePerformance({ queueIds });
+
+    const records = perf.queuePerformance.map((q) => ({
+        date:         dateStr,
+        queueId:      q.queueId,
+        queueName:    q.queueName,
+        serviceLevel: q.serviceLevel,
+        avgWaitTime:  q.avgWaitTime,
+        avgHandleTime: q.avgHandleTime,
+        abandonRate:  q.abandonRate,
+        totalHandled: q.totalHandled,
+        slaMet:       q.serviceLevel >= 0.80,
+    }));
+
+    // Upsert each record into a custom "queueSlaLog" object
+    // (assumes you've created this object schema via objects.createObject)
+    await Promise.all(
+        records.map((rec) =>
+            api.objects.update({
+                object: 'queueSlaLog',
+                where:  { date: rec.date, queueId: rec.queueId },
+                update: rec,
+            }).catch(() =>
+                // If no match to update, create instead
+                api.objects.create({ object: 'queueSlaLog', ...rec }),
+            ),
+        ),
+    );
+
+    const slaFailures = records.filter((r) => !r.slaMet);
+    if (slaFailures.length > 0) {
+        console.warn(`[${dateStr}] SLA missed on ${slaFailures.length} queue(s):`);
+        slaFailures.forEach((r) => {
+            console.warn(`  ${r.queueName}: ${(r.serviceLevel * 100).toFixed(1)}% (target: 80%)`);
+        });
+    } else {
+        console.log(`[${dateStr}] All queues met SLA. ✅`);
+    }
+
+    return records;
+}
+
+// Run this daily via a cron job or at end-of-day
+await recordDailySlaCompliance(['queue-sales', 'queue-support']);
+```
+
+---
+
+### Concurrent Engagement Cap Enforcement
+
+Prevent any single agent from handling more concurrent engagements than your quality threshold allows.
+
+```javascript
+const MAX_CONCURRENT = 3;
+
+async function enforceConcurrencyLimits(queueIds) {
+    const data = await api.engagementMetrics.getAgentPerformance({ queueIds });
+
+    const overloaded = data.agentPerformance.filter(
+        (a) => a.status === 'working' && a.concurrentEngagements > MAX_CONCURRENT,
+    );
+
+    if (overloaded.length === 0) {
+        console.log('All agents within concurrency limits.');
+        return [];
+    }
+
+    console.warn(`${overloaded.length} agent(s) exceeding concurrency limit of ${MAX_CONCURRENT}:`);
+    overloaded.forEach((a) => {
+        console.warn(`  ${a.userName}: ${a.concurrentEngagements} concurrent (userId: ${a.userId})`);
+    });
+
+    // Optional: set these workers offline to stop new assignments
+    // (un-comment to enforce hard cap)
+    // await Promise.all(
+    //     overloaded.map((a) =>
+    //         api.taskRouter.worker.setOffline({ userId: a.userId }),
+    //     ),
+    // );
+
+    return overloaded;
+}
+
+const flagged = await enforceConcurrencyLimits(['queue-chat', 'queue-email']);
+```
+
+---
+
+### Multi-Queue Comparison Report (HTML Table)
+
+Generate a formatted HTML comparison table — useful for embedding in a daily email digest or internal dashboard.
+
+```javascript
+async function buildQueueComparisonHtml(queueIds) {
+    const perf = await api.engagementMetrics.getDashboardMetrics({ queueIds });
+
+    const rows = perf.queuePerformance.map((q) => {
+        const slColor = q.serviceLevel >= 0.90 ? '#22c55e'
+                      : q.serviceLevel >= 0.80 ? '#f59e0b'
+                      : '#ef4444';
+        const slPct   = (q.serviceLevel * 100).toFixed(1);
+
+        return `
+            <tr>
+                <td>${q.queueName}</td>
+                <td style="color:${slColor};font-weight:bold">${slPct}%</td>
+                <td>${q.avgWaitTime}s</td>
+                <td>${q.avgHandleTime}s</td>
+                <td>${(q.abandonRate * 100).toFixed(1)}%</td>
+                <td>${q.totalHandled}</td>
+            </tr>
+        `;
+    }).join('');
+
+    const html = `
+        <table border="1" cellpadding="8" style="border-collapse:collapse;font-family:sans-serif">
+            <thead style="background:#f3f4f6">
+                <tr>
+                    <th>Queue</th>
+                    <th>Service Level</th>
+                    <th>Avg Wait</th>
+                    <th>Avg Handle</th>
+                    <th>Abandon Rate</th>
+                    <th>Total Handled</th>
+                </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>
+    `;
+
+    return html;
+}
+
+const html = await buildQueueComparisonHtml(['queue-sales', 'queue-support', 'queue-billing']);
+// Embed in an email via api.messaging.email.send({ ... content_html: html ... })
+```
+
+---
+
+## TypeScript Interfaces
+
+```typescript
+interface EngagementMetricsSummary {
+    /** Total engagements across all queues */
+    total: number;
+    /** Waiting — not yet assigned to a worker */
+    new: number;
+    /** Actively being handled by a worker */
+    working: number;
+    /** In after-call / post-chat wrap-up */
+    wrapUp: number;
+    /** Completed in the current window */
+    completed: number;
+}
+
+interface QueueMetrics {
+    queueId: string;
+    queueName: string;
+    new: number;
+    working: number;
+    wrapUp: number;
+    completed: number;
+    total: number;
+}
+
+interface QueuePerformance {
+    queueId: string;
+    queueName: string;
+    /** Average time (seconds) a worker spends on an engagement */
+    avgHandleTime: number;
+    /** Average wait (seconds) before first assignment */
+    avgWaitTime: number;
+    /** Average wrap-up time (seconds) after engagement ends */
+    avgWrapUpTime: number;
+    /** Fraction (0–1) of engagements abandoned before assignment */
+    abandonRate: number;
+    /** Fraction (0–1) handled within the configured SLA threshold */
+    serviceLevel: number;
+    totalHandled: number;
+    totalAbandoned: number;
+}
+
+interface AgentPerformance {
+    userId: string;
+    userName: string;
+    queueId: string;
+    /** Current worker status */
+    status: 'available' | 'working' | 'wrapUp' | 'offline';
+    totalHandled: number;
+    /** Average handle time in seconds */
+    avgHandleTime: number;
+    /** Average wrap-up time in seconds */
+    avgWrapUpTime: number;
+    /** Fraction (0–1) of logged-in time spent on engagements */
+    utilization: number;
+    concurrentEngagements: number;
+}
+
+interface EngagementMetricsResponse {
+    summary?: EngagementMetricsSummary;
+    byQueue?: QueueMetrics[];
+    queuePerformance?: QueuePerformance[];
+    agentPerformance?: AgentPerformance[];
+}
+
+interface GetMetricsOptions {
+    queueIds?: string[];
+    statuses?: ('new' | 'working' | 'wrapUp' | 'completed')[];
+    userIds?: string[];
+    includeSummary?: boolean;
+    includeByQueue?: boolean;
+    includeQueuePerformance?: boolean;
+    includeAgentPerformance?: boolean;
+}
+```
+
+---
+
+## Error Codes
+
+| HTTP | Code | Meaning |
+|---|---|---|
+| `400` | `INVALID_QUEUE_ID` | One or more `queueIds` values are not valid IDs |
+| `400` | `INVALID_STATUS` | A value in `statuses` is not one of `new`, `working`, `wrapUp`, `completed` |
+| `401` | `UNAUTHORIZED` | Token missing, expired, or revoked — call `login.login()` again |
+| `403` | `FORBIDDEN` | Authenticated user lacks permission to view metrics for the requested queues |
+| `404` | `QUEUE_NOT_FOUND` | A requested queue ID does not exist in this namespace |
+| `429` | `RATE_LIMITED` | Too many metrics requests — back off and retry after `Retry-After` seconds |
+| `500` | `METRICS_UNAVAILABLE` | Internal aggregation error — safe to retry after a short delay |
+
+### Error Handling Example
+
+```javascript
+try {
+    const data = await api.engagementMetrics.getDashboardMetrics({
+        queueIds: ['queue-sales'],
+    });
+    return data;
+} catch (err) {
+    if (err.status === 401) {
+        await api.login.login(process.env.UNBOUND_USER, process.env.UNBOUND_PASS);
+        return api.engagementMetrics.getDashboardMetrics({ queueIds: ['queue-sales'] });
+    }
+    if (err.status === 429) {
+        const retryAfter = parseInt(err.headers?.['retry-after'] ?? '5', 10);
+        console.warn(`Rate limited. Retrying in ${retryAfter}s…`);
+        await new Promise((r) => setTimeout(r, retryAfter * 1000));
+        return api.engagementMetrics.getDashboardMetrics({ queueIds: ['queue-sales'] });
+    }
+    if (err.status === 500) {
+        console.error('Metrics unavailable, using cached data');
+        return null;
+    }
+    throw err;
+}
+```
+
+---
+
+## Method Quick Reference
+
+| Method | Include Flags | Use Case |
+|---|---|---|
+| `getMetrics(options)` | All configurable | Maximum flexibility — pick exactly what you need |
+| `getSummary(options)` | `summary` only | Overall totals: waiting / active / wrapUp |
+| `getByQueue(options)` | `byQueue` only | Per-queue status breakdown for a wall board |
+| `getQueuePerformance(options)` | `queuePerformance` only | SLA tracking, wait time, abandon rate |
+| `getAgentPerformance(options)` | `agentPerformance` only | Agent utilization, handle time, concurrent load |
+| `getDashboardMetrics(options)` | All four | Full supervisor dashboard in a single call |
+
+**Performance tip:** Always pass `queueIds` when you only need data for specific queues. Omitting it returns metrics for every queue in the namespace, which is slower and uses more bandwidth. Use the targeted convenience methods (`getSummary`, `getByQueue`, etc.) to avoid fetching metric sections you won't use.
