@@ -143,6 +143,7 @@ const sidebars: SidebarsConfig = {
         'guides/real-time-subscriptions',
         'guides/integrate-auth',
         'guides/agent-assist',
+        'guides/agent-softphone',
         'guides/outbound-campaign',
       ],
     },

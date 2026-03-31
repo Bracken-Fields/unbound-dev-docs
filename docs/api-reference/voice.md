@@ -2856,6 +2856,466 @@ curl -X POST "https://{namespace}.api.unbound.cx/voice/calls/call-9f3a2c1b/repla
 
 ---
 
+### Pattern 7 — Whisper coaching (agent hears coach, caller does not)
+
+A supervisor joins a live call in listen-only mode, then optionally whispers guidance to the agent without the customer hearing.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+// Called from supervisor's UI when they click "Coach" on a live call
+
+async function startWhisperCoach(supervisorApi, targetChannelId, supervisorPhone) {
+    // Step 1: Supervisor dials into the call as a third party
+    const supervisorCall = await supervisorApi.voice.call({
+        to: supervisorPhone,       // Supervisor's own device
+        from: process.env.UNBOUND_NUMBER,
+        app: [
+            { action: 'answer' },
+        ],
+    });
+
+    // Step 2: Conference the supervisor channel into the existing call
+    await supervisorApi.voice.conference([
+        supervisorCall.voiceChannelId,
+        targetChannelId,
+    ]);
+
+    // Step 3: Mute supervisor outbound toward the caller
+    // direction='out' mutes what flows *out* from this channel — caller cannot hear supervisor
+    await supervisorApi.voice.mute(supervisorCall.voiceChannelId, 'mute', 'out');
+
+    console.log(`Supervisor coaching ${targetChannelId} — caller cannot hear supervisor`);
+
+    return {
+        supervisorCallId: supervisorCall.id,
+        supervisorChannelId: supervisorCall.voiceChannelId,
+    };
+}
+
+// Later — supervisor decides to unmute (agent AND caller now hear them = full barge-in)
+async function supervisorUnmute(supervisorApi, supervisorChannelId) {
+    await supervisorApi.voice.unmute(supervisorChannelId, 'out');
+    console.log('Supervisor is now audible to both parties');
+}
+
+// Stop coaching: hang up the supervisor leg only
+async function stopCoaching(supervisorApi, supervisorCallId) {
+    await supervisorApi.voice.hangup(supervisorCallId);
+    console.log('Supervisor left — main call continues');
+}
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+const headers = {
+    'Authorization': 'Bearer {supervisor-token}',
+    'Content-Type': 'application/json',
+};
+const ns = 'https://{namespace}.api.unbound.cx';
+
+// Step 1: Supervisor dials in
+const dialRes = await fetch(`${ns}/voice/calls`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+        to: supervisorPhone,
+        from: process.env.UNBOUND_NUMBER,
+        app: [{ action: 'answer' }],
+    }),
+});
+const { id: supervisorCallId, voiceChannelId: supervisorChannelId } = await dialRes.json();
+
+// Step 2: Conference supervisor into the live call
+await fetch(`${ns}/voice/conference`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ channels: [supervisorChannelId, targetChannelId] }),
+});
+
+// Step 3: Mute supervisor toward the caller
+await fetch(`${ns}/voice/mute`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+        voiceChannelId: supervisorChannelId,
+        action: 'mute',
+        direction: 'out',
+    }),
+});
+```
+
+</TabItem>
+</Tabs>
+
+**Key concepts:**
+- `direction: 'out'` on `mute` means "silence what this channel sends to others." The caller cannot hear the supervisor, but the agent can via the conference bridge.
+- To escalate to full barge-in (all parties hear each other), call `voice.unmute(supervisorChannelId, 'out')`.
+- Hanging up `supervisorCallId` silently drops the supervisor without disrupting the main call.
+
+---
+
+### Pattern 8 — AI-assisted call disposition (transcription → extract → log to objects)
+
+Automatically transcribe a call, extract disposition data with AI, and write structured records back to CRM objects when the call ends.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+import express from 'express';
+import { createSDK } from '@unbound/sdk';
+
+const app = express();
+app.use(express.json());
+
+const api = createSDK({
+    namespace: process.env.UNBOUND_NS,
+    token: process.env.UNBOUND_TOKEN,
+});
+
+// In-flight transcription buffers keyed by callId
+const transcriptBuffers = new Map();
+
+app.post('/webhooks/voice', async (req, res) => {
+    const event = req.body;
+    res.sendStatus(200);  // ACK immediately — never let the webhook block
+
+    switch (event.type) {
+        case 'transcribe': {
+            const { callId, text, speaker } = event;
+            if (!transcriptBuffers.has(callId)) {
+                transcriptBuffers.set(callId, []);
+            }
+            transcriptBuffers.get(callId).push({
+                speaker,  // 'agent' | 'customer'
+                text,
+                ts: Date.now(),
+            });
+            break;
+        }
+
+        case 'hangup': {
+            const { callId, cdrId, engagementId } = event;
+            const segments = transcriptBuffers.get(callId) || [];
+            transcriptBuffers.delete(callId);
+
+            if (segments.length === 0) break;
+
+            // Build labelled transcript
+            const fullText = segments
+                .map(s => `${s.speaker === 'agent' ? 'Agent' : 'Customer'}: ${s.text}`)
+                .join('\n');
+
+            try {
+                // Run AI extractions in parallel
+                const [intentResult, summaryResult] = await Promise.all([
+                    api.ai.extract.intent({
+                        value: fullText,
+                        params: {
+                            intents: [
+                                'billing',
+                                'technical_support',
+                                'cancellation',
+                                'general_inquiry',
+                                'complaint',
+                            ],
+                        },
+                    }),
+                    api.ai.generative.chat({
+                        messages: [
+                            {
+                                role: 'user',
+                                content: [
+                                    'Summarize this support call in 2-3 sentences.',
+                                    'End with resolution status: resolved / unresolved / escalated.\n',
+                                    fullText,
+                                ].join('\n'),
+                            },
+                        ],
+                        maxTokens: 150,
+                    }),
+                ]);
+
+                // Write disposition record to CRM
+                await api.objects.create({
+                    object: 'call_dispositions',
+                    data: {
+                        cdrId,
+                        engagementId,
+                        callId,
+                        transcript: fullText,
+                        intent: intentResult?.intent || 'general_inquiry',
+                        summary: summaryResult?.message || '',
+                        dispositionedAt: new Date().toISOString(),
+                        agentTurns: segments.filter(s => s.speaker === 'agent').length,
+                        customerTurns: segments.filter(s => s.speaker !== 'agent').length,
+                    },
+                });
+
+                console.log(
+                    `Dispositioned call ${callId}: ${intentResult?.intent}`,
+                );
+            } catch (err) {
+                console.error(`Disposition failed for call ${callId}:`, err.message);
+            }
+            break;
+        }
+    }
+});
+
+// Enable transcription when a call connects — call this from your call handler
+async function enableTranscription(voiceChannelId) {
+    await api.voice.transcribe(voiceChannelId, 'start', 'both', {
+        url: `${process.env.WEBHOOK_BASE}/webhooks/voice`,
+    });
+}
+
+app.listen(3000);
+```
+
+</TabItem>
+</Tabs>
+
+**Notes:**
+- `forwardText.url` receives one POST per transcript segment as it's recognized — buffer these and process on `hangup`.
+- Run `ai.extract.intent` and `ai.generative.chat` in parallel with `Promise.all` to minimize webhook processing time.
+- Always `res.sendStatus(200)` before any async work so Unbound doesn't retry the webhook delivery.
+
+---
+
+### Pattern 9 — Multi-party conference room (ad-hoc bridge)
+
+Build a dynamic conference where participants can join and leave independently, with the host able to mute or remove individuals.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+class ConferenceRoom {
+    constructor(api) {
+        this.api = api;
+        // callId → { callId, channelId, name, phoneNumber }
+        this.participants = new Map();
+    }
+
+    // Dial out to a participant and add them to the bridge
+    async invite(phoneNumber, name, callerDID) {
+        const call = await this.api.voice.call({
+            to: phoneNumber,
+            from: callerDID,
+            app: [{ action: 'answer' }],
+        });
+
+        this.participants.set(call.id, {
+            callId: call.id,
+            channelId: call.voiceChannelId,
+            name,
+            phoneNumber,
+        });
+
+        // Conference everyone together (voice.conference is idempotent for existing channels)
+        if (this.participants.size > 1) {
+            const allChannels = Array.from(this.participants.values())
+                .map(p => p.channelId);
+            await this.api.voice.conference(allChannels);
+        }
+
+        console.log(`${name} joined (${this.participants.size} total participants)`);
+        return call.id;
+    }
+
+    // Silence a participant — they still hear the conference
+    async mute(callId) {
+        const p = this._get(callId);
+        await this.api.voice.mute(p.channelId, 'mute', 'in');
+        console.log(`Muted ${p.name}`);
+    }
+
+    async unmute(callId) {
+        const p = this._get(callId);
+        await this.api.voice.unmute(p.channelId, 'in');
+        console.log(`Unmuted ${p.name}`);
+    }
+
+    // Remove one participant without ending others
+    async remove(callId) {
+        const p = this._get(callId);
+        await this.api.voice.hangup(callId);
+        this.participants.delete(callId);
+        console.log(`${p.name} removed from conference`);
+    }
+
+    // End the entire conference
+    async dissolve() {
+        const tasks = Array.from(this.participants.values())
+            .map(p => this.api.voice.hangup(p.callId).catch(() => {}));
+        await Promise.all(tasks);
+        this.participants.clear();
+        console.log('Conference dissolved');
+    }
+
+    list() {
+        return Array.from(this.participants.values()).map(p => ({
+            callId: p.callId,
+            name: p.name,
+            phoneNumber: p.phoneNumber,
+        }));
+    }
+
+    _get(callId) {
+        const p = this.participants.get(callId);
+        if (!p) throw new Error(`Participant ${callId} not in conference`);
+        return p;
+    }
+}
+
+// Usage example
+const room = new ConferenceRoom(api);
+
+await room.invite('+15551110001', 'Alice', process.env.UNBOUND_NUMBER);
+await room.invite('+15552220002', 'Bob', process.env.UNBOUND_NUMBER);
+await room.invite('+15553330003', 'Carol', process.env.UNBOUND_NUMBER);
+
+console.log(room.list());
+// [
+//     { callId: 'call-aaa', name: 'Alice', phoneNumber: '+15551110001' },
+//     { callId: 'call-bbb', name: 'Bob',   phoneNumber: '+15552220002' },
+//     { callId: 'call-ccc', name: 'Carol', phoneNumber: '+15553330003' },
+// ]
+
+// Mute Bob mid-call
+const bobId = room.list().find(p => p.name === 'Bob').callId;
+await room.mute(bobId);
+
+// Later: end everything
+await room.dissolve();
+```
+
+</TabItem>
+</Tabs>
+
+**Notes:**
+- `voice.conference(channels)` accepts any number of channel IDs and bridges them all. Call it again with the full list whenever a new participant joins.
+- `voice.hangup(callId)` on a single participant disconnects only that leg — the conference continues for remaining participants.
+- Track `callId → name` in your own map so you can display names in your UI alongside the Unbound IDs.
+
+---
+
+### Pattern 10 — SIP endpoint dial-out with PSTN fallback
+
+Route calls to a registered SIP device first; automatically fall back to the agent's mobile if the SIP device is unreachable.
+
+<Tabs groupId="lang">
+<TabItem value="sdk" label="SDK">
+
+```javascript
+import { createSDK } from '@unbound/sdk';
+
+const api = createSDK({
+    namespace: process.env.UNBOUND_NS,
+    token: process.env.UNBOUND_TOKEN,
+});
+
+async function dialAgentWithFallback(options) {
+    const {
+        agentUserId,
+        agentMobile,    // E.164 PSTN fallback number
+        customerPhone,
+        callerDID,
+    } = options;
+
+    // 1. Look up any active SIP endpoint for this agent
+    const endpoints = await api.sipEndpoints.list({ userId: agentUserId });
+    const activeSip = endpoints.find(ep => ep.status === 'active');
+
+    // 2. Build dial app — SIP first, PSTN fallback
+    const app = [];
+
+    if (activeSip) {
+        app.push({
+            action: 'dial',
+            destination: `sip:${activeSip.address}`,
+            timeout: 20,  // wait 20 s for SIP answer, then move to next action
+        });
+    }
+
+    // PSTN fallback always present
+    app.push({
+        action: 'dial',
+        destination: agentMobile,
+        timeout: 30,
+    });
+
+    // 3. Place the call — Unbound runs app[] actions sequentially
+    const call = await api.voice.call({
+        to: customerPhone,
+        from: callerDID,
+        app,
+    });
+
+    console.log(`Call ${call.id} initiated (${activeSip ? 'SIP first' : 'PSTN only'})`);
+    return call;
+}
+
+// Track which path was taken via CDR / webhook event analysis
+const call = await dialAgentWithFallback({
+    agentUserId: 'user-agent-id-123',
+    agentMobile: '+13175550199',
+    customerPhone: '+15552223333',
+    callerDID: '+18005551234',
+});
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```javascript
+// Build the app array — SIP first if endpoint is known, PSTN fallback always present
+const callApp = [
+    {
+        action: 'dial',
+        destination: `sip:${sipAddress}`,  // e.g., "agent@acme.sip.unbound.cx"
+        timeout: 20,
+    },
+    {
+        action: 'dial',
+        destination: agentMobileE164,
+        timeout: 30,
+    },
+];
+
+const res = await fetch('https://{namespace}.api.unbound.cx/voice/calls', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer {token}',
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        to: customerPhone,
+        from: callerDID,
+        app: callApp,
+    }),
+});
+
+const call = await res.json();
+console.log('Call initiated:', call.id);
+```
+
+</TabItem>
+</Tabs>
+
+**Notes:**
+- The `app` array runs sequentially — if the first `dial` action times out or errors, Unbound automatically moves to the next action.
+- Set a reasonable `timeout` on the SIP step (15–25 seconds) so the caller doesn't wait too long before the PSTN fallback kicks in.
+- SIP endpoints must have `status: 'active'` (device registered); use `api.sipEndpoints.list()` to verify before building the dial app.
+- SIP routes carry no per-minute carrier cost — routing calls to SIP-registered agents reduces your PSTN spend. Track your routing split via CDR records.
+
+---
+
 ## Error Handling
 
 <Tabs groupId="lang">
